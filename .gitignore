@@ -1,0 +1,16 @@
+# Reference repositories are available to Codex but not part of this project
+/references/repos/
+
+# Temporary work
+/scratch/
+
+# Runtime/generated files
+*.log
+*.tmp
+*.bak
+.qmlcache/
+__pycache__/
+
+# Editor files
+.vscode/
+.idea/
