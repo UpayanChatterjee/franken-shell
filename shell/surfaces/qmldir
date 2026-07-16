@@ -1,0 +1,2 @@
+module FrankenShell.Surfaces
+DiagnosticSurface 1.0 DiagnosticSurface.qml

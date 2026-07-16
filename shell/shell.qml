@@ -1,43 +1,45 @@
-//@ pragma Env QS_CRASHREPORT_URL=https://github.com/caelestia-dots/shell/issues/new?template=crash.yml
-//@ pragma DefaultEnv QS_NO_RELOAD_POPUP=1
-//@ pragma DefaultEnv QS_DROP_EXPENSIVE_FONTS=1
-//@ pragma DefaultEnv QSG_RENDER_LOOP=threaded
-//@ pragma DefaultEnv QT_QUICK_FLICKABLE_WHEEL_DECELERATION=10000
-
-import "modules"
-import "modules/drawers"
-import "modules/background"
-import "modules/areapicker"
-import "modules/lock"
 import QtQuick
 import Quickshell
-import qs.services
+import "core" as Core
+import "surfaces" as Surfaces
 
 ShellRoot {
     id: root
 
+    property string startupState: "Bootstrapping"
+    readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
+
     settings.watchFiles: false
 
-    Binding {
-        target: ShellState
-        property: "shellRoot"
-        value: root
+    Core.Diagnostics {
+        mode: root.mode
+        startupState: root.startupState
+        surfaceVisible: diagnosticSurface.visible
     }
 
-    GSFLoader {}
+    Surfaces.DiagnosticSurface {
+        id: diagnosticSurface
 
-    Background {}
-    Drawers {}
-    AreaPicker {}
-    Lock {
-        id: lock
+        mode: root.mode
+        startupState: root.startupState
     }
 
-    ConfigToasts {}
-    Shortcuts {}
-    VicinaeBridge {}
-    BatteryMonitor {}
-    IdleMonitors {
-        lock: lock
+    Component.onCompleted: {
+        Core.Logger.info("core", "startup", {
+            mode: root.mode,
+            projectVersion: Core.ProjectInfo.projectVersion,
+            shellDir: Quickshell.shellDir
+        });
+        Core.Logger.info("config", "built-in-defaults-active", {
+            configPath: Core.ProjectInfo.configPath,
+            schemaVersion: Core.ProjectInfo.configSchemaVersion
+        });
+        Core.Logger.info("theme", "fallback-theme-active", {
+            theme: "FallbackTheme"
+        });
+        root.startupState = "SurfacesReady";
+        Core.Logger.info("surfaces", "diagnostic-surface-ready", {
+            visible: diagnosticSurface.visible
+        });
     }
 }

@@ -1,0 +1,4 @@
+module FrankenShell.Core
+singleton Logger 1.0 Logger.qml
+singleton ProjectInfo 1.0 ProjectInfo.qml
+Diagnostics 1.0 Diagnostics.qml

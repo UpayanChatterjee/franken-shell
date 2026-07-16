@@ -1,0 +1,167 @@
+#!/bin/sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SHELL_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+
+is_running() {
+    qs ipc --path "$SHELL_DIR" show >/dev/null 2>&1
+}
+
+diagnostics_ready() {
+    summary=$(qs ipc --path "$SHELL_DIR" call diagnostics summary 2>/dev/null) || return 1
+    case "$summary" in
+        \{*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+wait_for_diagnostics() {
+    attempts=0
+    while [ "$attempts" -lt 50 ]; do
+        if diagnostics_ready; then
+            return 0
+        fi
+        attempts=$((attempts + 1))
+        sleep 0.1
+    done
+    return 1
+}
+
+wait_for_stop() {
+    attempts=0
+    while [ "$attempts" -lt 50 ]; do
+        if ! is_running; then
+            return 0
+        fi
+        attempts=$((attempts + 1))
+        sleep 0.1
+    done
+    return 1
+}
+
+start_instance() {
+    mode=$1
+    if is_running; then
+        printf 'Franken Shell is already running from %s\n' "$SHELL_DIR"
+        return 0
+    fi
+
+    FRANKEN_SHELL_MODE=$mode qs --no-duplicate --daemonize --path "$SHELL_DIR" --log-times
+    if ! wait_for_diagnostics; then
+        printf 'Franken Shell did not become ready. Inspect logs with: %s logs\n' "$0" >&2
+        return 1
+    fi
+    printf 'Franken Shell started in %s mode from %s\n' "$mode" "$SHELL_DIR"
+}
+
+stop_instance() {
+    if ! is_running; then
+        printf 'Franken Shell is not running from %s\n' "$SHELL_DIR"
+        return 0
+    fi
+    qs kill --path "$SHELL_DIR"
+    if ! wait_for_stop; then
+        printf 'Franken Shell did not stop cleanly.\n' >&2
+        return 1
+    fi
+}
+
+verify_baseline() {
+    actual=$(qs --version)
+    printf '%s\n' "$actual"
+    case "$actual" in
+        *"Quickshell 0.3.0"*"4df562dfb2475a9057f0f33a8db75808efad8670"*) ;;
+        *)
+            printf 'Expected Quickshell 0.3.0 at commit 4df562dfb2475a9057f0f33a8db75808efad8670\n' >&2
+            return 1
+            ;;
+    esac
+
+    if command -v pacman >/dev/null 2>&1; then
+        pacman -Q quickshell-git qt6-base hyprland
+    fi
+}
+
+show_diagnostics() {
+    if ! is_running; then
+        printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+        return 1
+    fi
+    qs ipc --path "$SHELL_DIR" call diagnostics summary
+    printf 'runtimeQuickshell='
+    qs --version
+    if command -v hyprctl >/dev/null 2>&1; then
+        printf 'runtimeHyprland='
+        hyprctl version | sed -n '1p'
+    fi
+}
+
+check_qml() {
+    find "$SHELL_DIR" -name '*.qml' -print0 \
+        | xargs -0 qmllint -I "$SHELL_DIR" -I /usr/lib/qt6/qml
+}
+
+usage() {
+    printf '%s\n' \
+        "Usage: $0 COMMAND" \
+        "" \
+        "Commands:" \
+        "  start             Start non-owning development mode" \
+        "  mock              Start non-owning mock mode" \
+        "  stop              Stop only this repository-path instance" \
+        "  restart           Full process restart in development mode" \
+        "  reload            Request an in-process soft reload" \
+        "  logs [LINES]      Show recent Quickshell logs" \
+        "  diagnostics       Show bootstrap and runtime diagnostics" \
+        "  config-status     Show the built-in configuration status" \
+        "  verify-baseline   Verify the tested local runtime baseline" \
+        "  check             Check QML syntax and imports"
+}
+
+command=${1:-help}
+case "$command" in
+    start)
+        start_instance development
+        ;;
+    mock)
+        start_instance mock
+        ;;
+    stop)
+        stop_instance
+        ;;
+    restart)
+        stop_instance
+        start_instance development
+        ;;
+    reload)
+        qs ipc --path "$SHELL_DIR" call diagnostics reload
+        if ! wait_for_diagnostics; then
+            printf 'Franken Shell did not become ready after reload.\n' >&2
+            exit 1
+        fi
+        ;;
+    logs)
+        qs log --path "$SHELL_DIR" --tail "${2:-100}"
+        ;;
+    diagnostics)
+        show_diagnostics
+        ;;
+    config-status)
+        qs ipc --path "$SHELL_DIR" call diagnostics configStatus
+        ;;
+    verify-baseline)
+        verify_baseline
+        ;;
+    check)
+        check_qml
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
