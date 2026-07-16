@@ -9,6 +9,8 @@ label=${1:-diagnostics}
 destination="$ARTIFACT_DIR/$label"
 mkdir -p "$destination"
 
+cd "$REPO_ROOT"
+
 {
 	printf 'git='
 	git --version

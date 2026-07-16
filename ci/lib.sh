@@ -8,7 +8,7 @@ TOOLS_DIR="$REPO_ROOT/.ci-tools/bin"
 ARTIFACT_DIR=${CI_ARTIFACT_DIR:-"$REPO_ROOT/.ci-artifacts"}
 
 export CI_DIR REPO_ROOT TOOLS_DIR ARTIFACT_DIR
-export PATH="$TOOLS_DIR:$REPO_ROOT/node_modules/.bin:$PATH"
+export PATH="$TOOLS_DIR:$REPO_ROOT/node_modules/.bin:/usr/lib/qt6/bin:/usr/lib64/qt6/bin:$PATH"
 
 die() {
 	printf 'error: %s\n' "$*" >&2

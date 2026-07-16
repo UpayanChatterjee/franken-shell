@@ -23,6 +23,6 @@ export QT_QPA_PLATFORM=offscreen
 shell/dev/franken-shell config-helper-client-test
 shell/dev/franken-shell config-service-test
 shell/dev/franken-shell monitor-registry-test
-shell/dev/franken-shell command-registry-test
+HOME=$(dirname -- "$REPO_ROOT") shell/dev/franken-shell command-registry-test
 
 printf 'Unit and fixture suites passed.\n'
