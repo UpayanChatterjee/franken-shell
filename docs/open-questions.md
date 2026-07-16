@@ -34,83 +34,47 @@ Do not let Codex resolve these silently through implementation convenience.
 
 ## Q-001 — Exact Quickshell baseline
 
-**Priority:** Blocker, Research  
-**Needed by:** Phase 0
+**Status:** Resolved by D-071
 
-Which exact Quickshell release or commit should Franken Shell pin initially?
+**Resolved scope:** Exact Phase 0 development pin
 
-Questions:
+The tested development baseline is Quickshell `0.3.0` at commit
+`4df562dfb2475a9057f0f33a8db75808efad8670`, Arch package
+`quickshell-git 0.3.0.r15.g4df562d-1`, Qt `6.11.1`, and Hyprland `0.55.4`
+using Lua configuration.
 
-- Which version is already installed and stable on the user's current system?
-- Does that version expose the required Hyprland, notification, tray, PipeWire, UPower, Bluetooth, NetworkManager, Polkit, and IPC facilities?
-- Are any required APIs only available on a newer development revision?
-- Should the project package a minimum supported version or a specific commit?
-- How will compatibility checks be implemented?
-
-Expected output:
-
-- one pinned development baseline;
-- one documented minimum;
-- a small compatibility matrix.
+The supported minimum and compatibility range were not resolved. They are
+tracked by Q-113.
 
 ---
 
 ## Q-002 — Retained Caelestia service inventory
 
-**Priority:** Blocker, Research  
-**Needed by:** Phase 0–1
+**Status:** Provisionally resolved by D-072
 
-Which exact Caelestia modules, services, helpers, and configuration pieces should be retained?
+**Resolved scope:** Audited transitional migration inventory
 
-Required inventory:
+The complete provisional matrix is maintained in `runtime-dependencies.md`.
+It constrains Phase 0 and prevents broad legacy imports, but it does not
+permanently settle every dependency.
 
-- dynamic colour generation;
-- wallpaper service;
-- notification service, if currently used;
-- audio service;
-- network service;
-- Bluetooth service;
-- power and battery service;
-- tray handling;
-- resource/sensor service;
-- icon/theme helpers;
-- utility processes;
-- any custom modifications already made by the user.
-
-For each retained component, decide:
-
-- keep unchanged;
-- wrap behind Franken Shell adapter;
-- copy and maintain;
-- replace with Quickshell-native service;
-- remove.
-
-This must happen before Codex imports broad sections of Caelestia by convenience.
+Remaining capability and ownership research is tracked by Q-114.
 
 ---
 
 ## Q-003 — Initial source tree migration strategy
 
-**Priority:** High  
-**Needed by:** Phase 0
+**Status:** Resolved by D-073
 
-How should the current modified Caelestia configuration be brought into the new repository?
+**Resolved scope:** Main-branch bootstrap and legacy preservation
 
-Options:
+Main receives a clean bootstrap without a physical legacy source directory.
+The customized implementation remains available through Git history,
+`design-baseline-v1`, and `legacy/caelestia-custom`. The live user
+configuration remains untouched and runnable.
 
-1. copy the entire current shell into a `legacy/` reference directory;
-2. start clean and copy selected modules only;
-3. import current shell as a Git subtree or separate branch;
-4. preserve only a reference commit and extract components incrementally.
-
-Questions:
-
-- Should the current working configuration remain runnable during development?
-- How will differences be compared?
-- Should copied upstream files preserve attribution and commit metadata?
-- How will local modifications be identified before extraction?
-
-Recommended direction remains a clean new shell with a read-only legacy reference, but this has not been formally settled.
+Any later extraction remains subject to the attribution, licensing, dependency,
+and ownership review required by D-072 and the repository instructions.
 
 ---
 
@@ -169,24 +133,78 @@ Questions:
 
 ## Q-006 — Main shell startup and supervision
 
-**Priority:** High  
-**Needed by:** Phase 0–1
+**Status:** Resolved by D-074
 
-What is the primary supported startup model?
+**Resolved scope:** Development topology and production supervisor
 
-Options:
+Development uses a manually launched, repository-path, non-owning Franken
+Shell alongside the normally started Caelestia shell. Production uses one
+systemd user service, optionally triggered by Hyprland, with duplicate
+protection, bounded `Restart=on-failure`, journal lifecycle logs, and separate
+reload/restart operations.
 
-- user systemd service;
-- Hyprland Lua autostart;
-- both, with one recommended.
+Notification fallback, Mako activation, and persistent SNI-host recovery are
+tracked by Q-115.
 
-Questions:
+---
 
-- How should reload differ from restart?
-- How do we prevent duplicate notification/tray ownership?
-- Should systemd restart on crash?
-- How are logs surfaced?
-- What startup ordering is needed for Hyprland, D-Bus, and optional services?
+## Q-113 — Supported Quickshell range and compatibility checks
+
+**Priority:** High, Research
+
+**Needed by:** Packaging and compatibility claims
+
+What minimum Quickshell version and compatibility range can Franken Shell
+support after testing?
+
+Research:
+
+- test required modules and API behaviour across candidate revisions;
+- define compatibility checks and failure diagnostics;
+- identify APIs that require revisions newer than the Phase 0 pin;
+- produce a small tested compatibility matrix.
+
+The D-071 pin is not evidence of a supported minimum.
+
+---
+
+## Q-114 — Transitional Caelestia capability research
+
+**Priority:** High, Research
+
+**Needed by:** Relevant adapter or migration task
+
+Resolve the provisional inventory items that cannot yet be classified
+permanently:
+
+- lock, PAM, and session lifecycle ownership and failure semantics;
+- `M3Shapes` packaging, licence, ABI, and replacement implications;
+- NetworkManager secret-agent, enterprise Wi-Fi, and captive-portal support;
+- Bluetooth PIN/passkey pairing-agent behaviour;
+- notification reload and restart semantics;
+- tray watcher and item recovery semantics.
+
+Results may revise the provisional matrix only through an approved decision.
+
+---
+
+## Q-115 — Exclusive-service crash fallback and recovery
+
+**Priority:** High, Research
+
+**Needed by:** Production notification/tray ownership
+
+How should production recover exclusive session responsibilities after a crash?
+
+Research:
+
+- whether and when Mako may activate while systemd restarts Franken Shell;
+- how notification ownership is handed back without losing or duplicating service;
+- whether the persistent SNI host remains necessary;
+- how tray items recover across watcher/host loss;
+- what ordering and readiness checks belong in the production unit.
+
+This does not block the non-owning Phase 0 bootstrap.
 
 ---
 
@@ -2196,7 +2214,7 @@ These should be tested in daily use rather than answered from theory:
 
 These require up-to-date primary-source verification before implementation:
 
-- exact Quickshell version and module capabilities;
+- supported Quickshell range and module/API compatibility evidence under Q-113;
 - Hyprland 0.55+ Lua gesture and IPC behaviour;
 - Vicinae invocation/deeplink and extension APIs;
 - quickshell-overview IPC/config format;
@@ -2220,10 +2238,15 @@ Resolve in this order:
 
 ## Before Phase 0
 
-1. Quickshell version pin.
-2. current Caelestia inventory.
-3. source migration strategy.
-4. startup/supervision model.
+Resolved by D-071 through D-074:
+
+1. exact tested development baseline;
+2. provisional Caelestia migration inventory;
+3. clean main-branch bootstrap strategy;
+4. parallel-safe development and production supervision topology.
+
+Q-113 through Q-115 retain follow-up research that does not block the non-owning
+Phase 0 bootstrap.
 
 ## Before Phase 1
 

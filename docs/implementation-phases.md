@@ -174,19 +174,34 @@ Create only the initial files needed for startup.
 Record:
 
 - Franken Shell version;
-- Quickshell version or commit;
-- Hyprland minimum version;
+- exact D-071 Quickshell version, commit, and Arch package;
+- Qt version;
+- tested Hyprland version and Lua configuration mode;
 - tested Vicinae version;
 - tested quickshell-overview revision;
 - configuration schema version;
 - IPC version.
+
+The Phase 0 pin is not a minimum supported version. Compatibility range work is
+deferred to Q-113.
+
+### Parallel-safe development mode
+
+The current Caelestia shell remains separately runnable and continues to own
+notifications, tray watching, Polkit-agent duties, lock/session behaviour, and
+other exclusive session responsibilities.
+
+Launch Franken Shell manually from the repository path in a non-owning mode.
+The Phase 0 instance must not register notification, tray-watcher, Polkit-agent,
+session-lock, or equivalent exclusive ownership.
 
 ### Development commands
 
 Provide simple commands for:
 
 - start;
-- reload;
+- in-process reload;
+- full process restart;
 - stop;
 - logs;
 - validate config;
@@ -229,7 +244,9 @@ Expose:
 
 - shell starts with no user configuration;
 - shell starts without Caelestia;
+- shell can run in parallel with the existing Caelestia shell without claiming exclusive session services;
 - shell reload does not create duplicate instances;
+- reload and full restart are distinct documented operations;
 - logs identify startup success or failure;
 - project versions are visible through one diagnostic command;
 - invalid initial configuration falls back safely.
@@ -239,6 +256,8 @@ Expose:
 - real bar;
 - control centre;
 - notifications;
+- tray watching;
+- Polkit-agent or session-lock ownership;
 - system integrations;
 - visual polish.
 
@@ -1500,10 +1519,17 @@ Make the project installable, recoverable, maintainable, and safe to update.
 
 ## 15.1 Startup packaging
 
-Choose and document primary startup:
+Package and document the approved production startup topology:
 
-- user systemd service recommended;
-- Hyprland Lua autostart supported.
+- one systemd user service is the primary supervisor;
+- Hyprland may start that service or its target, but must not separately launch Quickshell;
+- duplicate-instance protection remains an additional guard;
+- use `Restart=on-failure` with a bounded delay;
+- send service lifecycle logs to the journal while retaining Quickshell structured logs and crash reports;
+- document full process restart and in-process reload as different operations.
+
+Resolve Q-115 before production Franken Shell claims notification,
+tray-watcher, Polkit-agent, lock, or equivalent exclusive ownership.
 
 ## 15.2 Installation
 
@@ -2062,6 +2088,6 @@ A first stable release should not be tagged until:
 
 Once the remaining design documents and feature specifications are present, begin **Phase 0** with a single Codex task:
 
-> Create the minimal runnable Franken Shell Quickshell project with a root `shell.qml`, a fallback semantic theme singleton, structured startup logging, version constants, and a simple noninteractive test surface. Do not implement the real bar, system services, or external integrations. Include a README section with exact development start, reload, and stop commands.
+> Create the minimal runnable Franken Shell Quickshell project with a root `shell.qml`, a fallback semantic theme singleton, structured startup logging, version constants, and a simple noninteractive test surface. Run it manually from the repository path in a non-owning mode alongside the existing Caelestia shell. It must not claim notification, tray-watcher, Polkit-agent, session-lock, or equivalent exclusive ownership. Do not implement the real bar, system services, or external integrations. Include a README section with exact development start, in-process reload, full restart, stop, and log commands.
 
 That task establishes the first executable baseline without allowing implementation to jump ahead of the architecture.

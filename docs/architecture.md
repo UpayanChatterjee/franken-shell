@@ -1,9 +1,9 @@
 # Franken Shell — Architecture
 
 > **Status:** Working architecture baseline  
-> **Target compositor:** Hyprland 0.55+ using Lua configuration  
+> **Tested Phase 0 compositor:** Hyprland 0.55.4 using Lua configuration
 > **Primary UI runtime:** Quickshell / QML  
-> **Current Quickshell target:** Pin and test a specific Quickshell 0.3.x release or commit before implementation  
+> **Pinned Phase 0 runtime:** Quickshell 0.3.0 at `4df562dfb2475a9057f0f33a8db75808efad8670`, package `quickshell-git 0.3.0.r15.g4df562d-1`, Qt 6.11.1
 > **Related documents:** `product-vision.md`, `design-principles.md`, `feature-map.md`, `interaction-language.md`, `visual-language.md`
 
 This document defines the proposed system architecture for Franken Shell.
@@ -129,6 +129,10 @@ The project should:
 
 Hyprland Lua mode must be detected or assumed only after the compositor adapter verifies it.
 
+The D-071 pin is the exact tested development baseline. It is not the minimum
+supported version; support ranges require the compatibility testing tracked by
+Q-113.
+
 ---
 
 # 2. Runtime Topology
@@ -163,6 +167,17 @@ quickshell: franken-shell
 ```
 
 A single main instance avoids duplicated service subscriptions and allows surfaces to coordinate reliably.
+
+### Phase 0 parallel-development topology
+
+During early development, the existing Caelestia shell remains the working
+shell and retains notifications, tray watching, lock/session behaviour, and
+other exclusive responsibilities.
+
+The Franken Shell development instance is launched manually from its repository
+path in a non-owning mode. It must not register a notification server, tray
+watcher, Polkit agent, session lock, or equivalent exclusive session owner.
+This is a temporary development topology, not the production ownership model.
 
 ---
 
@@ -2183,21 +2198,17 @@ A later diagnostic UI can consume the same models.
 
 ## 32.1 Startup ownership
 
-Preferred options:
+Production uses one systemd user service as the primary process supervisor.
+Hyprland may start that service or its target, but must not also launch the
+Quickshell process directly.
 
-- user systemd service; or
-- Hyprland Lua autostart entry.
+The service uses duplicate-instance protection as an additional guard and
+`Restart=on-failure` with a bounded delay. Service lifecycle logs go to the
+journal; Quickshell structured logs and crash reports remain available.
 
-The project should choose one documented primary method and support the other where useful.
-
-A user systemd service offers:
-
-- restart policy;
-- logs;
-- dependency ordering;
-- easier diagnostics.
-
-Hyprland autostart remains simple and compositor-local.
+Development does not start Franken Shell through the production unit while the
+working Caelestia shell is active. It uses the non-owning repository-path mode
+defined in section 2.1.
 
 ---
 
@@ -2213,6 +2224,13 @@ Production behaviour must distinguish:
 - external integration restart.
 
 A reload must not duplicate notification servers, tray watchers, or IPC handlers.
+
+An in-process reload reconstructs or updates the running QML instance while
+preserving the Quickshell process. A full restart stops and starts the supervised
+process. Commands and diagnostics must name these operations distinctly.
+
+Notification fallback during crashes, Mako activation, and persistent SNI-host
+recovery remain unresolved under Q-115.
 
 ---
 

@@ -4,6 +4,13 @@
 
 This inventory describes the active Quickshell tree rooted in `shell/shell.qml` at lines 16–43. It distinguishes compositor-visible surfaces from support objects, and it treats the bar, drawers, notification popups, OSD, utilities, toasts, and popouts as components composed inside one per-screen `ContentWindow`, not as independent operating-system windows (`shell/modules/drawers/Drawers.qml:7-25`; `shell/modules/drawers/ContentWindow.qml:251-335`; `shell/modules/drawers/Panels.qml:16-155`). “Shortcut” below means a registered `CustomShortcut.name`; the active QML does not define the user's external key combinations (`shell/components/misc/CustomShortcut.qml:3-7`; `shell/modules/Shortcuts.qml:17-186`).
 
+This is the customized Caelestia implementation preserved at
+`design-baseline-v1`, not the Phase 0 bootstrap contract. D-073 permits the
+repository `shell/` tree to be replaced in a later implementation task without
+creating a physical legacy directory on main. Until then, the live user
+configuration remains separately runnable and owns exclusive session
+responsibilities; the parallel Phase 0 instance must be non-owning.
+
 ## Component topology
 
 The bootstrap creates independent background, drawer, picker, and lock roots alongside support-only roots. `Drawers` creates one `ContentWindow` per enabled screen; that window contains `BarWrapper` plus the shared `Panels` set. `ShellState` creates per-enabled-screen state and component registries, while service singletons supply shared data to surfaces (`shell/shell.qml:16-43`; `shell/services/ShellState.qml:9-99`; `shell/modules/drawers/Drawers.qml:7-25`; `shell/modules/drawers/ContentWindow.qml:251-335`; `shell/modules/drawers/Panels.qml:16-155`).

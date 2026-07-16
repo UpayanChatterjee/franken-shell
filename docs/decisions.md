@@ -1787,6 +1787,122 @@ This keeps decisions manageable and prevents a large generated specification fro
 
 ---
 
+# D-071 — Phase 0 Development Baseline
+
+**Status:** Accepted
+
+## Decision
+
+The exact pinned and tested Phase 0 development baseline is:
+
+- Quickshell `0.3.0`;
+- Quickshell commit `4df562dfb2475a9057f0f33a8db75808efad8670`;
+- Arch package `quickshell-git 0.3.0.r15.g4df562d-1`;
+- Qt `6.11.1`;
+- Hyprland `0.55.4` using Lua configuration.
+
+This pin is a development baseline, not a minimum supported version.
+
+## Rationale
+
+These versions are installed together and were inspected during the Phase 0 readiness audit. Pinning the complete tested set avoids treating a generic pre-1.0 Quickshell release family as interchangeable.
+
+## Consequences
+
+- Phase 0 records and checks the exact versions above;
+- version-sensitive behaviour is evaluated against this baseline;
+- the eventual minimum supported version and compatibility range remain unresolved until compatibility testing exists;
+- compatibility claims must not be inferred from the development pin.
+
+---
+
+# D-072 — Provisional Caelestia Migration Inventory
+
+**Status:** Accepted
+
+## Decision
+
+The audited Caelestia component matrix in `runtime-dependencies.md` is the provisional migration inventory.
+
+The Phase 0 bootstrap imports no legacy Caelestia presentation modules. Selected installed Caelestia CLI and native modules may remain available during transition, but retained capabilities must be consumed behind Franken Shell adapters.
+
+`Copy and maintain` means eligible for selective extraction after dependency, licence, ownership, and consumer review. It does not authorize immediate or bulk copying.
+
+During parallel development, the running Caelestia shell continues to own notifications, tray watching, lock/session behaviour, and other exclusive session responsibilities.
+
+## Rationale
+
+The current shell mixes presentation, QML services, native modules, external commands, configuration, and exclusive session ownership. A provisional matrix preserves the audit evidence without turning every transitional dependency into a permanent commitment.
+
+## Consequences
+
+- classifications may change through later approved research or implementation evidence;
+- broad legacy presentation imports are prohibited in Phase 0;
+- retained capabilities cross a Franken Shell adapter boundary;
+- unresolved lock, agent, notification, tray, and native-module questions remain tracked in `open-questions.md`.
+
+---
+
+# D-073 — Clean Main-Branch Bootstrap
+
+**Status:** Accepted
+
+## Decision
+
+Franken Shell will begin with a clean Phase 0 bootstrap on the main branch.
+
+The customized Caelestia implementation is preserved through Git history, the `design-baseline-v1` tag, and the `legacy/caelestia-custom` branch. Main will not contain a physical legacy source directory.
+
+The live configuration at `~/.config/quickshell/caelestia` remains untouched and separately runnable throughout early development. Replacing the repository `shell/` implementation is deferred to a later implementation task.
+
+## Rationale
+
+Git already preserves the exact customized tree without duplicating a large legacy directory or making legacy structure part of the new architecture.
+
+## Consequences
+
+- legacy components are inspected or extracted from Git history or the legacy branch;
+- extraction remains selective and review-driven;
+- the working user shell is not the Phase 0 development target and is not modified by bootstrap work;
+- migration and visual redesign are not combined.
+
+---
+
+# D-074 — Development and Production Startup Topology
+
+**Status:** Accepted
+
+## Decision
+
+During development:
+
+- the current Caelestia shell continues to start normally;
+- Franken Shell is launched manually from its repository path in a non-owning development mode;
+- the development instance must not claim notification, tray-watcher, Polkit-agent, lock, or equivalent exclusive ownership.
+
+For production:
+
+- one systemd user service is the primary supervisor;
+- Hyprland may start that service or its target, but must not separately launch Quickshell;
+- duplicate-instance protection remains an additional guard;
+- the service uses `Restart=on-failure` with a bounded delay;
+- service lifecycle logs go to the journal while Quickshell structured logs and crash reports remain available.
+
+Full process restart and in-process reload are distinct documented operations.
+
+## Rationale
+
+Parallel non-owning development protects the working desktop and avoids duplicate session-service ownership. A single production supervisor provides clear process ownership, crash recovery, ordering, and logs.
+
+## Consequences
+
+- Phase 0 must prove parallel-safe non-owning operation;
+- development commands must identify the repository path and ownership mode explicitly;
+- production startup has one authority even when triggered from Hyprland;
+- notification fallback, Mako activation, and persistent SNI-host recovery remain unresolved but do not block the non-owning bootstrap.
+
+---
+
 # Current Accepted Baseline Summary
 
 The implementation should currently assume:
@@ -1820,6 +1936,10 @@ The implementation should currently assume:
 - adapters for system interaction;
 - shared configuration;
 - local failure containment;
+- exact Phase 0 development pin from D-071;
+- clean main-branch bootstrap with the working Caelestia shell preserved separately;
+- parallel-safe non-owning development operation;
+- one systemd user service as the production supervisor;
 - phased implementation with edge-drag validation early.
 
 ---
@@ -1845,5 +1965,7 @@ The following should receive future entries when resolved:
 - final tray pinning UX;
 - final OSD placement;
 - final quickshell-overview vendoring decision;
-- retained Caelestia service inventory;
+- final post-migration Caelestia dependency inventory;
+- supported Quickshell minimum and compatibility range;
+- exclusive notification/tray fallback and recovery behaviour;
 - exact default Hyprland bindings.

@@ -4,7 +4,43 @@
 
 This inventory covers the active QML and shipped helper assets under `shell/`. Historical prose in `shell/changes.md` and editor policy under `shell/.claude/` are excluded. Caelestia reference-plugin `CMakeLists.txt` files are used only as provenance for native QML module declarations and build/link dependencies; they do not prove that the locally installed plugin has the same binary graph. Facts are directly observed and source-cited. `[INFERENCE]` marks a derived consequence. An **opaque** value or transport is not exposed by the inspected source.
 
-The native QML imports are load-bearing: active files import them without an import fallback. The `caelestia` executable is not classified globally as either required or optional; each CLI-backed feature below records its own behavior. This document contains no proposed architecture or visual direction.
+The native QML imports are load-bearing: active files import them without an import fallback. The `caelestia` executable is not classified globally as either required or optional; each CLI-backed feature below records its own behavior. Except for the provisional migration classification accepted by D-072, this document contains no proposed architecture or visual direction.
+
+## Provisional migration classification
+
+This D-072 matrix is a transitional inventory, not a permanent dependency
+commitment. Phase 0 imports no legacy Caelestia presentation modules. Selected
+installed CLI and native modules may remain available while capabilities are
+migrated behind Franken Shell adapters.
+
+`Copy and maintain` means eligible for selective extraction after review; it
+does not authorize immediate or bulk copying.
+
+| Component family | Provisional classification | Transition constraint |
+|---|---|---|
+| Installed Caelestia CLI and native plugins | Keep unchanged | Remain available during transition; availability does not permit direct feature-view coupling. |
+| Dynamic colours and wallpaper CLI | Wrap behind a Franken Shell adapter | Phase 0 uses a built-in fallback theme and no legacy presentation. |
+| Audio, PipeWire, Cava, and beat tracking | Wrap behind a Franken Shell adapter | Preserve optional capability and failure boundaries. |
+| QML `Nmcli` network service | Replace later | Prototype Quickshell Networking first; secret-agent and advanced-network gaps remain Q-114. |
+| Quickshell Bluetooth integration | Wrap behind a Franken Shell adapter | Pairing-agent behaviour remains Q-114. |
+| UPower, power profiles, and battery policy | Wrap behind Franken Shell adapters | Keep status independent from optional policy controls. |
+| Notification server and history implementation | Replace later | Running Caelestia retains ownership during parallel development; restart semantics remain Q-114/Q-115. |
+| Quickshell system tray and DBusMenu | Wrap behind a Franken Shell adapter | Running Caelestia retains watcher ownership; recovery remains Q-114/Q-115. |
+| Persistent SNI host | Keep unchanged | Retain initially; long-term necessity and recovery remain Q-115. |
+| Hyprland service and Lua workarounds | Copy and maintain | Selectively extract behind the compositor adapter after review. |
+| `AppDb`, `Qalculator`, `CUtils`, and image analysis | Wrap behind adapters | Retain only when a Franken feature has a documented consumer. |
+| CPU, GPU, lyrics, weather, and sensor services | Wrap behind adapters | Expose optional availability and local failure. |
+| Local `FanSpeeds` service | Copy and maintain | Selective extraction only, with portability checks. |
+| `VicinaeBridge`, Mono, STT, TTS, and Shazam | Copy and maintain | Place behind optional integration adapters; preserve no machine-specific path assumptions. |
+| `GlobalConfig`, token configuration, and `BarConfig` | Replace later | Migrate to `ConfigService` and `ThemeManager`. |
+| Caelestia toast implementation | Replace later | Use Franken Shell feedback ownership when that phase begins. |
+| Lock, PAM, and session lifecycle | Unknown pending research | Current Caelestia retains ownership; Q-114 governs research. |
+| Existing bar, drawer, Nexus, and other presentation QML | Remove | Exclude from the Phase 0 bootstrap; reimplement or selectively extract only through later approved feature tasks. |
+| `Caelestia.Blobs` and `M3Shapes` visual dependencies | Unknown pending research | No Phase 0 dependency; packaging, licence, ABI, and visual need remain Q-114. |
+
+The current running Caelestia shell continues to own notifications, tray
+watching, lock/session behaviour, and other exclusive session responsibilities
+while the Phase 0 development instance runs in non-owning mode.
 
 ## Runtime host and compositor
 
