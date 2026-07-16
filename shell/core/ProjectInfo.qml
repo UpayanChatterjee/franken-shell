@@ -5,7 +5,7 @@ import Quickshell
 
 QtObject {
     readonly property string projectName: "Franken Shell"
-    readonly property string projectVersion: "0.0.0-phase0"
+    readonly property string projectVersion: "0.1.0-phase1-slice2b"
     readonly property int configSchemaVersion: 1
     readonly property int configHelperProtocolVersion: 1
     readonly property int ipcVersion: 1
@@ -19,7 +19,8 @@ QtObject {
 
     readonly property string vicinaeBaseline: "not tested by Phase 0 bootstrap"
     readonly property string overviewBaseline: "not tested by Phase 0 bootstrap"
-    readonly property string configPath: "built-in defaults; no user configuration loaded"
+    readonly property string configPath:
+        "${XDG_CONFIG_HOME:-$HOME/.config}/franken-shell/config.toml"
     readonly property string configHelperDevelopmentExecutable:
         "root://helpers/franken-config-helper/target/debug/franken-config-helper"
     readonly property string shellPath: Quickshell.shellDir

@@ -5,6 +5,8 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SHELL_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 CONFIG_HELPER_DIR="$SHELL_DIR/helpers/franken-config-helper"
+CONFIG_FIXTURE_DIR="$CONFIG_HELPER_DIR/tests/fixtures"
+CONFIG_DEMO_DIR=${TMPDIR:-/tmp}/franken-shell-config-demo-$(id -u)
 
 is_running() {
     qs ipc --path "$SHELL_DIR" show >/dev/null 2>&1
@@ -44,12 +46,21 @@ wait_for_stop() {
 
 start_instance() {
     mode=$1
+    fixture_path=${2:-}
     if is_running; then
         printf 'Franken Shell is already running from %s\n' "$SHELL_DIR"
         return 0
     fi
 
-    FRANKEN_SHELL_MODE=$mode qs --no-duplicate --daemonize --path "$SHELL_DIR" --log-times
+    if [ -n "$fixture_path" ]; then
+        FRANKEN_SHELL_MODE=$mode \
+        FRANKEN_CONFIG_FIXTURE_PATH=$fixture_path \
+            qs --no-duplicate --daemonize --path "$SHELL_DIR" --log-times
+    else
+        FRANKEN_CONFIG_FIXTURE_PATH= \
+        FRANKEN_SHELL_MODE=$mode \
+            qs --no-duplicate --daemonize --path "$SHELL_DIR" --log-times
+    fi
     if ! wait_for_diagnostics; then
         printf 'Franken Shell did not become ready. Inspect logs with: %s logs\n' "$0" >&2
         return 1
@@ -59,6 +70,7 @@ start_instance() {
 
 stop_instance() {
     if ! is_running; then
+        rm -rf "$CONFIG_DEMO_DIR"
         printf 'Franken Shell is not running from %s\n' "$SHELL_DIR"
         return 0
     fi
@@ -67,6 +79,7 @@ stop_instance() {
         printf 'Franken Shell did not stop cleanly.\n' >&2
         return 1
     fi
+    rm -rf "$CONFIG_DEMO_DIR"
 }
 
 verify_baseline() {
@@ -123,6 +136,70 @@ test_config_helper_client() {
         qs --no-duplicate --path "$SHELL_DIR/config-helper-client-tests.qml" --log-times
 }
 
+check_config_service() {
+    qmllint -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+        "$SHELL_DIR/core/ConfigDefaults.js" \
+        "$SHELL_DIR/core/ConfigPathResolver.js" \
+        "$SHELL_DIR/core/ConfigSnapshotBuilder.js" \
+        "$SHELL_DIR/core/ConfigValueList.qml" \
+        "$SHELL_DIR/core/ConfigValueMap.qml" \
+        "$SHELL_DIR/core/ConfigSnapshot.qml" \
+        "$SHELL_DIR/core/ConfigService.qml" \
+        "$SHELL_DIR/tests/config_service/FakeConfigHelperClient.qml" \
+        "$SHELL_DIR/tests/config_service/ConfigServiceTests.qml" \
+        "$SHELL_DIR/tests/config_service/ConfigServiceIntegrationTests.qml"
+}
+
+run_config_service_test() {
+    entrypoint=$1
+    runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-config-runtime.XXXXXX")
+    fixture_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-config-fixture.XXXXXX")
+    chmod 700 "$runtime_dir"
+
+    result=0
+    QT_QPA_PLATFORM=offscreen \
+    XDG_RUNTIME_DIR="$runtime_dir" \
+    FRANKEN_SHELL_MODE=config-service-test \
+    FRANKEN_CONFIG_FIXTURE_PATH="$fixture_dir/config.toml" \
+    FRANKEN_CONFIG_FIXTURE_DIRECTORY="$CONFIG_FIXTURE_DIR" \
+        qs --no-duplicate --path "$entrypoint" --log-times || result=$?
+    rm -rf "$runtime_dir" "$fixture_dir"
+    return "$result"
+}
+
+test_config_service() {
+    build_config_helper
+    run_config_service_test "$SHELL_DIR/config-service-tests.qml"
+    run_config_service_test "$SHELL_DIR/config-service-integration-tests.qml"
+}
+
+start_config_demo() {
+    fixture=${1:-"$CONFIG_FIXTURE_DIR/missing_optional.toml"}
+    if [ ! -f "$fixture" ]; then
+        printf 'Config demo fixture does not exist: %s\n' "$fixture" >&2
+        return 2
+    fi
+    fixture_root=$(CDPATH= cd -- "$CONFIG_FIXTURE_DIR" && pwd -P)
+    fixture_dir=$(CDPATH= cd -- "$(dirname -- "$fixture")" && pwd -P)
+    fixture=$fixture_dir/$(basename -- "$fixture")
+    case "$fixture" in
+        "$fixture_root"/*) ;;
+        *)
+            printf 'Config demo accepts only repository helper fixtures under %s\n' \
+                "$fixture_root" >&2
+            return 2
+            ;;
+    esac
+
+    mkdir -p "$CONFIG_DEMO_DIR"
+    cp "$fixture" "$CONFIG_DEMO_DIR/config.toml"
+    if ! start_instance config-demo "$CONFIG_DEMO_DIR/config.toml"; then
+        rm -rf "$CONFIG_DEMO_DIR"
+        return 1
+    fi
+    printf 'Temporary demo configuration: %s\n' "$CONFIG_DEMO_DIR/config.toml"
+}
+
 run_config_helper() {
     cargo run --quiet --locked \
         --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml" \
@@ -162,9 +239,10 @@ usage() {
         "  stop              Stop only this repository-path instance" \
         "  restart           Full process restart in development mode" \
         "  reload            Request an in-process soft reload" \
+        "  config-reload     Request ConfigService to reread its current path" \
         "  logs [LINES]      Show recent Quickshell logs" \
         "  diagnostics       Show bootstrap and runtime diagnostics" \
-        "  config-status     Show the built-in configuration status" \
+        "  config-status     Show sanitized active configuration status" \
         "  verify-baseline   Verify the tested local runtime baseline" \
         "  check             Check QML syntax and imports" \
         "  config-helper-build" \
@@ -173,6 +251,12 @@ usage() {
         "                    Run configuration helper unit and fixture tests" \
         "  config-helper-client-test" \
         "                    Exercise the QML helper client against controlled fixtures" \
+        "  config-service-check" \
+        "                    Statically check ConfigService and its typed snapshot files" \
+        "  config-service-test" \
+        "                    Run fake-client lifecycle and real-helper fixture tests" \
+        "  config-demo [FIXTURE_TOML]" \
+        "                    Start non-owning mode with a copied temporary configuration" \
         "  config-helper-validate-fixture TOML_FILE" \
         "                    Validate one TOML fixture through protocol v1" \
         "  config-helper-pipe" \
@@ -201,6 +285,9 @@ case "$command" in
             exit 1
         fi
         ;;
+    config-reload)
+        qs ipc --path "$SHELL_DIR" call diagnostics reloadConfig
+        ;;
     logs)
         qs log --path "$SHELL_DIR" --tail "${2:-100}"
         ;;
@@ -224,6 +311,15 @@ case "$command" in
         ;;
     config-helper-client-test)
         test_config_helper_client
+        ;;
+    config-service-check)
+        check_config_service
+        ;;
+    config-service-test)
+        test_config_service
+        ;;
+    config-demo)
+        start_config_demo "${2:-}"
         ;;
     config-helper-validate-fixture)
         validate_config_fixture "${2:-}"

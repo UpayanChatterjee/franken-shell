@@ -1,6 +1,7 @@
-# Franken Shell Phase 0
+# Franken Shell development shell
 
-This directory contains the clean, non-owning Franken Shell bootstrap. It is
+This directory contains the clean, non-owning Franken Shell bootstrap and the
+Phase 1 configuration lifecycle. It is
 selected by its explicit repository path and is independent from the live
 Caelestia configuration at `~/.config/quickshell/caelestia`.
 
@@ -29,6 +30,7 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell stop
 ./dev/franken-shell restart
 ./dev/franken-shell reload
+./dev/franken-shell config-reload
 ./dev/franken-shell logs
 ./dev/franken-shell diagnostics
 ./dev/franken-shell config-status
@@ -37,6 +39,9 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-helper-build
 ./dev/franken-shell config-helper-test
 ./dev/franken-shell config-helper-client-test
+./dev/franken-shell config-service-check
+./dev/franken-shell config-service-test
+./dev/franken-shell config-demo helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 ./dev/franken-shell config-helper-validate-fixture helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAndNormalize","sourceIdentifier":"example.toml","tomlSource":"schemaVersion = 1\n"}' \
     | ./dev/franken-shell config-helper-pipe
@@ -47,16 +52,60 @@ printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAnd
 running `caelestia` configuration.
 
 `reload` requests a Quickshell soft reload and preserves the process where
-supported. `restart` performs a full stop and new process launch. These are
-different lifecycle operations.
+supported. `config-reload` asks the running `ConfigService` to reread its
+current authoritative path without reloading QML. `restart` performs a full
+stop and new process launch. These are different lifecycle operations.
 
-The Quickshell bootstrap still has no external user configuration.
-`config-status` reports its built-in schema-one defaults. Phase 1 slice 1 adds
-the standalone `franken-config-helper` Rust binary under
+## Configuration lifecycle
+
+The authoritative user configuration is:
+
+```text
+${XDG_CONFIG_HOME:-$HOME/.config}/franken-shell/config.toml
+```
+
+The shell activates a complete typed built-in snapshot before it reads the
+user file. A missing file is a normal, healthy defaults-only state and does not
+require the Rust helper. The bundled normalized defaults resource is checked by
+a Rust contract test against `Configuration::default()` so QML and helper
+defaults cannot drift silently.
+
+When a file exists, `ConfigService` watches it with a restartable debounce
+(300 ms by default), sends the exact text read by QML to the single root-owned
+helper client, constructs a complete candidate snapshot, and swaps the active
+snapshot reference once. Unknown fields can produce warnings without blocking
+activation. Supported older schemas migrate only in memory; the source file is
+not rewritten.
+
+An invalid cold start keeps built-in defaults active and marks configuration
+health degraded. An invalid hot reload retains the complete previous active
+snapshot and generation. A later valid edit activates a new snapshot and
+recovers health. Helper unavailability and transport failure are reported
+separately from validation failure. There is no persistent last-valid cache.
+
+Configuration writing, settings drafts, source-preserving patching, and
+automatic migration rewrites are not implemented.
+
+Automated tests set `FRANKEN_SHELL_MODE=config-service-test` together with
+`FRANKEN_CONFIG_FIXTURE_PATH`; `config-demo` uses the separate explicit
+`config-demo` mode. The fixture override is ignored in every other mode, so an
+inherited override cannot redirect the ordinary development or production
+configuration path. Both modes use temporary paths and never read or watch the
+user's live configuration. `config-demo` accepts only a fixture under the
+repository helper's `tests/fixtures/` directory, copies it into `/tmp`, and
+starts the same non-owning repository-path instance against that copy.
+
+`config-status` exposes a sanitized JSON summary: path, source, schema,
+generation, health, reload state, counts, helper transport health, and
+migration state. It does not expose TOML text, normalized configuration, or
+command arguments.
+
+Phase 1 slice 1 adds the standalone `franken-config-helper` Rust binary under
 `helpers/franken-config-helper/`. Phase 1 slice 2A adds one root-owned QML
 client for asynchronous protocol invocation and transport validation. It does
-not read or watch `config.toml`, own active configuration, or publish typed
-configuration snapshots.
+not read or watch `config.toml` itself. Phase 1 slice 2B adds the root-owned
+`ConfigService`, watched file lifecycle, typed snapshots, atomic publication,
+health, diagnostics, and explicit reload.
 
 The QML client resolves the development helper deterministically at:
 

@@ -6,6 +6,7 @@ Scope {
     required property string mode
     required property string startupState
     required property bool surfaceVisible
+    required property QtObject configService
     required property string configHelperState
     required property string configHelperResolution
     required property string configHelperExecutable
@@ -21,13 +22,14 @@ Scope {
         target: "diagnostics"
 
         function summary(): string {
+            const config = configService.configurationSummary();
             return JSON.stringify({
                 project: ProjectInfo.projectName,
                 projectVersion: ProjectInfo.projectVersion,
                 mode: mode,
                 startupState: startupState,
                 shellPath: ProjectInfo.shellPath,
-                configPath: ProjectInfo.configPath,
+                configPath: config.authoritativePath,
                 surfaceVisible: surfaceVisible,
                 expectedQuickshellVersion: ProjectInfo.quickshellVersion,
                 expectedQuickshellCommit: ProjectInfo.quickshellCommit,
@@ -36,6 +38,20 @@ Scope {
                 testedHyprlandVersion: ProjectInfo.hyprlandVersion,
                 hyprlandConfigMode: ProjectInfo.hyprlandConfigMode,
                 configSchemaVersion: ProjectInfo.configSchemaVersion,
+                configActiveSource: config.activeSource,
+                configActiveSchemaVersion: config.activeSchemaVersion,
+                configActiveGeneration: config.activeGeneration,
+                configHealth: config.health,
+                configSourceState: config.sourceState,
+                configReloadState: config.reloadState,
+                configWarningCount: config.warningCount,
+                configErrorCount: config.errorCount,
+                configHelperTransportHealth: config.helperTransportHealth,
+                configMigratedInMemory: config.migrationInMemory,
+                configLastSuccessfulValidation: config.lastSuccessfulValidation,
+                configLastRejectedGeneration: config.lastRejectedGeneration,
+                configWatchEnabled: config.watchEnabled,
+                configActivationSequence: config.activationSequence,
                 configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
                 configHelperState: configHelperState,
                 configHelperResolution: configHelperResolution,
@@ -57,14 +73,7 @@ Scope {
         }
 
         function configStatus(): string {
-            return JSON.stringify({
-                status: "BuiltInDefaults",
-                path: ProjectInfo.configPath,
-                schemaVersion: ProjectInfo.configSchemaVersion,
-                helperClientState: configHelperState,
-                helperResolution: configHelperResolution,
-                helperExecutable: configHelperExecutable
-            });
+            return JSON.stringify(configService.configurationSummary());
         }
 
         function themeStatus(): string {
@@ -79,6 +88,11 @@ Scope {
             Logger.info("core", "soft-reload-requested", {});
             reloadTimer.start();
             return "soft reload requested";
+        }
+
+        function reloadConfig(): string {
+            Logger.info("config", "explicit-reload-requested", {});
+            return configService.requestReload();
         }
     }
 }

@@ -2,4 +2,8 @@ module FrankenShell.Core
 singleton Logger 1.0 Logger.qml
 singleton ProjectInfo 1.0 ProjectInfo.qml
 ConfigHelperClient 1.0 ConfigHelperClient.qml
+ConfigService 1.0 ConfigService.qml
+ConfigSnapshot 1.0 ConfigSnapshot.qml
+ConfigValueList 1.0 ConfigValueList.qml
+ConfigValueMap 1.0 ConfigValueMap.qml
 Diagnostics 1.0 Diagnostics.qml

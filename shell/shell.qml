@@ -15,10 +15,17 @@ ShellRoot {
         id: configHelperClient
     }
 
+    Core.ConfigService {
+        id: configService
+
+        helperClient: configHelperClient
+    }
+
     Core.Diagnostics {
         mode: root.mode
         startupState: root.startupState
         surfaceVisible: diagnosticSurface.visible
+        configService: configService
         configHelperState: configHelperClient.state
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperExecutable: configHelperClient.resolvedHelperExecutable
@@ -38,7 +45,7 @@ ShellRoot {
             shellDir: Quickshell.shellDir
         });
         Core.Logger.info("config", "built-in-defaults-active", {
-            configPath: Core.ProjectInfo.configPath,
+            configPath: configService.authoritativePath,
             schemaVersion: Core.ProjectInfo.configSchemaVersion
         });
         Core.Logger.info("theme", "fallback-theme-active", {
