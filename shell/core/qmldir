@@ -6,6 +6,8 @@ ConfigService 1.0 ConfigService.qml
 ConfigSnapshot 1.0 ConfigSnapshot.qml
 ConfigValueList 1.0 ConfigValueList.qml
 ConfigValueMap 1.0 ConfigValueMap.qml
+internal CommandProcessSlot CommandProcessSlot.qml
+CommandRegistry 1.0 CommandRegistry.qml
 Diagnostics 1.0 Diagnostics.qml
 HyprlandMonitorAdapter 1.0 HyprlandMonitorAdapter.qml
 MonitorRecord 1.0 MonitorRecord.qml

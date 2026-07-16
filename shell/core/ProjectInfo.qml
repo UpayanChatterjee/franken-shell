@@ -5,7 +5,7 @@ import Quickshell
 
 QtObject {
     readonly property string projectName: "Franken Shell"
-    readonly property string projectVersion: "0.1.0-phase1-slice3a"
+    readonly property string projectVersion: "0.1.0-phase1-slice3b"
     readonly property int configSchemaVersion: 1
     readonly property int configHelperProtocolVersion: 1
     readonly property int ipcVersion: 1

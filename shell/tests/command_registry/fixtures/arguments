@@ -1,0 +1,7 @@
+#!/bin/sh
+
+[ "$#" -eq 3 ] || exit 31
+[ "$1" = "alpha beta" ] || exit 32
+[ "$2" = "literal|pipe" ] || exit 33
+[ "$3" = '$HOME' ] || exit 34
+exit 0

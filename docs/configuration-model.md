@@ -1362,11 +1362,17 @@ The exact Vicinae command syntax must be verified during implementation and may 
 ```toml
 executable = "program"
 arguments = [ "arg1", "arg2",]
-detached = true
+detached = false
 timeoutMs = 5000
 
 [environment]
 ```
+
+Phase 1 slice 3B supports tracked, non-detached commands only. `detached` must
+be false, the `environment` table must be empty, and `workingDirectory` is not
+accepted. The configuration helper rejects non-default use of these fields so
+an active configuration cannot silently request behaviour the runtime ignores.
+`timeoutMs` is enforced by the command registry.
 
 ## 20.2 Security rules
 

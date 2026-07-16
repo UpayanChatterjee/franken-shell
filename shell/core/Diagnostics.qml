@@ -10,6 +10,7 @@ Scope {
     required property bool surfaceVisible
     required property var configService
     required property var monitorRegistry
+    required property var commandRegistry
     required property string configHelperState
     required property string configHelperResolution
     required property string configHelperExecutable
@@ -27,6 +28,7 @@ Scope {
         function summary(): string {
             const config = root.configService.configurationSummary();
             const monitors = root.monitorRegistry.diagnosticsSummary();
+            const commands = root.commandRegistry.registrySummary();
             return JSON.stringify({
                 project: ProjectInfo.projectName,
                 projectVersion: ProjectInfo.projectVersion,
@@ -66,6 +68,17 @@ Scope {
                 monitorBackendAvailability: monitors.backendAvailability,
                 monitorLastRefresh: monitors.lastRefresh,
                 monitorLastMappingError: monitors.lastMappingError,
+                commandRegisteredCount: commands.registeredCommandCount,
+                commandAvailableCount: commands.availableCommandCount,
+                commandUnavailableCount: commands.unavailableCommandCount,
+                commandActiveRequestCount: commands.activeRequestCount,
+                commandQueuedRequestCount: commands.queuedRequestCount,
+                commandRetainedRequestCount: commands.retainedRequestCount,
+                commandLastRequestId: commands.lastRequestId,
+                commandLastFailureCategory: commands.lastFailureCategory,
+                commandRegistryGeneration: commands.registryGeneration,
+                commandSnapshotSequence: commands.snapshotSequence,
+                commandLastAvailabilityRefresh: commands.lastAvailabilityRefresh,
                 configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
                 configHelperState: root.configHelperState,
                 configHelperResolution: root.configHelperResolution,
@@ -92,6 +105,20 @@ Scope {
 
         function monitorStatus(): string {
             return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
+        }
+
+        function commandStatus(): string {
+            return JSON.stringify(root.commandRegistry.registrySummary());
+        }
+
+        function commandDemo(): string {
+            if (root.mode !== "command-demo") {
+                return JSON.stringify({
+                    state: "unavailable",
+                    failureCategory: "commandDemoModeRequired"
+                });
+            }
+            return JSON.stringify(root.commandRegistry.execute("development.commandDemo"));
         }
 
         function themeStatus(): string {

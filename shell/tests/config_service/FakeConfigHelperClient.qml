@@ -119,7 +119,7 @@ Scope {
             normalized.commands.private = {
                 executable: "program",
                 arguments: ["--token", "fixture-secret"],
-                detached: true,
+                detached: false,
                 timeoutMs: 5000,
                 environment: {}
             };

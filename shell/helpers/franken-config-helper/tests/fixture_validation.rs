@@ -54,10 +54,8 @@ fn complete_configuration_is_normalized() {
     assert_eq!(config.schema_version, 1);
     assert_eq!(config.workspaces.special.len(), 2);
     assert_eq!(config.commands["vicinae.root"].arguments, ["toggle"]);
-    assert_eq!(
-        config.commands["vicinae.root"].environment["LANG"],
-        "C.UTF-8"
-    );
+    assert!(!config.commands["vicinae.root"].detached);
+    assert!(config.commands["vicinae.root"].environment.is_empty());
 }
 
 #[test]
@@ -181,4 +179,31 @@ fn arbitrary_command_string_is_rejected_structurally() {
 fn executable_shell_composition_is_rejected_semantically() {
     let response = validate("unsafe_executable.toml", 14);
     assert!(has_error(&response, "CONFIG_COMMAND_EXECUTABLE_UNSAFE"));
+}
+
+#[test]
+fn detached_command_execution_is_rejected() {
+    let response = validate("unsupported_command_detached.toml", 15);
+    assert!(!response.success);
+    assert!(has_error(&response, "CONFIG_COMMAND_DETACHED_UNSUPPORTED"));
+}
+
+#[test]
+fn command_environment_overrides_are_rejected() {
+    let response = validate("unsupported_command_environment.toml", 16);
+    assert!(!response.success);
+    assert!(has_error(
+        &response,
+        "CONFIG_COMMAND_ENVIRONMENT_UNSUPPORTED"
+    ));
+}
+
+#[test]
+fn command_working_directory_is_rejected_instead_of_ignored() {
+    let response = validate("unsupported_command_working_directory.toml", 17);
+    assert!(!response.success);
+    assert!(has_error(
+        &response,
+        "CONFIG_COMMAND_WORKING_DIRECTORY_UNSUPPORTED"
+    ));
 }

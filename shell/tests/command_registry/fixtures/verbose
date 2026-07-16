@@ -1,0 +1,9 @@
+#!/bin/sh
+
+index=0
+while [ "$index" -lt 2500 ]; do
+    printf '%s\n' 'harmless verbose stdout fixture'
+    printf '%s\n' 'harmless verbose stderr fixture' >&2
+    index=$((index + 1))
+done
+exit 0

@@ -1,7 +1,7 @@
 # Franken Shell development shell
 
 This directory contains the clean, non-owning Franken Shell bootstrap and the
-Phase 1 configuration and monitor-normalization services. It is
+Phase 1 configuration, monitor-normalization, and command-registry services. It is
 selected by its explicit repository path and is independent from the live
 Caelestia configuration at `~/.config/quickshell/caelestia`.
 
@@ -45,6 +45,10 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell monitor-registry-test
 ./dev/franken-shell monitor-diagnostics
 ./dev/franken-shell monitor-observe
+./dev/franken-shell command-registry-check
+./dev/franken-shell command-registry-test
+./dev/franken-shell command-diagnostics
+./dev/franken-shell command-demo
 ./dev/franken-shell config-demo helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 ./dev/franken-shell config-helper-validate-fixture helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAndNormalize","sourceIdentifier":"example.toml","tomlSource":"schemaVersion = 1\n"}' \
@@ -176,6 +180,66 @@ counts, runtime IDs, transforms, mapping health, refresh state, and backend
 availability. It omits serials, model descriptions, and raw IPC objects.
 `monitor-observe` is optional and read-only; it invokes `hyprctl monitors -j`
 and selects a small topology summary without dispatching monitor commands.
+
+## Command registry
+
+Phase 1 slice 3B adds one root-owned `CommandRegistry`. Consumers can only
+query stable IDs, check cached availability, execute a configured zero-parameter
+command, cancel by request ID, inspect a sanitized request model, or read the
+sanitized registry summary. The underlying Quickshell `Process` objects,
+resolved executable paths, argument arrays, environment data, and command
+output are not exposed. The fixed process-slot type is internal to the QML
+module and cannot be instantiated by feature imports.
+
+The registry atomically copies definitions from each active `ConfigService`
+snapshot. Running requests keep the executable and argument array copied when
+they were accepted; removed or replaced definitions affect only later
+requests. Availability refresh uses one asynchronous `/usr/bin/test` probe
+requiring a regular executable file over absolute paths or the fixed search
+directories `/usr/local/bin`,
+`/usr/bin`, and `/bin`. This is a conservative Phase 1 development policy, not
+a final packaging decision or a substitute for the user's shell `PATH`. It
+does not consult a shell, run the configured command, read `PATH`, or scan the
+user's interactive shell environment.
+Executable paths support only the configuration model's approved `$HOME`,
+`$XDG_CONFIG_HOME`, `$XDG_STATE_HOME`, `$XDG_CACHE_HOME`, and
+`$XDG_DATA_HOME` prefixes, with standard XDG fallbacks. Arguments remain
+literal; `~`, `$PATH`, `${...}`, globs, and every other expansion form are
+rejected or left uninterpreted as appropriate.
+
+Execution uses three fixed process slots, a FIFO queue capped at 32 requests,
+and a retained terminal history capped at 256 entries. Each request receives a
+collision-free decimal process-lifetime ID and reports queued, starting,
+running, completed, failed-to-start, timeout, cancellation, nonzero-exit, and
+unavailable states.
+Timeout kills the child; cancellation requests termination and escalates to a
+kill after a short fixed grace period. Stdout and stderr are drained and
+discarded without collection, publication, logging, or changing the command's
+exit result. Each internal `Process.command` property is cleared immediately
+after QProcess dispatch so Quickshell's failed-to-start fallback warning cannot
+print the configured executable or argument array.
+
+The helper rejects `detached = true`, non-empty command `environment` tables,
+and every `workingDirectory` field. Tracked detached execution cannot satisfy
+the required lifecycle contract, while environment and working-directory
+overrides are outside this slice's approved command definition. `timeoutMs` is
+copied into each accepted request and enforced by the runtime.
+
+Snapshot replacement invalidates all queued requests from the old generation
+with a structured `configurationReplaced` failure. Already-running requests
+retain their copied executable, arguments, and timeout until they terminate.
+
+Development commands are:
+
+- `command-registry-check` for focused QML and forbidden-path checks;
+- `command-registry-test` for harmless deterministic lifecycle fixtures;
+- `command-diagnostics` for the sanitized live summary;
+- `command-demo` for the fixed `development.commandDemo` ID only.
+
+`command-demo` refuses to reuse an existing shell, starts a dedicated
+`command-demo` mode from the fixed repository fixture, and never accepts an
+executable, argument, fixture path, or arbitrary command ID from the caller.
+The diagnostics IPC method rejects demo execution in every other mode.
 
 ## Configuration helper protocol
 

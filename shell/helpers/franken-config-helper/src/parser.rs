@@ -1402,9 +1402,21 @@ impl<'a> ConfigParser<'a> {
                     "detached",
                     "timeoutMs",
                     "environment",
+                    "workingDirectory",
                 ],
                 &path,
             );
+            if let Some(value) = definition.get("workingDirectory") {
+                let field_path = format!("{path}.workingDirectory");
+                self.remember(&field_path, value.span());
+                self.error(
+                    "CONFIG_COMMAND_WORKING_DIRECTORY_UNSUPPORTED",
+                    "command workingDirectory is not supported by the Phase 1 command runtime",
+                    Some(&field_path),
+                    Some(value.span()),
+                    Some("Remove workingDirectory from this command definition."),
+                );
+            }
             let executable = self.required_nonempty_string(
                 definition,
                 "executable",
@@ -1412,7 +1424,7 @@ impl<'a> ConfigParser<'a> {
             );
             let arguments =
                 self.required_string_array(definition, "arguments", &format!("{path}.arguments"));
-            let mut detached = true;
+            let mut detached = false;
             self.assign_bool(
                 definition,
                 "detached",
@@ -1638,6 +1650,26 @@ impl<'a> ConfigParser<'a> {
         }
 
         for (command_id, command) in &config.commands {
+            if command.detached {
+                let path = format!("commands.{command_id}.detached");
+                self.error(
+                    "CONFIG_COMMAND_DETACHED_UNSUPPORTED",
+                    "detached command execution is not supported by the tracked Phase 1 runtime",
+                    Some(&path),
+                    self.location(&path),
+                    Some("Set detached = false or omit the field."),
+                );
+            }
+            if !command.environment.is_empty() {
+                let path = format!("commands.{command_id}.environment");
+                self.error(
+                    "CONFIG_COMMAND_ENVIRONMENT_UNSUPPORTED",
+                    "per-command environment overrides are not supported by the Phase 1 runtime",
+                    Some(&path),
+                    self.location(&path),
+                    Some("Remove the command environment table."),
+                );
+            }
             if contains_disallowed_executable_syntax(&command.executable) {
                 let path = format!("commands.{command_id}.executable");
                 self.error(

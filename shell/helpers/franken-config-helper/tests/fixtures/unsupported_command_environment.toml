@@ -1,0 +1,9 @@
+schemaVersion = 1
+
+[commands."fixture.environment"]
+executable = "/usr/bin/true"
+arguments = []
+detached = false
+
+[commands."fixture.environment".environment]
+FRANKEN_FIXTURE = "private"

@@ -15,6 +15,8 @@ Scope {
         const category = domain === "config" ? configCategory
             : domain === "theme" ? themeCategory
             : domain === "surfaces" ? surfacesCategory
+            : domain === "monitors" ? monitorsCategory
+            : domain === "commands" ? commandsCategory
             : coreCategory;
 
         if (level === "debug")
@@ -61,6 +63,20 @@ Scope {
         id: themeCategory
 
         name: "franken.theme"
+        defaultLogLevel: LoggingCategory.Info
+    }
+
+    LoggingCategory {
+        id: monitorsCategory
+
+        name: "franken.monitors"
+        defaultLogLevel: LoggingCategory.Info
+    }
+
+    LoggingCategory {
+        id: commandsCategory
+
+        name: "franken.commands"
         defaultLogLevel: LoggingCategory.Info
     }
 

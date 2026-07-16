@@ -1,0 +1,7 @@
+schemaVersion = 1
+
+[commands."development.commandDemo"]
+executable = "/usr/bin/true"
+arguments = []
+detached = false
+timeoutMs = 1000

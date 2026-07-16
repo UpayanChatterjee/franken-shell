@@ -32,12 +32,19 @@ ShellRoot {
         configService: configService
     }
 
+    Core.CommandRegistry {
+        id: commandRegistry
+
+        configService: configService
+    }
+
     Core.Diagnostics {
         mode: root.mode
         startupState: root.startupState
         surfaceVisible: diagnosticSurface.visible
         configService: configService
         monitorRegistry: monitorRegistry
+        commandRegistry: commandRegistry
         configHelperState: configHelperClient.state
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperExecutable: configHelperClient.resolvedHelperExecutable

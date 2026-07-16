@@ -180,8 +180,5 @@ required = false
 [commands."vicinae.root"]
 executable = "vicinae"
 arguments = ["toggle"]
-detached = true
+detached = false
 timeoutMs = 5000
-
-[commands."vicinae.root".environment]
-LANG = "C.UTF-8"

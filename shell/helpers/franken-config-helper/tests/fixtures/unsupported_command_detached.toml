@@ -1,0 +1,6 @@
+schemaVersion = 1
+
+[commands."fixture.detached"]
+executable = "/usr/bin/true"
+arguments = []
+detached = true

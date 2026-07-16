@@ -1,0 +1,7 @@
+schemaVersion = 1
+
+[commands."fixture.workingDirectory"]
+executable = "/usr/bin/true"
+arguments = []
+detached = false
+workingDirectory = "/tmp"

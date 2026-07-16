@@ -178,6 +178,111 @@ test_monitor_registry() {
     return "$result"
 }
 
+check_command_registry() {
+    "$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+        "$SHELL_DIR/core/CommandProcessSlot.qml" \
+        "$SHELL_DIR/core/CommandRegistry.qml" \
+        "$SHELL_DIR/tests/command_registry/FakeCommandConfigService.qml" \
+        "$SHELL_DIR/tests/command_registry/CommandRegistryTests.qml"
+
+    if rg -n \
+        -e 'startDetached' \
+        -e 'execDetached' \
+        -e 'eval[[:space:]]*\(' \
+        -e "['\"](sh|bash)['\"][[:space:]]*,[[:space:]]*['\"]-c['\"]" \
+        -e 'process\.(environment|workingDirectory)' \
+        "$SHELL_DIR/core/CommandProcessSlot.qml" \
+        "$SHELL_DIR/core/CommandRegistry.qml"; then
+        printf 'CommandRegistry static safety check found a forbidden execution path.\n' >&2
+        return 1
+    fi
+
+    if rg -n \
+        -e '^CommandProcessSlot[[:space:]]' \
+        "$SHELL_DIR/core/qmldir"; then
+        printf 'CommandProcessSlot must remain private to CommandRegistry.\n' >&2
+        return 1
+    fi
+
+    if rg -n \
+        -e 'function execute\([^)]*,' \
+        -e 'optionalContext' \
+        "$SHELL_DIR/core/CommandRegistry.qml"; then
+        printf 'CommandRegistry execute must remain a stable-ID-only API.\n' >&2
+        return 1
+    fi
+
+    registry_count=$(rg -c 'Core\.CommandRegistry[[:space:]]*\{' "$SHELL_DIR/shell.qml")
+    if [ "$registry_count" -ne 1 ]; then
+        printf 'Expected exactly one root CommandRegistry, found %s.\n' "$registry_count" >&2
+        return 1
+    fi
+
+    if ! rg -q 'root\.mode !== "command-demo"' "$SHELL_DIR/core/Diagnostics.qml"; then
+        printf 'The harmless command demo must remain restricted to command-demo mode.\n' >&2
+        return 1
+    fi
+}
+
+test_command_registry() {
+    runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-command-runtime.XXXXXX")
+    chmod 700 "$runtime_dir"
+
+    result=0
+    QT_QPA_PLATFORM=offscreen \
+    XDG_RUNTIME_DIR="$runtime_dir" \
+    FRANKEN_SHELL_MODE=command-registry-test \
+        qs --no-duplicate --path "$SHELL_DIR/command-registry-tests.qml" --log-times || result=$?
+    rm -rf "$runtime_dir"
+    return "$result"
+}
+
+show_command_diagnostics() {
+    if ! is_running; then
+        printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+        return 1
+    fi
+    qs ipc --path "$SHELL_DIR" call diagnostics commandStatus
+}
+
+run_command_demo() {
+    if is_running; then
+        printf 'command-demo refuses to reuse an existing Franken Shell instance.\n' >&2
+        return 1
+    fi
+
+    fixture="$CONFIG_FIXTURE_DIR/command_registry_demo.toml"
+    mkdir -p "$CONFIG_DEMO_DIR"
+    chmod 700 "$CONFIG_DEMO_DIR"
+    cp "$fixture" "$CONFIG_DEMO_DIR/config.toml"
+    if ! start_instance command-demo "$CONFIG_DEMO_DIR/config.toml"; then
+        rm -rf "$CONFIG_DEMO_DIR"
+        return 1
+    fi
+
+    attempts=0
+    while [ "$attempts" -lt 50 ]; do
+        summary=$(qs ipc --path "$SHELL_DIR" call diagnostics commandStatus 2>/dev/null) || summary=
+        case "$summary" in
+            *'"registeredCommandCount":1'*'"availableCommandCount":1'*) break ;;
+        esac
+        attempts=$((attempts + 1))
+        sleep 0.1
+    done
+    if [ "$attempts" -ge 50 ]; then
+        printf 'The fixed development.commandDemo command is not available in the active snapshot.\n' >&2
+        return 1
+    fi
+    result=$(qs ipc --path "$SHELL_DIR" call diagnostics commandDemo)
+    case "$result" in
+        *'"state":"unavailable"'*)
+            printf 'The fixed development.commandDemo request was rejected: %s\n' "$result" >&2
+            return 1
+            ;;
+    esac
+    printf '%s\n' "$result"
+}
+
 show_monitor_diagnostics() {
     if ! is_running; then
         printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
@@ -318,6 +423,14 @@ usage() {
         "                    Show sanitized normalized monitor diagnostics" \
         "  monitor-observe" \
         "                    Read the current Hyprland monitor state without dispatching commands" \
+        "  command-registry-check" \
+        "                    Statically check the CommandRegistry execution boundary" \
+        "  command-registry-test" \
+        "                    Run deterministic harmless command lifecycle fixtures" \
+        "  command-diagnostics" \
+        "                    Show sanitized command counts and lifecycle diagnostics" \
+        "  command-demo" \
+        "                    Execute only the fixed harmless development.commandDemo ID" \
         "  config-demo [FIXTURE_TOML]" \
         "                    Start non-owning mode with a copied temporary configuration" \
         "  config-helper-validate-fixture TOML_FILE" \
@@ -392,6 +505,22 @@ case "$command" in
         ;;
     monitor-observe)
         observe_monitors
+        ;;
+    command-registry-check)
+        check_command_registry
+        ;;
+    command-registry-test)
+        test_command_registry
+        ;;
+    command-diagnostics)
+        show_command_diagnostics
+        ;;
+    command-demo)
+        if [ "$#" -ne 1 ]; then
+            printf 'command-demo accepts no arguments.\n' >&2
+            exit 2
+        fi
+        run_command_demo
         ;;
     config-demo)
         start_config_demo "${2:-}"
