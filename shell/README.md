@@ -36,6 +36,7 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell check
 ./dev/franken-shell config-helper-build
 ./dev/franken-shell config-helper-test
+./dev/franken-shell config-helper-client-test
 ./dev/franken-shell config-helper-validate-fixture helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAndNormalize","sourceIdentifier":"example.toml","tomlSource":"schemaVersion = 1\n"}' \
     | ./dev/franken-shell config-helper-pipe
@@ -52,7 +53,26 @@ different lifecycle operations.
 The Quickshell bootstrap still has no external user configuration.
 `config-status` reports its built-in schema-one defaults. Phase 1 slice 1 adds
 the standalone `franken-config-helper` Rust binary under
-`helpers/franken-config-helper/`; no QML `ConfigService` invokes it yet.
+`helpers/franken-config-helper/`. Phase 1 slice 2A adds one root-owned QML
+client for asynchronous protocol invocation and transport validation. It does
+not read or watch `config.toml`, own active configuration, or publish typed
+configuration snapshots.
+
+The QML client resolves the development helper deterministically at:
+
+```text
+helpers/franken-config-helper/target/debug/franken-config-helper
+```
+
+Build it with `config-helper-build` or run `config-helper-client-test`, which
+builds it before exercising the real helper and controlled transport-failure
+fixtures. Production installation paths remain a packaging concern.
+
+The client API is `validateAndNormalize(generation, sourceIdentifier,
+tomlSource)`. Results are emitted through `resultReady(result)`, while
+`requestStateChanged(generation, state)` exposes queued, process, terminal, and
+supersession transitions. The client keeps at most one active request and one
+replaceable pending request.
 
 ## Configuration helper protocol
 

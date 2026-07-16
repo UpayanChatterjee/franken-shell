@@ -1,0 +1,106 @@
+#!/bin/sh
+
+set -eu
+
+scenario=${1:-success}
+request=$(cat)
+generation=$(printf '%s' "$request" | jq -er '.requestGeneration | numbers')
+
+emit_success() {
+    jq -cn \
+        --argjson generation "$generation" \
+        '{
+            protocolVersion: 1,
+            requestGeneration: $generation,
+            success: true,
+            detectedSourceSchemaVersion: 1,
+            effectiveSchemaVersion: 1,
+            migrationOccurred: false,
+            normalizedConfiguration: {schemaVersion: 1},
+            warnings: [],
+            errors: []
+        }'
+}
+
+case "$scenario" in
+    success)
+        emit_success
+        ;;
+    validation-failure)
+        jq -cn \
+            --argjson generation "$generation" \
+            '{
+                protocolVersion: 1,
+                requestGeneration: $generation,
+                success: false,
+                detectedSourceSchemaVersion: 1,
+                effectiveSchemaVersion: 1,
+                migrationOccurred: false,
+                normalizedConfiguration: null,
+                warnings: [],
+                errors: [{
+                    severity: "error",
+                    code: "CONFIG_FIXTURE_INVALID",
+                    message: "controlled validation failure",
+                    configurationPath: "fixture",
+                    source: "fixture",
+                    line: 1,
+                    column: 1,
+                    repairHint: null
+                }]
+            }'
+        ;;
+    malformed-stdout)
+        printf '{not-json\n'
+        ;;
+    wrong-protocol)
+        jq -cn \
+            --argjson generation "$generation" \
+            '{
+                protocolVersion: 2,
+                requestGeneration: $generation,
+                success: true,
+                detectedSourceSchemaVersion: 1,
+                effectiveSchemaVersion: 1,
+                migrationOccurred: false,
+                normalizedConfiguration: {schemaVersion: 1},
+                warnings: [],
+                errors: []
+            }'
+        ;;
+    mismatched-generation)
+        jq -cn \
+            --argjson generation "$((generation + 1))" \
+            '{
+                protocolVersion: 1,
+                requestGeneration: $generation,
+                success: true,
+                detectedSourceSchemaVersion: 1,
+                effectiveSchemaVersion: 1,
+                migrationOccurred: false,
+                normalizedConfiguration: {schemaVersion: 1},
+                warnings: [],
+                errors: []
+            }'
+        ;;
+    nonzero-exit)
+        printf 'controlled safe stderr diagnostic\n' >&2
+        exit 7
+        ;;
+    timeout)
+        sleep 2
+        emit_success
+        ;;
+    stderr)
+        printf 'controlled safe stderr diagnostic\n' >&2
+        emit_success
+        ;;
+    delayed-success)
+        sleep 0.15
+        emit_success
+        ;;
+    *)
+        printf 'unknown fake-helper scenario\n' >&2
+        exit 64
+        ;;
+esac

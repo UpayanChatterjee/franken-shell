@@ -6,6 +6,9 @@ Scope {
     required property string mode
     required property string startupState
     required property bool surfaceVisible
+    required property string configHelperState
+    required property string configHelperResolution
+    required property string configHelperExecutable
 
     Timer {
         id: reloadTimer
@@ -33,6 +36,10 @@ Scope {
                 testedHyprlandVersion: ProjectInfo.hyprlandVersion,
                 hyprlandConfigMode: ProjectInfo.hyprlandConfigMode,
                 configSchemaVersion: ProjectInfo.configSchemaVersion,
+                configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
+                configHelperState: configHelperState,
+                configHelperResolution: configHelperResolution,
+                configHelperExecutable: configHelperExecutable,
                 ipcVersion: ProjectInfo.ipcVersion
             });
         }
@@ -53,7 +60,10 @@ Scope {
             return JSON.stringify({
                 status: "BuiltInDefaults",
                 path: ProjectInfo.configPath,
-                schemaVersion: ProjectInfo.configSchemaVersion
+                schemaVersion: ProjectInfo.configSchemaVersion,
+                helperClientState: configHelperState,
+                helperResolution: configHelperResolution,
+                helperExecutable: configHelperExecutable
             });
         }
 

@@ -112,6 +112,17 @@ test_config_helper() {
     cargo test --locked --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml"
 }
 
+test_config_helper_client() {
+    runtime_dir=${TMPDIR:-/tmp}/franken-shell-config-helper-client-$(id -u)
+    mkdir -p "$runtime_dir"
+    chmod 700 "$runtime_dir"
+    build_config_helper
+    QT_QPA_PLATFORM=offscreen \
+    XDG_RUNTIME_DIR="$runtime_dir" \
+    FRANKEN_CONFIG_HELPER_TEST_FAKE="$SHELL_DIR/tests/config_helper/fake-config-helper" \
+        qs --no-duplicate --path "$SHELL_DIR/config-helper-client-tests.qml" --log-times
+}
+
 run_config_helper() {
     cargo run --quiet --locked \
         --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml" \
@@ -160,6 +171,8 @@ usage() {
         "                    Build the Rust configuration helper" \
         "  config-helper-test" \
         "                    Run configuration helper unit and fixture tests" \
+        "  config-helper-client-test" \
+        "                    Exercise the QML helper client against controlled fixtures" \
         "  config-helper-validate-fixture TOML_FILE" \
         "                    Validate one TOML fixture through protocol v1" \
         "  config-helper-pipe" \
@@ -208,6 +221,9 @@ case "$command" in
         ;;
     config-helper-test)
         test_config_helper
+        ;;
+    config-helper-client-test)
+        test_config_helper_client
         ;;
     config-helper-validate-fixture)
         validate_config_fixture "${2:-}"

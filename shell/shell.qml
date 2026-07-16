@@ -11,10 +11,17 @@ ShellRoot {
 
     settings.watchFiles: false
 
+    Core.ConfigHelperClient {
+        id: configHelperClient
+    }
+
     Core.Diagnostics {
         mode: root.mode
         startupState: root.startupState
         surfaceVisible: diagnosticSurface.visible
+        configHelperState: configHelperClient.state
+        configHelperResolution: configHelperClient.resolutionPolicy
+        configHelperExecutable: configHelperClient.resolvedHelperExecutable
     }
 
     Surfaces.DiagnosticSurface {
