@@ -4,6 +4,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SHELL_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+CONFIG_HELPER_DIR="$SHELL_DIR/helpers/franken-config-helper"
 
 is_running() {
     qs ipc --path "$SHELL_DIR" show >/dev/null 2>&1
@@ -103,6 +104,43 @@ check_qml() {
         | xargs -0 qmllint -I "$SHELL_DIR" -I /usr/lib/qt6/qml
 }
 
+build_config_helper() {
+    cargo build --locked --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml"
+}
+
+test_config_helper() {
+    cargo test --locked --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml"
+}
+
+run_config_helper() {
+    cargo run --quiet --locked \
+        --manifest-path "$CONFIG_HELPER_DIR/Cargo.toml" \
+        --bin franken-config-helper
+}
+
+validate_config_fixture() {
+    fixture=${1:-}
+    if [ -z "$fixture" ] || [ ! -f "$fixture" ]; then
+        printf 'Usage: %s config-helper-validate-fixture TOML_FILE\n' "$0" >&2
+        return 2
+    fi
+    if ! command -v jq >/dev/null 2>&1; then
+        printf 'config-helper-validate-fixture requires jq for development request construction.\n' >&2
+        return 1
+    fi
+
+    jq -Rs \
+        --arg source "$fixture" \
+        '{
+            protocolVersion: 1,
+            requestGeneration: 1,
+            operation: "validateAndNormalize",
+            sourceIdentifier: $source,
+            tomlSource: .
+        }' \
+        "$fixture" | run_config_helper
+}
+
 usage() {
     printf '%s\n' \
         "Usage: $0 COMMAND" \
@@ -117,7 +155,15 @@ usage() {
         "  diagnostics       Show bootstrap and runtime diagnostics" \
         "  config-status     Show the built-in configuration status" \
         "  verify-baseline   Verify the tested local runtime baseline" \
-        "  check             Check QML syntax and imports"
+        "  check             Check QML syntax and imports" \
+        "  config-helper-build" \
+        "                    Build the Rust configuration helper" \
+        "  config-helper-test" \
+        "                    Run configuration helper unit and fixture tests" \
+        "  config-helper-validate-fixture TOML_FILE" \
+        "                    Validate one TOML fixture through protocol v1" \
+        "  config-helper-pipe" \
+        "                    Pipe one JSON protocol request to the helper"
 }
 
 command=${1:-help}
@@ -156,6 +202,18 @@ case "$command" in
         ;;
     check)
         check_qml
+        ;;
+    config-helper-build)
+        build_config_helper
+        ;;
+    config-helper-test)
+        test_config_helper
+        ;;
+    config-helper-validate-fixture)
+        validate_config_fixture "${2:-}"
+        ;;
+    config-helper-pipe)
+        run_config_helper
         ;;
     help|-h|--help)
         usage

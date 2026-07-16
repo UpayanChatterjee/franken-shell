@@ -1,0 +1,4 @@
+schemaVersion = 1
+
+[commands]
+unsafe = "program --flag | other-program"

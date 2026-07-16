@@ -1,0 +1,14 @@
+schemaVersion = 1
+
+[workspaces]
+[[workspaces.special]]
+id = "music"
+hyprlandName = "music"
+label = "Music"
+icon = "music"
+
+[[workspaces.special]]
+id = "music"
+hyprlandName = "second-music"
+label = "Other Music"
+icon = "music"

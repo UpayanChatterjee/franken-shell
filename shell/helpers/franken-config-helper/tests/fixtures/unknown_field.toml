@@ -1,0 +1,6 @@
+schemaVersion = 1
+futureTopLevel = true
+
+[bar]
+edge = "left"
+futureBarField = 42

@@ -44,9 +44,28 @@ while the Phase 0 development instance runs in non-owning mode.
 
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
-`ConfigService` owns watching and atomic typed snapshot publication. The exact
-Rust parser library and packaging strategy remain Q-116; this inventory does
-not classify them as existing runtime dependencies.
+`ConfigService` owns watching and atomic typed snapshot publication. Phase 1
+slice 1 implements the helper as the single crate and binary
+`shell/helpers/franken-config-helper` / `franken-config-helper`. QML invocation,
+installation packaging, and version-coupling policy remain outside this slice
+and Q-116 remains open for those broader concerns.
+
+### Rust configuration helper
+
+The helper is a standalone native process. It reads one versioned JSON request
+from stdin and emits one normalized JSON response to stdout. It does not read
+or rewrite the live configuration itself and has no Python runtime dependency.
+
+| Rust crate | Confirmed helper role | Selection rationale |
+|---|---|---|
+| `toml` `1.1.2` | TOML 1.1 parsing through the public spanned `DeTable` / `DeValue` representation. | Provides byte spans for keys and values used by structural, unknown-field, and semantic diagnostics without selecting a source-editing or comment-preserving patch library. |
+| `serde` `1.0.228` | Derives the stable normalized response model. | Keeps the typed Rust-to-JSON boundary explicit and narrow. |
+| `serde_json` `1.0.150` | Parses protocol-version-1 requests and serializes the single response. | Implements the D-076 transport directly without an additional IPC or schema framework. |
+| `thiserror` `2.0.18` | Defines internal migration errors. | Keeps migration-pipeline failures typed while public failures remain protocol diagnostics. |
+
+Cargo unit and fixture tests use the standard library and checked-in fixtures;
+there is no separate test-only runtime dependency. The crate is not installed
+globally by repository development commands.
 
 ## Runtime host and compositor
 

@@ -1,0 +1,187 @@
+schemaVersion = 1
+
+[shell]
+language = "en-IN"
+timeFormat = "12h"
+firstDayOfWeek = "monday"
+
+[shell.startup]
+showReadinessToast = true
+restoreSessionState = false
+
+[shell.reload]
+watchConfig = false
+debounceMs = 450
+
+[appearance]
+mode = "dark"
+fallbackMode = "light"
+iconTheme = "Papirus"
+reducedMotion = true
+highContrast = true
+
+[appearance.dynamicColors]
+enabled = false
+source = "caelestia"
+transition = false
+
+[appearance.surfaceOpacity]
+bar = 0.9
+controlCenter = 0.95
+popover = 0.92
+notification = 1.0
+
+[appearance.blur]
+enabled = true
+popovers = true
+
+[appearance.font]
+family = "Inter"
+scale = 1.1
+
+[bar]
+enabled = true
+edge = "bottom"
+thickness = 46
+visibleOn = "configuredMonitors"
+hideInFullscreen = true
+
+[bar.autohide]
+enabled = true
+revealDelayMs = 0
+hideDelayMs = 400
+activationWidth = 3
+revealOverFullscreen = false
+
+[bar.layout]
+start = ["workspacePager", "specialWorkspaces"]
+context = ["contextStatus", "tray"]
+end = ["networkSpeed", "audio", "resources", "battery", "dateTime", "vicinae"]
+
+[bar.workspacePager]
+groupSize = 5
+showOccupancy = false
+showApplicationIcons = false
+scrollEnabled = true
+scrollDirection = "natural"
+
+[bar.contextRegion]
+slots = 4
+overflow = "stack"
+priority = ["critical", "privacy", "recording", "connectivity", "devices", "activity"]
+
+[bar.networkSpeed]
+enabled = true
+show = "download"
+unit = "bits"
+base = 1024
+decimals = 1
+updateIntervalMs = 500
+smoothingWindow = 4
+zeroFormat = "0"
+
+[bar.battery]
+showPercentSign = true
+chargingAnimation = false
+
+[bar.dateTime]
+showDate = false
+monthFormat = "shortText"
+verticalLayout = "stacked"
+
+[bar.vicinae]
+show = true
+position = "absoluteEnd"
+
+[controlCenter]
+enabled = true
+edge = "right"
+width = 400
+defaultPage = "volumeMixer"
+restoreLastPageForMs = 10000
+quickControls = ["wifi", "bluetooth"]
+sliders = ["volume"]
+tabs = ["notifications", "volumeMixer"]
+
+[controlCenter.edgeDrag]
+enabled = true
+activationWidth = 3
+minimumDistance = 30
+openThreshold = 0.4
+velocityThreshold = 800
+horizontalIntentRatio = 1.75
+allowInFullscreen = false
+
+[controlCenter.scrim]
+enabled = true
+dismissOnClick = false
+
+[workspaces]
+[[workspaces.special]]
+id = "music"
+hyprlandName = "music"
+label = "Music"
+icon = "music"
+shortcutHint = "Super+M"
+defaultApplication = "cider"
+
+[[workspaces.special]]
+id = "scratchpad"
+hyprlandName = "scratchpad"
+label = "Scratchpad"
+icon = "terminal"
+
+[workspaces.numbered]
+minimum = 1
+maximum = 15
+groupSize = 5
+wrap = true
+
+[workspaces.numbered.semanticLabels]
+1 = "Browser"
+2 = "Files and terminal"
+
+[workspaces.overview]
+provider = "quickshell-overview"
+openOnActiveWorkspaceClick = false
+rows = 3
+columns = 5
+showSpecialWorkspaces = true
+hideEmptyRows = true
+
+[workspaces.focusedWindowActions]
+enabled = true
+actions = ["moveToWorkspace", "moveToSpecialWorkspace", "toggleFloating", "toggleFullscreen", "close", "kill"]
+
+[integrations.caelestia]
+enabled = true
+dynamicColors = true
+services = ["colours"]
+
+[integrations.vicinae]
+enabled = true
+required = false
+themeSync = true
+extensionEnabled = true
+shortcutMenu = ["vicinae.root"]
+
+[integrations.overview]
+enabled = true
+provider = "quickshell-overview"
+required = false
+instanceName = "overview"
+themeSync = true
+configSync = true
+
+[integrations.autoCpuFreq]
+enabled = false
+required = false
+
+[commands."vicinae.root"]
+executable = "vicinae"
+arguments = ["toggle"]
+detached = true
+timeoutMs = 5000
+
+[commands."vicinae.root".environment]
+LANG = "C.UTF-8"

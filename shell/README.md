@@ -34,6 +34,11 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-status
 ./dev/franken-shell verify-baseline
 ./dev/franken-shell check
+./dev/franken-shell config-helper-build
+./dev/franken-shell config-helper-test
+./dev/franken-shell config-helper-validate-fixture helpers/franken-config-helper/tests/fixtures/complete_valid.toml
+printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAndNormalize","sourceIdentifier":"example.toml","tomlSource":"schemaVersion = 1\n"}' \
+    | ./dev/franken-shell config-helper-pipe
 ```
 
 `start` and `mock` use Quickshell's repository-path identity and
@@ -44,9 +49,36 @@ running `caelestia` configuration.
 supported. `restart` performs a full stop and new process launch. These are
 different lifecycle operations.
 
-The bootstrap has no external user configuration. `config-status` reports the
-built-in schema-one defaults; configuration loading and validation begin in
-Phase 1.
+The Quickshell bootstrap still has no external user configuration.
+`config-status` reports its built-in schema-one defaults. Phase 1 slice 1 adds
+the standalone `franken-config-helper` Rust binary under
+`helpers/franken-config-helper/`; no QML `ConfigService` invokes it yet.
+
+## Configuration helper protocol
+
+The helper reads exactly one protocol-version-1 JSON request from stdin and
+writes exactly one JSON response to stdout. The initial operation is
+`validateAndNormalize`.
+
+```json
+{
+  "protocolVersion": 1,
+  "requestGeneration": 42,
+  "operation": "validateAndNormalize",
+  "sourceIdentifier": "/display/path/config.toml",
+  "tomlSource": "schemaVersion = 1\n"
+}
+```
+
+Successful responses contain the detected and effective schema versions,
+migration status, a normalized typed configuration, warnings, and errors.
+Validation failures use the same response shape. Diagnostics include stable
+codes, logical configuration paths, source identifiers, and source positions
+where available.
+
+The helper never reads the live user configuration itself, writes source TOML,
+or requires Python. `config-helper-validate-fixture` uses `jq` only to construct
+a development request from a selected fixture.
 
 Quickshell stores its own per-shell logs and runtime state outside this
 repository. `logs` reads the log for this repository-path identity only.

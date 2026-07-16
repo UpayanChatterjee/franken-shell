@@ -1,0 +1,9 @@
+schemaVersion = 1
+
+[bar.workspacePager]
+groupSize = 5
+
+[workspaces.numbered]
+minimum = 10
+maximum = 4
+groupSize = 4
