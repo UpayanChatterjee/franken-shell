@@ -1,7 +1,7 @@
 # Franken Shell development shell
 
 This directory contains the clean, non-owning Franken Shell bootstrap and the
-Phase 1 configuration lifecycle. It is
+Phase 1 configuration and monitor-normalization services. It is
 selected by its explicit repository path and is independent from the live
 Caelestia configuration at `~/.config/quickshell/caelestia`.
 
@@ -41,6 +41,10 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-helper-client-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
+./dev/franken-shell monitor-registry-check
+./dev/franken-shell monitor-registry-test
+./dev/franken-shell monitor-diagnostics
+./dev/franken-shell monitor-observe
 ./dev/franken-shell config-demo helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 ./dev/franken-shell config-helper-validate-fixture helpers/franken-config-helper/tests/fixtures/complete_valid.toml
 printf '%s' '{"protocolVersion":1,"requestGeneration":1,"operation":"validateAndNormalize","sourceIdentifier":"example.toml","tomlSource":"schemaVersion = 1\n"}' \
@@ -122,6 +126,56 @@ tomlSource)`. Results are emitted through `resultReady(result)`, while
 `requestStateChanged(generation, state)` exposes queued, process, terminal, and
 supersession transitions. The client keeps at most one active request and one
 replaceable pending request.
+
+## Monitor registry
+
+Phase 1 slice 3A adds one root-owned `MonitorRegistry`. It creates no windows
+and makes no Hyprland dispatch calls. The registry coalesces Quickshell screen,
+Hyprland monitor/workspace, focused-window, and configuration changes into
+stable session records. Consumers use `monitors`, `monitorByRuntimeId()`,
+`monitorForScreen()`, `focusedMonitor`, `focusedWindowMonitor`,
+`fallbackMonitor`, and `fullscreenOnMonitor()` rather than raw Hyprland IPC
+objects.
+
+`runtimeId` values such as `monitor-1` are stable only for the lifetime of one
+registry instance and must not be persisted. Persistent configuration matching
+may use a composite of connector, make/model, description, and serial where
+available, but connector names alone are not treated as permanent hardware
+identity. Description remains an exposed matching fact rather than an identity
+key by itself. The current schema has no per-monitor rules, so every connected
+monitor is configured using the typed global `bar.enabled` and `bar.edge`
+defaults. A private provisional bridge recognizes only the documented future
+`monitors.default` and ordered `monitors.rules` shape if a later typed
+`ConfigService` snapshot exposes it. There is no public mutable rule input and
+the Phase 1 schema is unchanged.
+
+Coordinate spaces are explicit:
+
+- `logicalGeometry` is Qt device-independent geometry when a Quickshell screen
+  is present, otherwise normalized Hyprland logical geometry;
+- `compositorGeometry` is Hyprland logical layout geometry;
+- `physicalModeDimensions` is the unscaled monitor-mode size in physical
+  pixels and has no global origin;
+- `scale` is the compositor scale, while `devicePixelRatio` is Qt's
+  physical-to-device-independent ratio.
+
+Hyprland transforms 0 through 7 normalize to named rotation/flipped states.
+Odd quarter-turn transforms swap physical axes before logical geometry is
+derived. Fullscreen comes only from the active Hyprland workspace's
+`hasFullscreen` property; maximization and client geometry are ignored.
+
+Fallback selection is deterministic and session-stable: a compositor primary
+fact ranks first where available, followed by configured mapped records, then
+other configured records in stable session order. This is a candidate selector
+for later coordination, not a final control-centre, notification, popover, or
+surface-ownership policy.
+
+`monitor-registry-test` runs fake-screen and fake-Hyprland fixtures without
+touching the real display layout. `monitor-diagnostics` returns only normalized
+counts, runtime IDs, transforms, mapping health, refresh state, and backend
+availability. It omits serials, model descriptions, and raw IPC objects.
+`monitor-observe` is optional and read-only; it invokes `hyprctl monitors -j`
+and selects a small topology summary without dispatching monitor commands.
 
 ## Configuration helper protocol
 

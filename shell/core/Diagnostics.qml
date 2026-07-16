@@ -3,10 +3,13 @@ import Quickshell
 import Quickshell.Io
 
 Scope {
+    id: root
+
     required property string mode
     required property string startupState
     required property bool surfaceVisible
-    required property QtObject configService
+    required property var configService
+    required property var monitorRegistry
     required property string configHelperState
     required property string configHelperResolution
     required property string configHelperExecutable
@@ -22,15 +25,16 @@ Scope {
         target: "diagnostics"
 
         function summary(): string {
-            const config = configService.configurationSummary();
+            const config = root.configService.configurationSummary();
+            const monitors = root.monitorRegistry.diagnosticsSummary();
             return JSON.stringify({
                 project: ProjectInfo.projectName,
                 projectVersion: ProjectInfo.projectVersion,
-                mode: mode,
-                startupState: startupState,
+                mode: root.mode,
+                startupState: root.startupState,
                 shellPath: ProjectInfo.shellPath,
                 configPath: config.authoritativePath,
-                surfaceVisible: surfaceVisible,
+                surfaceVisible: root.surfaceVisible,
                 expectedQuickshellVersion: ProjectInfo.quickshellVersion,
                 expectedQuickshellCommit: ProjectInfo.quickshellCommit,
                 expectedQuickshellPackage: ProjectInfo.quickshellPackage,
@@ -52,10 +56,20 @@ Scope {
                 configLastRejectedGeneration: config.lastRejectedGeneration,
                 configWatchEnabled: config.watchEnabled,
                 configActivationSequence: config.activationSequence,
+                monitorConnectedCount: monitors.connectedMonitorCount,
+                monitorMappedCount: monitors.mappedMonitorCount,
+                monitorAmbiguousCount: monitors.ambiguousMonitorCount,
+                monitorUnmappedCount: monitors.unmappedMonitorCount,
+                monitorFocusedRuntimeId: monitors.focusedMonitorRuntimeId,
+                monitorFocusedWindowRuntimeId: monitors.focusedWindowMonitorRuntimeId,
+                monitorFallbackRuntimeId: monitors.fallbackMonitorRuntimeId,
+                monitorBackendAvailability: monitors.backendAvailability,
+                monitorLastRefresh: monitors.lastRefresh,
+                monitorLastMappingError: monitors.lastMappingError,
                 configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
-                configHelperState: configHelperState,
-                configHelperResolution: configHelperResolution,
-                configHelperExecutable: configHelperExecutable,
+                configHelperState: root.configHelperState,
+                configHelperResolution: root.configHelperResolution,
+                configHelperExecutable: root.configHelperExecutable,
                 ipcVersion: ProjectInfo.ipcVersion
             });
         }
@@ -73,7 +87,11 @@ Scope {
         }
 
         function configStatus(): string {
-            return JSON.stringify(configService.configurationSummary());
+            return JSON.stringify(root.configService.configurationSummary());
+        }
+
+        function monitorStatus(): string {
+            return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
         }
 
         function themeStatus(): string {
@@ -92,7 +110,7 @@ Scope {
 
         function reloadConfig(): string {
             Logger.info("config", "explicit-reload-requested", {});
-            return configService.requestReload();
+            return root.configService.requestReload();
         }
     }
 }

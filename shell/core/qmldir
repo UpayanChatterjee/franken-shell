@@ -7,3 +7,6 @@ ConfigSnapshot 1.0 ConfigSnapshot.qml
 ConfigValueList 1.0 ConfigValueList.qml
 ConfigValueMap 1.0 ConfigValueMap.qml
 Diagnostics 1.0 Diagnostics.qml
+HyprlandMonitorAdapter 1.0 HyprlandMonitorAdapter.qml
+MonitorRecord 1.0 MonitorRecord.qml
+MonitorRegistry 1.0 MonitorRegistry.qml

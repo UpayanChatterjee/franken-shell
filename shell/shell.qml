@@ -21,11 +21,23 @@ ShellRoot {
         helperClient: configHelperClient
     }
 
+    Core.HyprlandMonitorAdapter {
+        id: hyprlandMonitorAdapter
+    }
+
+    Core.MonitorRegistry {
+        id: monitorRegistry
+
+        backend: hyprlandMonitorAdapter
+        configService: configService
+    }
+
     Core.Diagnostics {
         mode: root.mode
         startupState: root.startupState
         surfaceVisible: diagnosticSurface.visible
         configService: configService
+        monitorRegistry: monitorRegistry
         configHelperState: configHelperClient.state
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperExecutable: configHelperClient.resolvedHelperExecutable
