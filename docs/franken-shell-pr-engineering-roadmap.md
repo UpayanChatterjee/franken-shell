@@ -264,7 +264,7 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | ID | Milestone | Brief outcome | Branch | Test-validated cutoff | Status |
 |---|---|---|---|---|---|
 | **B-000** | Repository baseline | Publish the current committed local project unchanged, establish `main` as the remote baseline, and preserve the pre-PR history with an annotated tag. | `main` | Remote `main` exactly represents the current committed local state, tags are present, and a fresh clone is usable. | **closed** |
-| **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **open** |
+| **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **in-progress** |
 | **PR-002** | Core baseline | Backfill tests and smoke coverage for the already implemented ConfigService, typed snapshots, helper/client foundation, MonitorRegistry, and CommandRegistry. | `test/core-baseline` | Every currently implemented core subsystem has direct contract tests, startup/reload smoke passes, and there are no unexplained warnings or leaked child processes. | **open** |
 | **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **open** |
 | **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **open** |
@@ -359,7 +359,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Engineering foundation
 - **Branch:** `chore/engineering-foundation`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope

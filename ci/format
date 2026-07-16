@@ -1,0 +1,73 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool cargo
+require_tool cmp
+require_tool prettier
+require_tool qmlformat
+require_tool rg
+require_tool sha256sum
+require_tool shfmt
+
+cd "$REPO_ROOT"
+
+if lua_files | rg -q .; then
+	require_tool stylua
+	lua_files |
+		while IFS= read -r file; do
+			stylua --check "$file"
+		done
+fi
+
+shfmt -d -ln bash ci/pinned-quickshell/PKGBUILD
+
+cargo fmt \
+	--manifest-path shell/helpers/franken-config-helper/Cargo.toml \
+	--all \
+	-- \
+	--check
+
+temporary_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-format.XXXXXX")
+trap 'rm -rf "$temporary_dir"' EXIT
+
+shell_actual="$temporary_dir/shell.txt"
+qml_actual="$temporary_dir/qml.txt"
+prettier_actual="$temporary_dir/prettier.txt"
+: >"$shell_actual"
+: >"$qml_actual"
+: >"$prettier_actual"
+
+shell_files |
+	while IFS= read -r file; do
+		if ! shfmt -d "$file" >/dev/null; then
+			fingerprint_file "$file" >>"$shell_actual"
+		fi
+	done
+
+qml_files |
+	while IFS= read -r file; do
+		formatted="$temporary_dir/qml-output"
+		if ! qmlformat -n "$file" >"$formatted" 2>/dev/null ||
+			! cmp -s "$file" "$formatted"; then
+			fingerprint_file "$file" >>"$qml_actual"
+		fi
+	done
+
+text_format_files |
+	while IFS= read -r file; do
+		formatted="$temporary_dir/prettier-output"
+		if ! prettier "$file" >"$formatted" 2>/dev/null ||
+			! cmp -s "$file" "$formatted"; then
+			fingerprint_file "$file" >>"$prettier_actual"
+		fi
+	done
+
+compare_debt ci/baselines/shfmt-known.txt "$shell_actual" shfmt
+compare_debt ci/baselines/qmlformat-known.txt "$qml_actual" qmlformat
+compare_debt ci/baselines/prettier-known.txt "$prettier_actual" prettier
+
+printf 'Formatting checks passed.\n'

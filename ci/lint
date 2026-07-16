@@ -1,0 +1,99 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool actionlint
+require_tool cargo
+require_tool markdownlint-cli2
+require_tool qmllint
+require_tool rg
+require_tool shellcheck
+
+cd "$REPO_ROOT"
+
+temporary_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-lint.XXXXXX")
+trap 'rm -rf "$temporary_dir"' EXIT
+
+shell_actual="$temporary_dir/shellcheck.txt"
+qml_output="$temporary_dir/qmllint-output.txt"
+qml_normalized="$temporary_dir/qmllint-normalized.txt"
+qml_actual="$temporary_dir/qmllint.txt"
+markdown_actual="$temporary_dir/markdownlint.txt"
+: >"$shell_actual"
+: >"$qml_output"
+: >"$qml_normalized"
+: >"$qml_actual"
+: >"$markdown_actual"
+
+if lua_files | rg -q .; then
+	require_tool selene
+	lua_files |
+		while IFS= read -r file; do
+			selene "$file"
+		done
+fi
+
+shellcheck -s bash \
+	-e SC2034,SC2154,SC2164 \
+	ci/pinned-quickshell/PKGBUILD
+
+shell_files |
+	while IFS= read -r file; do
+		if ! shellcheck -x "$file" >/dev/null; then
+			fingerprint_file "$file" >>"$shell_actual"
+		fi
+	done
+compare_debt ci/baselines/shellcheck-known.txt "$shell_actual" shellcheck
+
+cargo clippy \
+	--locked \
+	--manifest-path shell/helpers/franken-config-helper/Cargo.toml \
+	--all-targets \
+	--all-features \
+	-- \
+	-D warnings
+
+set +e
+shell/dev/franken-shell check >"$qml_output" 2>&1
+qml_status=$?
+set -e
+cat "$qml_output"
+if [ "$qml_status" -ne 0 ]; then
+	die "qmllint reported an error"
+fi
+
+sed 's/Warning: /\
+Warning: /g' "$qml_output" >"$qml_normalized"
+sed -nE 's#^Warning: (.*):[0-9]+:[0-9]+:.*\[([^]]+)\]$#\1:\2#p' \
+	"$qml_normalized" |
+	sed "s#^$REPO_ROOT/##" |
+	sort >"$qml_actual"
+warning_count=$(rg -c '^Warning: ' "$qml_normalized" || true)
+fingerprint_count=$(wc -l <"$qml_actual")
+if [ "$warning_count" -ne "$fingerprint_count" ]; then
+	die "qmllint emitted an uncategorized warning that is not baseline-safe"
+fi
+compare_debt ci/baselines/qmllint-known.txt "$qml_actual" qmllint
+
+markdown_files |
+	while IFS= read -r file; do
+		if ! markdownlint-cli2 "$file" >/dev/null 2>&1; then
+			fingerprint_file "$file" >>"$markdown_actual"
+		fi
+	done
+compare_debt ci/baselines/markdownlint-known.txt "$markdown_actual" markdownlint
+
+actionlint -shellcheck=
+
+if ! rg -q '^permissions:$' .github/workflows/*.yml; then
+	die "each workflow set must declare explicit top-level permissions"
+fi
+if rg -n '(^|[[:space:]])(write-all|contents:[[:space:]]*write|actions:[[:space:]]*write)' \
+	.github/workflows; then
+	die "workflow permissions are broader than this CI-only PR requires"
+fi
+
+printf 'Lint and static-analysis checks passed.\n'

@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool jq
+require_tool qs
+require_tool rg
+
+cd "$REPO_ROOT/shell"
+
+runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/fsci.XXXXXX")
+chmod 700 "$runtime_dir"
+
+export QT_QPA_PLATFORM=offscreen
+export XDG_RUNTIME_DIR="$runtime_dir"
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+
+cleanup() {
+	./dev/franken-shell stop >/dev/null 2>&1 || true
+	rm -rf "$runtime_dir"
+}
+trap cleanup EXIT INT TERM
+
+./dev/franken-shell mock
+summary=$(./dev/franken-shell diagnostics | sed -n '1p')
+
+printf '%s\n' "$summary" | jq -e '
+    .mode == "mock"
+    and .startupState == "SurfacesReady"
+    and .configHealth == "healthy"
+    and .configSourceState == "defaultsOnly"
+    and .surfaceVisible == true
+' >/dev/null
+
+./dev/franken-shell stop
+
+if qs list --all | rg -F "$REPO_ROOT/shell/shell.qml"; then
+	die "Franken Shell remained registered after smoke teardown"
+fi
+
+trap - EXIT INT TERM
+rm -rf "$runtime_dir"
+
+printf 'Non-owning startup and teardown smoke passed.\n'

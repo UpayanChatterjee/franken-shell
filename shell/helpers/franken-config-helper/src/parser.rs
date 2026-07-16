@@ -140,7 +140,7 @@ impl ValidationResult {
     }
 }
 
-impl<'a> ConfigParser<'a> {
+impl ConfigParser<'_> {
     fn finish(
         self,
         detected: Option<u32>,

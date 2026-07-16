@@ -1,0 +1,3 @@
+27556edd33fdb3ff56fb988d399eba9c3416bccb8ae9f54c10f986dcf23c46e4  shell/dev/franken-shell
+79887f6d3d870feacf5fd7dffac330df41a38cf273cafcdfdb37ccef9b1ef733  shell/tests/command_registry/fixtures/verbose
+fd101a23a743c2537edbd1df3ea3b99f70d707fb481fede6ff587ab74ff4c589  shell/tests/config_helper/fake-config-helper

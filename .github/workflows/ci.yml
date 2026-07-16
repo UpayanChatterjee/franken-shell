@@ -1,0 +1,282 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  hygiene:
+    name: CI / Hygiene
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run repository hygiene
+        run: ./ci/run hygiene
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics hygiene
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hygiene-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  format:
+    name: CI / Format
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Check formatting
+        run: ./ci/run format
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics format
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: format-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  lint:
+    name: CI / Lint
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Restore Cargo cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /root/.cargo/registry
+            /root/.cargo/git
+            shell/helpers/franken-config-helper/target
+          key: lint-cargo-${{ hashFiles('rust-toolchain.toml', 'shell/helpers/franken-config-helper/Cargo.lock') }}
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run lint and static analysis
+        run: ./ci/run lint
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics lint
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lint-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  unit:
+    name: CI / Unit
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Restore Cargo cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /root/.cargo/registry
+            /root/.cargo/git
+            shell/helpers/franken-config-helper/target
+          key: unit-cargo-${{ hashFiles('rust-toolchain.toml', 'shell/helpers/franken-config-helper/Cargo.lock') }}
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run unit and fixture suites
+        run: ./ci/run unit
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics unit
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    name: CI / Smoke
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run shell smoke
+        run: ./ci/run smoke
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics smoke
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: smoke-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  pinned:
+    name: CI / Pinned
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel@sha256:212b1e518e94ee9c52be55e8a32da75fcf11e7b5610b80b49479e67880102406
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Arch dependencies
+        run: ./ci/install-arch-deps pinned
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Restore Cargo cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /root/.cargo/registry
+            /root/.cargo/git
+            shell/helpers/franken-config-helper/target
+          key: pinned-cargo-${{ hashFiles('rust-toolchain.toml', 'shell/helpers/franken-config-helper/Cargo.lock') }}
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run pinned full suite
+        run: ./ci/run all
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics pinned
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pinned-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  arch:
+    name: CI / Arch
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install current Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Restore Cargo cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /root/.cargo/registry
+            /root/.cargo/git
+            shell/helpers/franken-config-helper/target
+          key: arch-cargo-${{ hashFiles('rust-toolchain.toml', 'shell/helpers/franken-config-helper/Cargo.lock') }}
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run Arch full suite
+        run: ./ci/run all
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics arch
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arch-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

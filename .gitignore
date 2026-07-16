@@ -10,6 +10,9 @@
 *.bak
 .qmlcache/
 __pycache__/
+node_modules/
+.ci-artifacts/
+.ci-tools/
 
 # Editor files
 .vscode/
