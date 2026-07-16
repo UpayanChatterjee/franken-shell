@@ -1,0 +1,2 @@
+27556edd33fdb3ff56fb988d399eba9c3416bccb8ae9f54c10f986dcf23c46e4  shell/dev/franken-shell
+09e2f67b7d40379b681afb599b4dacfa5444dda6a9fb286ce5f8a4a28a36942b  shell/tests/command_registry/fixtures/arguments

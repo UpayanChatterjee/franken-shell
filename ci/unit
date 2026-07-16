@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool cargo
+require_tool qs
+
+cd "$REPO_ROOT"
+
+cargo test \
+	--locked \
+	--manifest-path shell/helpers/franken-config-helper/Cargo.toml \
+	--all-targets \
+	--all-features
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+shell/dev/franken-shell config-helper-client-test
+shell/dev/franken-shell config-service-test
+shell/dev/franken-shell monitor-registry-test
+HOME=$(dirname -- "$REPO_ROOT") shell/dev/franken-shell command-registry-test
+
+printf 'Unit and fixture suites passed.\n'

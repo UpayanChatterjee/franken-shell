@@ -115,45 +115,45 @@ pub fn decode_request(input: &str) -> Result<Request, Box<Response>> {
         "tomlSource must be a string containing the exact TOML source text",
     );
 
-    if let Some(version) = protocol_version
-        && version != PROTOCOL_VERSION
-    {
-        errors.push(Diagnostic::protocol_error(
-            "PROTOCOL_UNSUPPORTED_VERSION",
-            format!(
-                "protocol version {version} is unsupported; this helper supports version {PROTOCOL_VERSION}"
-            ),
-            Some("protocolVersion"),
-            None,
-            None,
-            Some("Use protocolVersion = 1 or run a matching helper."),
-        ));
+    if let Some(version) = protocol_version {
+        if version != PROTOCOL_VERSION {
+            errors.push(Diagnostic::protocol_error(
+                "PROTOCOL_UNSUPPORTED_VERSION",
+                format!(
+                    "protocol version {version} is unsupported; this helper supports version {PROTOCOL_VERSION}"
+                ),
+                Some("protocolVersion"),
+                None,
+                None,
+                Some("Use protocolVersion = 1 or run a matching helper."),
+            ));
+        }
     }
 
-    if let Some(ref operation) = operation
-        && operation != VALIDATE_OPERATION
-    {
-        errors.push(Diagnostic::protocol_error(
-            "PROTOCOL_UNSUPPORTED_OPERATION",
-            format!("operation {operation:?} is unsupported"),
-            Some("operation"),
-            None,
-            None,
-            Some("Use operation = \"validateAndNormalize\"."),
-        ));
+    if let Some(ref operation) = operation {
+        if operation != VALIDATE_OPERATION {
+            errors.push(Diagnostic::protocol_error(
+                "PROTOCOL_UNSUPPORTED_OPERATION",
+                format!("operation {operation:?} is unsupported"),
+                Some("operation"),
+                None,
+                None,
+                Some("Use operation = \"validateAndNormalize\"."),
+            ));
+        }
     }
 
-    if let Some(ref source_identifier) = source_identifier
-        && source_identifier.is_empty()
-    {
-        errors.push(Diagnostic::protocol_error(
-            "PROTOCOL_INVALID_FIELD",
-            "sourceIdentifier must not be empty",
-            Some("sourceIdentifier"),
-            None,
-            None,
-            Some("Provide the display path or another stable source identifier."),
-        ));
+    if let Some(ref source_identifier) = source_identifier {
+        if source_identifier.is_empty() {
+            errors.push(Diagnostic::protocol_error(
+                "PROTOCOL_INVALID_FIELD",
+                "sourceIdentifier must not be empty",
+                Some("sourceIdentifier"),
+                None,
+                None,
+                Some("Provide the display path or another stable source identifier."),
+            ));
+        }
     }
 
     if !errors.is_empty() {

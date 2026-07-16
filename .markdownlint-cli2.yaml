@@ -1,0 +1,10 @@
+config:
+  default: true
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD033: false
+
+ignores:
+  - references/repos/**
+  - docs/franken-shell-pr-engineering-roadmap.md

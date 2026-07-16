@@ -1,0 +1,58 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool git
+require_tool gitleaks
+require_tool jq
+require_tool rg
+
+cd "$REPO_ROOT"
+
+git diff --check
+git diff --cached --check
+
+if git rev-parse --verify origin/main >/dev/null 2>&1; then
+	git diff --check origin/main...HEAD
+fi
+
+if git grep -n -E '^(<<<<<<< .+|>>>>>>> .+)$' -- . ':!references/repos'; then
+	die "merge-conflict markers are present"
+fi
+
+tracked_files=$(mktemp)
+actual_executables=$(mktemp)
+trap 'rm -f "$tracked_files" "$actual_executables"' EXIT
+git ls-files | sort >"$tracked_files"
+
+if rg -n \
+	-e '^references/repos/' \
+	-e '(^|/)(node_modules|target)/' \
+	-e '(^|/)\.env($|\.)' \
+	-e '\.(bak|old|orig|rej)$' \
+	-e '(^|/)(id_rsa|id_ed25519|credentials|secrets?)(\.|$)' \
+	"$tracked_files"; then
+	die "forbidden generated, backup, reference, or secret-like path is tracked"
+fi
+
+git ls-files -s |
+	awk '$1 == "100755" {print $4}' |
+	sort >"$actual_executables"
+if ! diff -u ci/executable-allowlist.txt "$actual_executables"; then
+	die "tracked executable bits differ from ci/executable-allowlist.txt"
+fi
+
+git ls-files '*.json' |
+	while IFS= read -r file; do
+		jq empty "$file"
+	done
+
+gitleaks dir "$REPO_ROOT" \
+	--config "$REPO_ROOT/.gitleaks.toml" \
+	--no-banner \
+	--redact
+
+printf 'Repository hygiene passed.\n'

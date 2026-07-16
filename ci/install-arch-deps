@@ -1,0 +1,127 @@
+#!/bin/sh
+
+set -eu
+
+lane=${1:-current}
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH='' cd -- "$script_dir/.." && pwd)
+
+if [ "$(id -u)" -ne 0 ]; then
+	printf 'install-arch-deps must run as root inside the CI container.\n' >&2
+	exit 1
+fi
+
+case "$lane" in
+pinned)
+	# shellcheck disable=SC2016
+	printf '%s\n' \
+		'Server = https://archive.archlinux.org/repos/2026/07/01/$repo/os/$arch' \
+		>/etc/pacman.d/mirrorlist
+	pacman -Syyuu --noconfirm
+	;;
+current)
+	pacman -Syu --noconfirm
+	;;
+*)
+	printf 'Usage: %s {pinned|current}\n' "$0" >&2
+	exit 2
+	;;
+esac
+
+pacman -S --needed --noconfirm \
+	ca-certificates \
+	cmake \
+	curl \
+	git \
+	hyprland \
+	jq \
+	ninja \
+	npm \
+	nodejs \
+	procps-ng \
+	ripgrep \
+	rustup \
+	shellcheck \
+	shfmt
+
+if [ "$lane" = pinned ]; then
+	pacman -S --needed --noconfirm \
+		cli11 \
+		cpptrace \
+		jemalloc \
+		libdrm \
+		libpipewire \
+		libxcb \
+		mesa \
+		polkit \
+		qt6-base \
+		qt6-declarative \
+		qt6-shadertools \
+		qt6-svg \
+		spirv-tools \
+		vulkan-headers \
+		wayland \
+		wayland-protocols
+
+	package_dir=${CI_PINNED_PACKAGE_DIR:-"$repo_root/.ci-cache/pinned-quickshell"}
+	mkdir -p "$package_dir"
+	package_file=
+	for candidate in \
+		"$package_dir"/quickshell-git-0.3.0.r15.g4df562d-1-*.pkg.tar.zst; do
+		if [ -f "$candidate" ]; then
+			package_file=$candidate
+			break
+		fi
+	done
+
+	if [ -z "$package_file" ]; then
+		build_root=$(mktemp -d /tmp/franken-quickshell-build.XXXXXX)
+		useradd --create-home --home-dir "$build_root/home" franken-build
+		cp "$repo_root/ci/pinned-quickshell/PKGBUILD" "$build_root/PKGBUILD"
+		chown -R franken-build:franken-build "$build_root" "$package_dir"
+		(
+			cd "$build_root"
+			runuser -u franken-build -- \
+				env HOME="$build_root/home" PKGDEST="$package_dir" \
+				makepkg --cleanbuild --force --noconfirm
+		)
+		rm -rf "$build_root"
+		for candidate in \
+			"$package_dir"/quickshell-git-0.3.0.r15.g4df562d-1-*.pkg.tar.zst; do
+			if [ -f "$candidate" ]; then
+				package_file=$candidate
+				break
+			fi
+		done
+		[ -n "$package_file" ] ||
+			{
+				printf 'Pinned Quickshell package build produced no installable artifact.\n' >&2
+				exit 1
+			}
+	else
+		printf 'Using cached pinned Quickshell package: %s\n' "$package_file"
+	fi
+
+	pacman -U --noconfirm "$package_file"
+else
+	pacman -S --needed --noconfirm quickshell
+fi
+
+rustup toolchain install 1.85.0 \
+	--profile minimal \
+	--component clippy \
+	--component rustfmt
+rustup default 1.85.0
+
+if [ "${GITHUB_ACTIONS:-}" = true ]; then
+	git config --global --add safe.directory "$repo_root"
+fi
+
+if [ "$lane" = pinned ]; then
+	pacman -Q quickshell-git qt6-base hyprland
+	pacman -Q quickshell-git | rg '^quickshell-git 0\.3\.0\.r15\.g4df562d-1$'
+	pacman -Q qt6-base | rg '^qt6-base 6\.11\.1-1$'
+	pacman -Q hyprland | rg '^hyprland 0\.55\.4-1$'
+	qs --version |
+		rg 'Quickshell 0\.3\.0 .*4df562dfb2475a9057f0f33a8db75808efad8670'
+fi

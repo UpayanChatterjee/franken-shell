@@ -1,0 +1,51 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+label=${1:-diagnostics}
+destination="$ARTIFACT_DIR/$label"
+mkdir -p "$destination"
+
+cd "$REPO_ROOT"
+
+{
+	printf 'git='
+	git --version
+	printf 'node='
+	node --version 2>/dev/null || printf 'unavailable\n'
+	printf 'npm='
+	npm --version 2>/dev/null || printf 'unavailable\n'
+	printf 'rustc='
+	rustc --version 2>/dev/null || printf 'unavailable\n'
+	printf 'cargo='
+	cargo --version 2>/dev/null || printf 'unavailable\n'
+	printf 'qmlformat='
+	qmlformat --version 2>/dev/null || printf 'unavailable\n'
+	printf 'qmllint='
+	qmllint --version 2>/dev/null || printf 'unavailable\n'
+	printf 'quickshell='
+	qs --version 2>/dev/null || printf 'unavailable\n'
+	if command -v pacman >/dev/null 2>&1; then
+		pacman -Q quickshell quickshell-git qt6-base hyprland 2>/dev/null || true
+	fi
+} >"$destination/versions.txt"
+
+git status --short --branch >"$destination/git-status.txt"
+git diff --check >"$destination/diff-check.txt" 2>&1 || true
+ps -eo pid,ppid,rss,%mem,comm >"$destination/processes.txt"
+
+if command -v qs >/dev/null 2>&1; then
+	qs list --all >"$destination/quickshell-instances.txt" 2>&1 || true
+fi
+
+{
+	printf 'CI=%s\n' "${CI:-}"
+	printf 'GITHUB_ACTIONS=%s\n' "${GITHUB_ACTIONS:-}"
+	printf 'RUNNER_OS=%s\n' "${RUNNER_OS:-}"
+	printf 'RUNNER_ARCH=%s\n' "${RUNNER_ARCH:-}"
+} >"$destination/environment-summary.txt"
+
+printf 'Collected redacted diagnostics in %s\n' "$destination"

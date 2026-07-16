@@ -1,0 +1,65 @@
+# Maintainer: Entailz <entail-wraps0r at icloud dot com>
+#
+# Repository-owned CI pin adapted from the AUR quickshell-git packaging recipe
+# at commit 2494139bce7b7fc71372da00b68fb745a2c72d90. The source revision and
+# package version below are fixed by Franken Shell decision D-071.
+
+_pkgname=quickshell
+_commit=4df562dfb2475a9057f0f33a8db75808efad8670
+
+pkgname=quickshell-git
+pkgver=0.3.0.r15.g4df562d
+pkgrel=1
+pkgdesc="Flexible toolkit for making desktop shells with QtQuick"
+arch=(x86_64 aarch64)
+url="https://git.outfoxxed.me/quickshell/quickshell"
+license=("LGPL-3.0-only")
+options=(!strip)
+depends=(
+	"cpptrace"
+	"jemalloc"
+	"libdrm"
+	"libpipewire"
+	"libxcb"
+	"mesa"
+	"polkit"
+	"qt6-base"
+	"qt6-declarative"
+	"qt6-svg"
+	"vulkan-headers"
+	"wayland"
+)
+makedepends=(
+	"cli11"
+	"cmake"
+	"git"
+	"ninja"
+	"qt6-shadertools"
+	"spirv-tools"
+	"wayland-protocols"
+)
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+source=("$_pkgname::git+$url.git#commit=$_commit")
+sha256sums=("SKIP")
+
+prepare() {
+	cd "$_pkgname"
+	test "$(git rev-parse HEAD)" = "$_commit"
+}
+
+build() {
+	cd "$_pkgname"
+	cmake -GNinja -B build \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DDISTRIBUTOR="AUR (package: quickshell-git)" \
+		-DINSTALL_QML_PREFIX=lib/qt6/qml
+	cmake --build build
+}
+
+package() {
+	cd "$_pkgname"
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$_pkgname"
+}

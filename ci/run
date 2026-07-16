@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CI_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(cd -- "$CI_DIR/.." && pwd)
+ARTIFACT_DIR=${CI_ARTIFACT_DIR:-"$REPO_ROOT/.ci-artifacts"}
+task=${1:-all}
+
+mkdir -p "$ARTIFACT_DIR"
+
+run_task() {
+	local name=$1
+	printf 'Running CI task: %s\n' "$name"
+	"$CI_DIR/$name" 2>&1 | tee "$ARTIFACT_DIR/$name.log"
+}
+
+case "$task" in
+hygiene | format | lint | unit | smoke)
+	run_task "$task"
+	;;
+all)
+	for name in hygiene format lint unit smoke; do
+		run_task "$name"
+	done
+	;;
+*)
+	printf 'Usage: %s {hygiene|format|lint|unit|smoke|all}\n' "$0" >&2
+	exit 2
+	;;
+esac

@@ -1,0 +1,10 @@
+title = "Franken Shell gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Read-only reference repositories are outside the project source tree"
+paths = [
+  '''^references/repos/''',
+]
