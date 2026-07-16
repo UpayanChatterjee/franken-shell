@@ -550,40 +550,42 @@ Do not put full arbitrary command output into normal UI. Diagnostics may expose 
 
 ## 6.1 Authoritative configuration section
 
-The integration consumes the existing workspace and integration configuration model.
+The integration consumes the existing workspace and integration configuration
+model from the typed immutable runtime snapshot published by `ConfigService`.
+It does not parse TOML or invoke the Rust helper directly.
 
 Conceptual source:
 
-```jsonc
-{
-  "workspaces": {
-    "numbered": {
-      "minimum": 1,
-      "maximum": 10,
-      "groupSize": 5,
-      "wrap": false,
-      "semanticLabels": {}
-    },
-    "special": [],
-    "overview": {
-      "provider": "quickshell-overview",
-      "openOnActiveWorkspaceClick": true,
-      "rows": 2,
-      "columns": 5,
-      "showSpecialWorkspaces": true,
-      "hideEmptyRows": false
-    }
-  },
-  "integrations": {
-    "overview": {
-      "enabled": true,
-      "provider": "quickshell-overview"
-    }
-  }
-}
+```toml
+[workspaces]
+special = []
+
+[workspaces.numbered]
+minimum = 1
+maximum = 10
+groupSize = 5
+wrap = false
+
+[workspaces.numbered.semanticLabels]
+
+[workspaces.overview]
+provider = "quickshell-overview"
+openOnActiveWorkspaceClick = true
+rows = 2
+columns = 5
+showSpecialWorkspaces = true
+hideEmptyRows = false
+
+[integrations.overview]
+enabled = true
+provider = "quickshell-overview"
 ```
 
-The exact final schema may evolve with the authoritative configuration document. This specification does not settle the final config file format.
+The authoritative user file is
+`$XDG_CONFIG_HOME/franken-shell/config.toml` under D-075. The shared
+configuration and validation boundary is defined by `docs/decisions.md`,
+`docs/configuration-model.md`, and `docs/architecture.md`; this specification
+defines only the integration-specific mapping.
 
 ## 6.2 Derived output rules
 
@@ -1676,7 +1678,6 @@ Need to determine:
 The following broader unresolved items affect complete integration:
 
 - **Q-001:** exact Quickshell baseline;
-- **Q-004 / Q-005:** final configuration format and validation implementation;
 - **Q-006:** startup and supervision model;
 - final monitor identity matching;
 - final icon strategy;

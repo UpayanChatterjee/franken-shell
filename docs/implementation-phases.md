@@ -276,13 +276,27 @@ Implement the architectural foundation required by every later feature.
 Implement:
 
 - built-in defaults;
-- user configuration path;
+- authoritative user path at `$XDG_CONFIG_HOME/franken-shell/config.toml`;
 - schema version;
-- parsing;
-- validation;
-- last-valid-state retention;
+- a small versioned Rust helper for TOML parsing, structural validation,
+  semantic validation, normalized JSON, structured diagnostics, schema-version
+  detection, and sequential in-memory migrations;
+- an explicitly versioned helper protocol;
+- asynchronous `ConfigService` helper invocation with request generations and
+  stale-response rejection;
+- typed immutable snapshot construction and atomic publication;
+- active-snapshot retention across invalid hot reloads;
 - hot-reload debounce;
-- structured errors.
+- configuration health, including defaults-only and degraded states;
+- fixture and unit tests.
+
+Built-in defaults activate immediately. Missing user configuration is normal.
+Invalid cold startup keeps defaults active and marks health degraded; a later
+valid result clears it.
+
+Phase 1 does not include source writes or patching, a settings UI,
+comment-preserving edits, CST patching, automatic migration rewrites, JSON
+Schema generation, or a persistent last-valid disk cache.
 
 The first schema can include only:
 
@@ -380,6 +394,9 @@ Expose:
 
 - one shell root owns all core services;
 - config reload is atomic;
+- stale configuration-helper responses are discarded;
+- invalid hot reload leaves the active snapshot completely unchanged;
+- startup never rewrites `config.toml`;
 - theme changes apply through semantic tokens;
 - monitor hotplug does not crash the shell;
 - command failures are visible in diagnostics;
@@ -392,6 +409,8 @@ Expose:
 - reload lifecycle;
 - screen-to-Hyprland monitor mapping;
 - focus restoration primitives;
+- exact focus-restoration behaviour (Q-121);
+- multi-monitor API validation (Q-122);
 - IPC type limitations.
 
 ---
@@ -1757,10 +1776,10 @@ Create:
 
 - built-in defaults;
 - user config lookup;
-- parser;
-- validation result;
+- versioned Rust parser/validator helper;
+- normalized JSON and structured diagnostic result;
 - error logging;
-- last-valid retention.
+- generation-aware active-snapshot retention.
 
 Use a deliberately small schema.
 

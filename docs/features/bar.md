@@ -1078,7 +1078,12 @@ The bar consumes normalized project adapters and controllers only.
 
 ## 10.4 Configuration consumed
 
-The bar consumes the logical configuration model even though the final file format remains unresolved.
+The authoritative user configuration is TOML at
+`$XDG_CONFIG_HOME/franken-shell/config.toml` under D-075. The bar consumes only
+the typed immutable runtime snapshot published by `ConfigService`; it does not
+parse TOML or invoke the Rust helper directly. The shared boundary is defined
+by `docs/decisions.md`, `docs/configuration-model.md`, and
+`docs/architecture.md`.
 
 Relevant fields include:
 
@@ -1625,7 +1630,6 @@ These are not bar-layout decisions, but they affect whether a bar item can be co
 
 - **Q-001:** Exact pinned Quickshell baseline and required module availability.
 - **Q-002:** Which retained Caelestia services are wrapped, copied, replaced, or removed.
-- **Q-004 / Q-005:** Authoritative configuration format and validation implementation.
 - **Q-045:** Exact scope of the compact audio popover.
 - **Q-046:** Reliable output-device icon classification and user overrides.
 - **Q-048:** Default volume scroll step.

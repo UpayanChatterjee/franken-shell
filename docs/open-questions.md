@@ -80,54 +80,110 @@ and ownership review required by D-072 and the repository instructions.
 
 ## Q-004 — Configuration file format
 
-**Priority:** Blocker  
-**Needed by:** Phase 1
+**Status:** Resolved by D-075
 
-Should the authoritative user configuration use:
+The authoritative user configuration is declarative TOML at
+`$XDG_CONFIG_HOME/franken-shell/config.toml`. QML feature code does not parse
+it directly, and derived normalized data is not a parallel source of truth.
 
-- JSON;
-- JSONC;
-- TOML;
-- YAML;
-- QML singleton properties;
-- another structured format?
-
-Evaluation criteria:
-
-- comment support;
-- reliable parser availability from Quickshell/QML;
-- schema validation;
-- round-trip writing by a future settings UI;
-- preservation of unknown fields;
-- migration support;
-- human readability;
-- error line/column reporting.
-
-A format should not be selected solely because it is easiest to parse once.
+Source-preserving edit semantics remain Q-117.
 
 ---
 
 ## Q-005 — Configuration validation implementation
 
+**Status:** Resolved by D-076
+
+A small versioned Rust helper is the authoritative parser and validator.
+`ConfigService` owns asynchronous invocation, generations, stale-response
+rejection, typed immutable snapshots, atomic publication, and configuration
+health. Phase 1 migrations occur only in memory.
+
+Parser-library and packaging choices remain Q-116. Future source edits, JSON
+Schema integration, persistent disk cache policy, and explicit migration writes
+remain Q-117 through Q-120.
+
+---
+
+## Q-116 — Rust configuration helper parser and packaging
+
 **Priority:** High, Research  
-**Needed by:** Phase 1
+**Needed by:** Phase 1 implementation
 
-How will configuration be validated?
+Which TOML parser, diagnostic/span strategy, executable/package layout, and
+version-coupling policy should the Rust helper use?
 
-Possible approaches:
+The decision must preserve the D-076 protocol boundary and support fixture and
+unit testing without expanding Phase 1 into source editing.
 
-- JSON Schema in a helper process;
-- native QML/JavaScript validation;
-- typed config objects with manual validation;
-- small Rust/C++ helper;
-- Python utility during development only.
+---
 
-Questions:
+## Q-117 — Source-preserving configuration patch semantics
 
-- Can validation run without blocking startup?
-- Can it provide exact paths and useful errors?
-- Can the future settings UI use the same schema?
-- How are migrations tested?
+**Priority:** High, Later
+
+How should a future CLI or settings UI patch known TOML nodes while preserving
+comments, formatting, ordering, and unsupported unknown fields?
+
+CST-based patching and write operations are not Phase 1 deliverables.
+
+---
+
+## Q-118 — JSON Schema and editor integration
+
+**Priority:** Medium, Later
+
+Should optional JSON Schema or equivalent metadata be generated for editors,
+documentation, or settings UI metadata, and how should it remain subordinate to
+the authoritative Rust runtime validator?
+
+---
+
+## Q-119 — Persistent last-valid configuration cache
+
+**Priority:** Medium, Later
+
+Should a future release persist a last-valid normalized snapshot for cold-start
+recovery, and if so, how is freshness, schema compatibility, corruption, and
+source authority handled?
+
+Phase 1 has no persistent last-valid disk cache.
+
+---
+
+## Q-120 — Explicit configuration migration-write workflow
+
+**Priority:** High, Later
+
+What explicit CLI or settings action may offer source-preserving migration
+writes, including preview, confirmation, backup, failure recovery, and handling
+of configuration newer than the running shell?
+
+Startup must never rewrite the user's configuration automatically.
+
+---
+
+## Q-121 — Exact focus-restoration behaviour
+
+**Priority:** High, Prototype
+
+**Needed by:** Phase 3
+
+Define and validate which window or surface regains focus after each transient
+surface closes, including keyboard, pointer, outside-click, monitor changes,
+destroyed origin windows, and nested surface transitions.
+
+---
+
+## Q-122 — Multi-monitor API validation
+
+**Priority:** High, Research
+
+**Needed by:** Phase 1 monitor registry
+
+Validate the pinned Quickshell and Hyprland APIs for monitor identity, focused
+monitor, geometry, scale, transform, hotplug ordering, and screen-to-Hyprland
+mapping before treating the proposed registry contract as reliable.
 
 ---
 
@@ -2250,8 +2306,11 @@ Phase 0 bootstrap.
 
 ## Before Phase 1
 
-5. configuration format.
-6. configuration validation approach.
+Configuration format and validation architecture are resolved by D-075 and
+D-076. Before Phase 1 implementation, resolve or bound:
+
+5. Rust configuration-helper parser and packaging strategy.
+6. multi-monitor API validation.
 7. theme source adapter boundary.
 
 ## Before Phase 3

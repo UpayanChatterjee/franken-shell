@@ -1218,7 +1218,7 @@ The same workspaces, commands, and theme values must not be maintained in multip
 - special workspace IDs are stable;
 - generated files are marked as generated;
 - settings UI edits the same schema;
-- invalid reloads preserve the last valid state.
+- invalid reloads preserve the active in-memory typed snapshot.
 
 ---
 
@@ -1239,9 +1239,10 @@ A shell config error should not destroy a running desktop session.
 ## Consequences
 
 - maintain built-in defaults;
-- retain last valid configuration;
+- retain the active valid snapshot across invalid hot reloads;
 - provide structured errors;
-- support schema migrations and backups.
+- support sequential in-memory schema migrations;
+- defer source-file writes, backups, and explicit migration writes until separately approved.
 
 ---
 
@@ -1903,6 +1904,95 @@ Parallel non-owning development protects the working desktop and avoids duplicat
 
 ---
 
+# D-075 — Authoritative TOML Configuration
+
+**Status:** Accepted
+
+## Decision
+
+Franken Shell's authoritative user configuration is declarative, non-executable
+TOML at:
+
+```text
+$XDG_CONFIG_HOME/franken-shell/config.toml
+```
+
+The source file remains authoritative. Generated caches, normalized
+representations, and integration files are derived data and never parallel
+sources of truth. QML feature code never parses TOML directly.
+
+Shell operations must not destroy comments or unknown fields. Phase 1 therefore
+does not write or patch `config.toml`; unsupported unknown fields may be ignored
+by runtime normalization while their source remains untouched.
+
+## Rationale
+
+TOML provides a human-readable, comment-capable, non-executable user format
+while allowing parsing and validation to remain outside feature QML.
+
+## Consequences
+
+- Q-004 is resolved;
+- actual user-file examples use TOML;
+- runtime consumers receive normalized typed configuration snapshots;
+- comment-preserving and unknown-field-preserving source edits remain future work;
+- generated data must identify itself as derived and reproducible.
+
+---
+
+# D-076 — Versioned Rust Configuration Validation Boundary
+
+**Status:** Accepted
+
+## Decision
+
+Configuration uses a staged architecture:
+
+1. a small versioned Rust helper is the authoritative parser and validator;
+2. it parses TOML, performs structural and semantic validation, detects schema
+   versions, applies sequential migrations in memory, and emits normalized JSON
+   plus structured diagnostics;
+3. QML `ConfigService` owns file watching, debounce, asynchronous helper
+   invocation, request generations, stale-response rejection, typed immutable
+   snapshot construction, atomic snapshot publication, and configuration health;
+4. feature controllers and views consume only the active typed snapshot;
+5. a future settings UI uses the same validation and migration logic.
+
+The helper protocol is explicitly versioned. Diagnostics support, where
+applicable, severity, code, message, configuration path, source file, line,
+column, and repair hint.
+
+Built-in defaults activate immediately. A missing user file is a normal
+defaults-only state. Invalid hot reloads leave the active snapshot unchanged.
+Invalid cold startup uses built-in defaults and marks configuration health
+degraded; later successful validation clears that state. Phase 1 has no
+persistent last-valid disk cache.
+
+Phase 1 helper scope is limited to parsing, structural validation, semantic
+validation, normalized JSON output, structured diagnostics, schema-version
+detection, sequential in-memory migrations, and fixture/unit tests. It excludes
+source writes or patching, settings UI, comment-preserving edits, CST patching,
+automatic migration rewrites, JSON Schema generation, and a persistent
+last-valid cache.
+
+## Rationale
+
+This keeps parsing and deterministic validation in a testable native boundary
+while keeping QML responsible for lifecycle, publication, and health without
+letting feature code consume unvalidated raw data.
+
+## Consequences
+
+- Q-005 is resolved;
+- each validation request and response carries a generation identifier;
+- stale responses are discarded;
+- unknown fields may produce structured warnings and are never destructively rewritten;
+- newer schema versions are never destructively rewritten or silently downgraded;
+- future source-preserving patch operations can be added without changing the runtime snapshot model;
+- JSON Schema remains optional future tooling, not the runtime authority.
+
+---
+
 # Current Accepted Baseline Summary
 
 The implementation should currently assume:
@@ -1934,7 +2024,8 @@ The implementation should currently assume:
 - fullscreen suppression for ordinary popups and bar;
 - one main Quickshell shell instance;
 - adapters for system interaction;
-- shared configuration;
+- authoritative TOML configuration with a versioned Rust validation helper;
+- atomic typed configuration snapshots owned by `ConfigService`;
 - local failure containment;
 - exact Phase 0 development pin from D-071;
 - clean main-branch bootstrap with the working Caelestia shell preserved separately;

@@ -377,8 +377,7 @@ franken-shell/
 │   └── features/
 │
 ├── config/
-│   ├── defaults.json
-│   ├── schema.json
+│   ├── defaults.json        # normalized internal data, not user configuration
 │   ├── migrations/
 │   └── examples/
 │
@@ -718,20 +717,22 @@ Used when no external file exists.
 
 Stored under the XDG configuration directory.
 
-Recommended conceptual location:
+Authoritative location:
 
 ```text
-$XDG_CONFIG_HOME/franken-shell/config.json
+$XDG_CONFIG_HOME/franken-shell/config.toml
 ```
 
-The final format may be JSON, JSONC, TOML, or a structured QML-readable format, but it must support:
+The TOML source is declarative and non-executable. It must support:
 
-- schema validation;
+- structural and semantic validation;
 - version field;
-- migrations;
+- sequential in-memory migrations;
 - useful errors;
-- atomic writes;
-- preservation of unknown future fields where practical.
+- preservation of comments and unknown fields by avoiding Phase 1 source writes.
+
+Generated normalized JSON is internal transport data, not user configuration or
+a parallel source of truth.
 
 ---
 
@@ -753,17 +754,27 @@ Runtime overrides should not silently rewrite persistent settings.
 
 One `ConfigService` should:
 
-- load;
-- validate;
-- normalize;
-- expose typed sections;
+- activate built-in defaults immediately;
 - watch for changes;
-- reject invalid reloads;
-- retain the last valid configuration;
-- emit structured change events;
-- write settings atomically.
+- debounce changes;
+- invoke the versioned Rust helper asynchronously with request generations;
+- reject stale responses;
+- construct typed immutable snapshots from valid normalized JSON;
+- publish a complete snapshot atomically;
+- leave the active snapshot unchanged after an invalid hot reload;
+- expose structured diagnostics and configuration health.
+
+The Rust helper owns TOML parsing, structural and semantic validation,
+schema-version detection, sequential in-memory migrations, normalized JSON
+output, and structured diagnostics. Its protocol is explicitly versioned.
+
+On cold startup, an invalid user file leaves built-in defaults active and marks
+configuration health degraded. A later successful validation clears degraded
+health. Phase 1 has no persistent last-valid disk cache and never rewrites the
+source file during startup.
 
 Feature code should not parse configuration files independently.
+Feature controllers and views consume only the active typed snapshot.
 
 ---
 

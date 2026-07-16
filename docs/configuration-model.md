@@ -21,7 +21,8 @@ The configuration model must support:
 - adopted-component integration;
 - future settings UI.
 
-The examples below use JSONC-like syntax for readability. The final file format may be JSONC, TOML, or another structured format, but the logical schema should remain equivalent.
+User-file examples below use TOML. JSON examples are used only where explicitly
+labelled as normalized internal or runtime-state data.
 
 ---
 
@@ -32,12 +33,14 @@ The examples below use JSONC-like syntax for readability. The final file format 
 The shell should have one primary user configuration file:
 
 ```text
-$XDG_CONFIG_HOME/franken-shell/config.jsonc
+$XDG_CONFIG_HOME/franken-shell/config.toml
 ```
 
 This file owns user-facing shell settings.
 
 Generated files for Vicinae, quickshell-overview, or other integrations must derive from this source rather than becoming additional authoritative configuration.
+Normalized JSON, caches, and diagnostic snapshots are derived data and never
+parallel sources of truth.
 
 ---
 
@@ -70,7 +73,7 @@ Optional distribution or deployment defaults.
 Suggested location:
 
 ```text
-/etc/xdg/franken-shell/config.jsonc
+/etc/xdg/franken-shell/config.toml
 ```
 
 ### User configuration
@@ -82,7 +85,7 @@ Primary user-owned configuration.
 Optional file for device-specific settings:
 
 ```text
-$XDG_CONFIG_HOME/franken-shell/machines/<machine-id>.jsonc
+$XDG_CONFIG_HOME/franken-shell/machines/<machine-id>.toml
 ```
 
 Useful for:
@@ -146,6 +149,9 @@ Visual values should normally come from shared theme tokens.
 
 ## 1.5 Invalid configuration never replaces valid state
 
+Built-in defaults activate immediately. A missing user file is a normal
+defaults-only state.
+
 On reload:
 
 1. parse candidate configuration;
@@ -155,12 +161,19 @@ On reload:
 5. construct derived models;
 6. apply atomically.
 
-If validation fails:
+Each asynchronous validation request has a generation identifier. Responses for
+stale generations are discarded.
 
-- keep the current valid configuration;
+If hot-reload validation fails:
+
+- keep the current active typed snapshot completely unchanged;
 - report the exact error;
 - expose the failure through diagnostics;
 - do not partially apply the candidate.
+
+On cold startup with an invalid user file, keep built-in defaults active and
+mark configuration health degraded. A later successful validation clears the
+degraded state. Phase 1 does not use a persisted last-valid disk cache.
 
 ---
 
@@ -168,10 +181,8 @@ If validation fails:
 
 Every configuration must include:
 
-```jsonc
-{
-  "schemaVersion": 1
-}
+```toml
+schemaVersion = 1
 ```
 
 The shell also exposes:
@@ -194,15 +205,17 @@ Migrations should be sequential:
 
 Do not maintain many direct migration paths.
 
-Migration process:
+Phase 1 migration process:
 
-1. create backup;
-2. parse old configuration;
-3. apply migration in memory;
-4. validate new structure;
-5. write migrated file atomically;
-6. preserve comments where the chosen format permits;
-7. report migration summary.
+1. detect the source schema version;
+2. parse the old configuration;
+3. apply each sequential migration in memory;
+4. validate the migrated structure;
+5. emit normalized JSON and a migration summary;
+6. leave the source file unchanged.
+
+Startup must never rewrite the user's configuration automatically. A future
+explicit CLI or settings action may offer source-preserving migration writes.
 
 ## 2.2 Forward compatibility
 
@@ -214,35 +227,70 @@ If the file schema is newer than the running shell:
 
 Never silently downgrade a newer configuration.
 
+## 2.3 Parser and runtime boundary
+
+A small versioned Rust helper is the authoritative TOML parser and validator.
+It owns structural validation, semantic validation, schema-version detection,
+sequential in-memory migrations, normalized JSON output, and structured
+diagnostics.
+
+The helper protocol is explicitly versioned.
+
+QML `ConfigService` owns file watching, debounce, asynchronous helper
+invocation, request generations, stale-response rejection, typed immutable
+snapshot construction, atomic publication, and configuration health.
+
+Feature controllers and views consume only the active typed snapshot. They
+never parse TOML or consume the raw normalized JSON transport directly.
+
+The future settings UI must use the same validation and migration logic.
+
 ---
 
 # 3. Proposed Top-Level Structure
 
-```jsonc
-{
-  "schemaVersion": 1,
+```toml
+schemaVersion = 1
 
-  "shell": {},
-  "appearance": {},
-  "bar": {},
-  "controlCenter": {},
-  "workspaces": {},
-  "gestures": {},
-  "notifications": {},
-  "audio": {},
-  "network": {},
-  "bluetooth": {},
-  "resources": {},
-  "power": {},
-  "calendar": {},
-  "tray": {},
-  "session": {},
-  "monitors": {},
-  "commands": {},
-  "integrations": {},
-  "accessibility": {},
-  "diagnostics": {}
-}
+[shell]
+
+[appearance]
+
+[bar]
+
+[controlCenter]
+
+[workspaces]
+
+[gestures]
+
+[notifications]
+
+[audio]
+
+[network]
+
+[bluetooth]
+
+[resources]
+
+[power]
+
+[calendar]
+
+[tray]
+
+[session]
+
+[monitors]
+
+[commands]
+
+[integrations]
+
+[accessibility]
+
+[diagnostics]
 ```
 
 Sections may be omitted. Missing values resolve to defaults.
@@ -253,22 +301,19 @@ Sections may be omitted. Missing values resolve to defaults.
 
 General shell behaviour.
 
-```jsonc
-{
-  "shell": {
-    "language": "system",
-    "timeFormat": "24h",
-    "firstDayOfWeek": "system",
-    "startup": {
-      "showReadinessToast": false,
-      "restoreSessionState": true
-    },
-    "reload": {
-      "watchConfig": true,
-      "debounceMs": 300
-    }
-  }
-}
+```toml
+[shell]
+language = "system"
+timeFormat = "24h"
+firstDayOfWeek = "system"
+
+[shell.startup]
+showReadinessToast = false
+restoreSessionState = true
+
+[shell.reload]
+watchConfig = true
+debounceMs = 300
 ```
 
 ## Fields
@@ -318,35 +363,32 @@ It must not restore stale destructive prompts or credentials.
 
 Shared visual preferences.
 
-```jsonc
-{
-  "appearance": {
-    "mode": "dynamic",
-    "fallbackMode": "dark",
-    "dynamicColors": {
-      "enabled": true,
-      "source": "caelestia",
-      "transition": true
-    },
-    "surfaceOpacity": {
-      "bar": 0.96,
-      "controlCenter": 0.98,
-      "popover": 0.98,
-      "notification": 0.98
-    },
-    "blur": {
-      "enabled": false,
-      "popovers": false
-    },
-    "font": {
-      "family": "system",
-      "scale": 1.0
-    },
-    "iconTheme": "system",
-    "reducedMotion": false,
-    "highContrast": false
-  }
-}
+```toml
+[appearance]
+mode = "dynamic"
+fallbackMode = "dark"
+iconTheme = "system"
+reducedMotion = false
+highContrast = false
+
+[appearance.dynamicColors]
+enabled = true
+source = "caelestia"
+transition = true
+
+[appearance.surfaceOpacity]
+bar = 0.96
+controlCenter = 0.98
+popover = 0.98
+notification = 0.98
+
+[appearance.blur]
+enabled = false
+popovers = false
+
+[appearance.font]
+family = "system"
+scale = 1.0
 ```
 
 ## Fields
@@ -416,91 +458,60 @@ Uses stronger outlines and contrast-adjusted semantic roles.
 
 Persistent edge-bar configuration.
 
-```jsonc
-{
-  "bar": {
-    "enabled": true,
-    "edge": "left",
-    "thickness": "auto",
-    "visibleOn": "configuredMonitors",
-    "hideInFullscreen": true,
+```toml
+[bar]
+enabled = true
+edge = "left"
+thickness = "auto"
+visibleOn = "configuredMonitors"
+hideInFullscreen = true
 
-    "autohide": {
-      "enabled": false,
-      "revealDelayMs": 0,
-      "hideDelayMs": 350,
-      "activationWidth": 2,
-      "revealOverFullscreen": false
-    },
+[bar.autohide]
+enabled = false
+revealDelayMs = 0
+hideDelayMs = 350
+activationWidth = 2
+revealOverFullscreen = false
 
-    "layout": {
-      "start": [
-        "workspacePager",
-        "specialWorkspaces"
-      ],
-      "context": [
-        "contextStatus",
-        "tray"
-      ],
-      "end": [
-        "networkSpeed",
-        "audio",
-        "resources",
-        "battery",
-        "dateTime",
-        "vicinae"
-      ]
-    },
+[bar.layout]
+start = [ "workspacePager", "specialWorkspaces",]
+context = [ "contextStatus", "tray",]
+end = [ "networkSpeed", "audio", "resources", "battery", "dateTime", "vicinae",]
 
-    "workspacePager": {
-      "groupSize": 5,
-      "showOccupancy": false,
-      "showApplicationIcons": false,
-      "scrollEnabled": true,
-      "scrollDirection": "natural"
-    },
+[bar.workspacePager]
+groupSize = 5
+showOccupancy = false
+showApplicationIcons = false
+scrollEnabled = true
+scrollDirection = "natural"
 
-    "contextRegion": {
-      "slots": 3,
-      "overflow": "stack",
-      "priority": [
-        "critical",
-        "privacy",
-        "recording",
-        "connectivity",
-        "devices",
-        "activity"
-      ]
-    },
+[bar.contextRegion]
+slots = 3
+overflow = "stack"
+priority = [ "critical", "privacy", "recording", "connectivity", "devices", "activity",]
 
-    "networkSpeed": {
-      "enabled": true,
-      "show": "download",
-      "unit": "bytes",
-      "base": 1000,
-      "decimals": 0,
-      "updateIntervalMs": 1000,
-      "smoothingWindow": 3,
-      "zeroFormat": "0K"
-    },
+[bar.networkSpeed]
+enabled = true
+show = "download"
+unit = "bytes"
+base = 1000
+decimals = 0
+updateIntervalMs = 1000
+smoothingWindow = 3
+zeroFormat = "0K"
 
-    "battery": {
-      "showPercentSign": false,
-      "chargingAnimation": true
-    },
+[bar.battery]
+showPercentSign = false
+chargingAnimation = true
 
-    "dateTime": {
-      "showDate": true,
-      "monthFormat": "shortText",
-      "verticalLayout": "stacked"
-    },
+[bar.dateTime]
+showDate = true
+monthFormat = "shortText"
+verticalLayout = "stacked"
 
-    "vicinae": {
-      "show": true,
-      "position": "absoluteEnd"
-    }
-  }
-}
+[bar.vicinae]
+show = true
+position = "absoluteEnd"
 ```
 
 ## 6.1 `edge`
@@ -573,11 +584,9 @@ Allowed:
 
 With:
 
-```jsonc
-{
-  "decimals": 0,
-  "base": 1000
-}
+```toml
+decimals = 0
+base = 1000
 ```
 
 examples are:
@@ -596,49 +605,29 @@ Tooltip includes both directions and may include `/s`.
 
 Right-edge drawer configuration.
 
-```jsonc
-{
-  "controlCenter": {
-    "enabled": true,
-    "edge": "right",
-    "width": "auto",
-    "defaultPage": "notifications",
-    "restoreLastPageForMs": 15000,
+```toml
+[controlCenter]
+enabled = true
+edge = "right"
+width = "auto"
+defaultPage = "notifications"
+restoreLastPageForMs = 15000
+quickControls = [ "wifi", "bluetooth", "doNotDisturb", "nightLight", "idleInhibitor",]
+sliders = [ "volume", "brightness",]
+tabs = [ "notifications", "volumeMixer",]
 
-    "edgeDrag": {
-      "enabled": true,
-      "activationWidth": 2,
-      "minimumDistance": 24,
-      "openThreshold": 0.35,
-      "velocityThreshold": 900,
-      "horizontalIntentRatio": 1.5,
-      "allowInFullscreen": false
-    },
+[controlCenter.edgeDrag]
+enabled = true
+activationWidth = 2
+minimumDistance = 24
+openThreshold = 0.35
+velocityThreshold = 900
+horizontalIntentRatio = 1.5
+allowInFullscreen = false
 
-    "quickControls": [
-      "wifi",
-      "bluetooth",
-      "doNotDisturb",
-      "nightLight",
-      "idleInhibitor"
-    ],
-
-    "sliders": [
-      "volume",
-      "brightness"
-    ],
-
-    "tabs": [
-      "notifications",
-      "volumeMixer"
-    ],
-
-    "scrim": {
-      "enabled": true,
-      "dismissOnClick": true
-    }
-  }
-}
+[controlCenter.scrim]
+enabled = true
+dismissOnClick = true
 ```
 
 ## 7.1 `edge`
@@ -680,94 +669,78 @@ The settings UI may expose presets:
 
 Authoritative workspace definitions.
 
-```jsonc
-{
-  "workspaces": {
-    "numbered": {
-      "minimum": 1,
-      "maximum": 10,
-      "groupSize": 5,
-      "wrap": false,
-      "semanticLabels": {
-        "1": "Browser",
-        "2": "Files and terminal",
-        "3": "PDF",
-        "4": "Obsidian"
-      }
-    },
+```toml
+[workspaces]
+[[workspaces.special]]
+id = "music"
+hyprlandName = "music"
+label = "Music"
+icon = "music"
+shortcutHint = "Super+M"
+defaultApplication = "cider"
 
-    "special": [
-      {
-        "id": "music",
-        "hyprlandName": "music",
-        "label": "Music",
-        "icon": "music",
-        "shortcutHint": "Super+M",
-        "defaultApplication": "cider"
-      },
-      {
-        "id": "movies",
-        "hyprlandName": "movies",
-        "label": "Movies",
-        "icon": "movie",
-        "shortcutHint": "Super+A",
-        "defaultApplication": "stremio"
-      },
-      {
-        "id": "books",
-        "hyprlandName": "books",
-        "label": "Books",
-        "icon": "book",
-        "shortcutHint": "Super+B",
-        "defaultApplication": "readest"
-      },
-      {
-        "id": "discord",
-        "hyprlandName": "discord",
-        "label": "Discord",
-        "icon": "discord",
-        "shortcutHint": "Super+D",
-        "defaultApplication": "discord"
-      },
-      {
-        "id": "scratchpad",
-        "hyprlandName": "scratchpad",
-        "label": "Scratchpad",
-        "icon": "terminal",
-        "shortcutHint": "Super+S"
-      },
-      {
-        "id": "todo",
-        "hyprlandName": "todo",
-        "label": "Todo",
-        "icon": "checklist",
-        "shortcutHint": "Super+T",
-        "defaultApplication": "planify"
-      }
-    ],
+[[workspaces.special]]
+id = "movies"
+hyprlandName = "movies"
+label = "Movies"
+icon = "movie"
+shortcutHint = "Super+A"
+defaultApplication = "stremio"
 
-    "overview": {
-      "provider": "quickshell-overview",
-      "openOnActiveWorkspaceClick": true,
-      "rows": 2,
-      "columns": 5,
-      "showSpecialWorkspaces": true,
-      "hideEmptyRows": false
-    },
+[[workspaces.special]]
+id = "books"
+hyprlandName = "books"
+label = "Books"
+icon = "book"
+shortcutHint = "Super+B"
+defaultApplication = "readest"
 
-    "focusedWindowActions": {
-      "enabled": true,
-      "actions": [
-        "moveToWorkspace",
-        "moveToSpecialWorkspace",
-        "toggleFloating",
-        "toggleFullscreen",
-        "close",
-        "kill"
-      ]
-    }
-  }
-}
+[[workspaces.special]]
+id = "discord"
+hyprlandName = "discord"
+label = "Discord"
+icon = "discord"
+shortcutHint = "Super+D"
+defaultApplication = "discord"
+
+[[workspaces.special]]
+id = "scratchpad"
+hyprlandName = "scratchpad"
+label = "Scratchpad"
+icon = "terminal"
+shortcutHint = "Super+S"
+
+[[workspaces.special]]
+id = "todo"
+hyprlandName = "todo"
+label = "Todo"
+icon = "checklist"
+shortcutHint = "Super+T"
+defaultApplication = "planify"
+
+[workspaces.numbered]
+minimum = 1
+maximum = 10
+groupSize = 5
+wrap = false
+
+[workspaces.overview]
+provider = "quickshell-overview"
+openOnActiveWorkspaceClick = true
+rows = 2
+columns = 5
+showSpecialWorkspaces = true
+hideEmptyRows = false
+
+[workspaces.focusedWindowActions]
+enabled = true
+actions = [ "moveToWorkspace", "moveToSpecialWorkspace", "toggleFloating", "toggleFullscreen", "close", "kill",]
+
+[workspaces.numbered.semanticLabels]
+1 = "Browser"
+2 = "Files and terminal"
+3 = "PDF"
+4 = "Obsidian"
 ```
 
 ## 8.1 Semantic labels
@@ -809,34 +782,27 @@ Users must not maintain a second special-workspace list manually.
 
 Gesture configuration and conflict policy.
 
-```jsonc
-{
-  "gestures": {
-    "enabled": true,
+```toml
+[gestures]
+enabled = true
+conflictPolicy = "warn"
 
-    "workspaceSwipe": {
-      "enabled": true,
-      "owner": "hyprland",
-      "fingers": 3,
-      "direction": "horizontal"
-    },
+[gestures.workspaceSwipe]
+enabled = true
+owner = "hyprland"
+fingers = 3
+direction = "horizontal"
 
-    "controlCenter": {
-      "enabled": false,
-      "fingers": 4,
-      "direction": "left",
-      "continuous": true
-    },
+[gestures.controlCenter]
+enabled = false
+fingers = 4
+direction = "left"
+continuous = true
 
-    "overview": {
-      "enabled": false,
-      "fingers": 4,
-      "direction": "up"
-    },
-
-    "conflictPolicy": "warn"
-  }
-}
+[gestures.overview]
+enabled = false
+fingers = 4
+direction = "up"
 ```
 
 ## 9.1 `owner`
@@ -871,80 +837,67 @@ Gesture support remains near-term rather than first-prototype critical.
 
 Notification, DND, grouping, popup, and sound policy.
 
-```jsonc
-{
-  "notifications": {
-    "enabled": true,
-    "history": {
-      "mode": "memory",
-      "maximumItems": 500,
-      "maximumAgeHours": 24
-    },
+```toml
+[notifications]
+enabled = true
 
-    "popups": {
-      "enabled": true,
-      "position": "topRight",
-      "timeoutMs": {
-        "routine": 6000,
-        "important": 9000,
-        "critical": 0
-      },
-      "pauseOnHover": true,
-      "pauseOnFocus": true,
-      "suppressWhileDrawerOpen": true,
-      "suppressInFullscreen": true,
-      "replayAfterFullscreen": false
-    },
+[notifications.history]
+mode = "memory"
+maximumItems = 500
+maximumAgeHours = 24
 
-    "grouping": {
-      "byApplication": true,
-      "burstWindowMs": 2500,
-      "maximumVisiblePopups": 4
-    },
+[notifications.popups]
+enabled = true
+position = "topRight"
+pauseOnHover = true
+pauseOnFocus = true
+suppressWhileDrawerOpen = true
+suppressInFullscreen = true
+replayAfterFullscreen = false
 
-    "doNotDisturb": {
-      "default": false,
-      "suppressPopups": true,
-      "suppressSounds": true,
-      "allowUserActionFeedback": true,
-      "allowOsds": true
-    },
+[notifications.grouping]
+byApplication = true
+burstWindowMs = 2500
+maximumVisiblePopups = 4
 
-    "criticalBypass": {
-      "incomingCalls": true,
-      "alarms": true,
-      "timers": true,
-      "authentication": true,
-      "pairingRequests": true,
-      "criticalBattery": true,
-      "criticalTemperature": true,
-      "criticalStorage": true,
-      "userActionFailures": true,
-      "recordingFailure": true,
-      "calendarReminders": false,
-      "downloadCompletion": false
-    },
+[notifications.doNotDisturb]
+default = false
+suppressPopups = true
+suppressSounds = true
+allowUserActionFeedback = true
+allowOsds = true
 
-    "sounds": {
-      "enabled": true,
-      "default": null,
-      "rules": [
-        {
-          "id": "incoming-calls",
-          "match": {
-            "category": "incomingCall"
-          },
-          "sound": "call"
-        }
-      ]
-    },
+[notifications.criticalBypass]
+incomingCalls = true
+alarms = true
+timers = true
+authentication = true
+pairingRequests = true
+criticalBattery = true
+criticalTemperature = true
+criticalStorage = true
+userActionFailures = true
+recordingFailure = true
+calendarReminders = false
+downloadCompletion = false
 
-    "privacy": {
-      "persistBodies": false,
-      "logBodies": false
-    }
-  }
-}
+[notifications.sounds]
+enabled = true
+[[notifications.sounds.rules]]
+id = "incoming-calls"
+sound = "call"
+
+[notifications.sounds.rules.match]
+category = "incomingCall"
+
+[notifications.privacy]
+persistBodies = false
+logBodies = false
+
+[notifications.popups.timeoutMs]
+routine = 6000
+important = 9000
+critical = 0
 ```
 
 ## 10.1 Silent by default
@@ -999,36 +952,28 @@ Do not allow arbitrary commands.
 
 Audio behaviour.
 
-```jsonc
-{
-  "audio": {
-    "backend": "pipewire",
-    "volumeStep": 0.02,
-    "maximumVolume": 1.0,
-    "middleClickMute": true,
-    "scrollOnBar": true,
+```toml
+[audio]
+backend = "pipewire"
+volumeStep = 0.02
+maximumVolume = 1.0
+middleClickMute = true
+scrollOnBar = true
+[[audio.outputIconRules]]
+match = "bluetooth"
+icon = "bluetoothHeadphones"
 
-    "osd": {
-      "enabled": true,
-      "timeoutMs": 1000
-    },
+[[audio.outputIconRules]]
+match = "headphones"
+icon = "headphones"
 
-    "outputIconRules": [
-      {
-        "match": "bluetooth",
-        "icon": "bluetoothHeadphones"
-      },
-      {
-        "match": "headphones",
-        "icon": "headphones"
-      },
-      {
-        "match": "hdmi",
-        "icon": "displayAudio"
-      }
-    ]
-  }
-}
+[[audio.outputIconRules]]
+match = "hdmi"
+icon = "displayAudio"
+
+[audio.osd]
+enabled = true
+timeoutMs = 1000
 ```
 
 ## 11.1 `maximumVolume`
@@ -1053,31 +998,24 @@ User overrides may address misidentified hardware.
 
 Network and throughput behaviour.
 
-```jsonc
-{
-  "network": {
-    "backend": "networkmanager",
+```toml
+[network]
+backend = "networkmanager"
+advancedSettingsCommand = "network.advanced"
 
-    "connectivity": {
-      "showFailureIndicator": true,
-      "checkInternet": true,
-      "captivePortal": true
-    },
+[network.connectivity]
+showFailureIndicator = true
+checkInternet = true
+captivePortal = true
 
-    "wifi": {
-      "scanOnPageOpen": true,
-      "scanIntervalWhileOpenMs": 15000,
-      "showSavedNetworks": true,
-      "showHiddenNetworkAction": true
-    },
+[network.wifi]
+scanOnPageOpen = true
+scanIntervalWhileOpenMs = 15000
+showSavedNetworks = true
+showHiddenNetworkAction = true
 
-    "ethernet": {
-      "showInNetworkPage": true
-    },
-
-    "advancedSettingsCommand": "network.advanced"
-  }
-}
+[network.ethernet]
+showInNetworkPage = true
 ```
 
 ## 12.1 Secrets
@@ -1100,18 +1038,15 @@ Feature UI should consume normalized models.
 
 Bluetooth behaviour.
 
-```jsonc
-{
-  "bluetooth": {
-    "backend": "bluez",
-    "scanOnPageOpen": true,
-    "scanTimeoutMs": 30000,
-    "showPreviouslyPaired": true,
-    "showBattery": true,
-    "autoSelectConnectedAudioOutput": false,
-    "pairingPromptPolicy": "foreground"
-  }
-}
+```toml
+[bluetooth]
+backend = "bluez"
+scanOnPageOpen = true
+scanTimeoutMs = 30000
+showPreviouslyPaired = true
+showBattery = true
+autoSelectConnectedAudioOutput = false
+pairingPromptPolicy = "foreground"
 ```
 
 ## 13.1 `pairingPromptPolicy`
@@ -1136,45 +1071,22 @@ Pairing prompts must remain visible and must not be dismissed accidentally.
 
 Resource indicator and popover.
 
-```jsonc
-{
-  "resources": {
-    "barIndicator": {
-      "metric": "memoryPercent",
-      "updateIntervalMs": 2000
-    },
+```toml
+[resources]
+systemMonitorCommand = "systemMonitor.open"
 
-    "popover": {
-      "updateIntervalMs": 1000,
-      "show": [
-        "cpuUsage",
-        "cpuTemperature",
-        "cpuClock",
-        "cpuFan",
-        "gpuUsage",
-        "gpuTemperature",
-        "gpuClock",
-        "gpuFan",
-        "memory",
-        "swap",
-        "storage",
-        "uptime",
-        "powerProfile",
-        "topProcess"
-      ]
-    },
+[resources.barIndicator]
+metric = "memoryPercent"
+updateIntervalMs = 2000
 
-    "storage": {
-      "mounts": [
-        "/"
-      ]
-    },
+[resources.popover]
+updateIntervalMs = 1000
+show = [ "cpuUsage", "cpuTemperature", "cpuClock", "cpuFan", "gpuUsage", "gpuTemperature", "gpuClock", "gpuFan", "memory", "swap", "storage", "uptime", "powerProfile", "topProcess",]
 
-    "sensorOverrides": {},
+[resources.storage]
+mounts = [ "/",]
 
-    "systemMonitorCommand": "systemMonitor.open"
-  }
-}
+[resources.sensorOverrides]
 ```
 
 ## 14.1 Conditional metrics
@@ -1189,13 +1101,10 @@ May map hardware-specific sensor identifiers to semantic names.
 
 Example:
 
-```jsonc
-{
-  "sensorOverrides": {
-    "cpuTemperature": "k10temp/Tctl",
-    "cpuFan": "asus/fan1"
-  }
-}
+```toml
+[sensorOverrides]
+cpuTemperature = "k10temp/Tctl"
+cpuFan = "asus/fan1"
 ```
 
 These belong preferably in machine-specific overrides.
@@ -1206,35 +1115,25 @@ These belong preferably in machine-specific overrides.
 
 Battery and auto-cpufreq.
 
-```jsonc
-{
-  "power": {
-    "battery": {
-      "warningPercent": 15,
-      "criticalPercent": 5,
-      "criticalBypassesDnd": true
-    },
+```toml
+[power.battery]
+warningPercent = 15
+criticalPercent = 5
+criticalBypassesDnd = true
 
-    "autoCpuFreq": {
-      "enabled": true,
-      "configPreference": [
-        "user",
-        "system"
-      ],
-      "userConfigPath": "$XDG_CONFIG_HOME/auto-cpufreq/auto-cpufreq.conf",
-      "systemConfigPath": "/etc/auto-cpufreq.conf",
-      "applyAfterSave": true,
-      "createBackup": true
-    },
+[power.autoCpuFreq]
+enabled = true
+configPreference = [ "user", "system",]
+userConfigPath = "$XDG_CONFIG_HOME/auto-cpufreq/auto-cpufreq.conf"
+systemConfigPath = "/etc/auto-cpufreq.conf"
+applyAfterSave = true
+createBackup = true
 
-    "temporaryOverrides": {
-      "enabled": true,
-      "showAutomatic": true,
-      "showPowerSave": true,
-      "showPerformance": true
-    }
-  }
-}
+[power.temporaryOverrides]
+enabled = true
+showAutomatic = true
+showPowerSave = true
+showPerformance = true
 ```
 
 ## 15.1 Threshold validation
@@ -1268,28 +1167,20 @@ Privileged helper policy remains outside the user configuration.
 
 Calendar panel and future providers.
 
-```jsonc
-{
-  "calendar": {
-    "defaultView": "month",
-    "showWeekNumbers": false,
-    "firstDayOfWeek": "system",
+```toml
+[calendar]
+defaultView = "month"
+showWeekNumbers = false
+firstDayOfWeek = "system"
+[[calendar.providers]]
+id = "local"
+type = "local"
+enabled = true
 
-    "providers": [
-      {
-        "id": "local",
-        "type": "local",
-        "enabled": true
-      }
-    ],
-
-    "google": {
-      "enabled": false,
-      "syncIntervalMinutes": 15,
-      "showDeclinedEvents": false
-    }
-  }
-}
+[calendar.google]
+enabled = false
+syncIntervalMinutes = 15
+showDeclinedEvents = false
 ```
 
 ## 16.1 Prototype
@@ -1308,23 +1199,18 @@ The config may store non-secret account IDs after authentication.
 
 System tray behaviour.
 
-```jsonc
-{
-  "tray": {
-    "enabled": true,
-    "hideWhenEmpty": true,
-    "defaultCollapsed": true,
-    "showCount": false,
+```toml
+[tray]
+enabled = true
+hideWhenEmpty = true
+defaultCollapsed = true
+showCount = false
+ordering = "stable"
+pinned = []
 
-    "ordering": "stable",
-    "pinned": [],
-
-    "attention": {
-      "surfaceUrgentItems": true,
-      "temporaryRevealMs": 5000
-    }
-  }
-}
+[tray.attention]
+surfaceUrgentItems = true
+temporaryRevealMs = 5000
 ```
 
 ## 17.1 Pinned items
@@ -1335,12 +1221,8 @@ Entries should use stable tray identifiers where available.
 
 Example:
 
-```jsonc
-{
-  "pinned": [
-    "org.localsend.localsend_app"
-  ]
-}
+```toml
+pinned = [ "org.localsend.localsend_app",]
 ```
 
 ## 17.2 Ordering
@@ -1357,34 +1239,23 @@ Allowed:
 
 Session actions.
 
-```jsonc
-{
-  "session": {
-    "actions": [
-      "lock",
-      "suspend",
-      "logout",
-      "reboot",
-      "shutdown"
-    ],
+```toml
+[session]
+actions = [ "lock", "suspend", "logout", "reboot", "shutdown",]
 
-    "confirm": {
-      "lock": false,
-      "suspend": false,
-      "logout": true,
-      "reboot": true,
-      "shutdown": true
-    },
+[session.confirm]
+lock = false
+suspend = false
+logout = true
+reboot = true
+shutdown = true
 
-    "commands": {
-      "lock": "session.lock",
-      "suspend": "session.suspend",
-      "logout": "session.logout",
-      "reboot": "session.reboot",
-      "shutdown": "session.shutdown"
-    }
-  }
-}
+[session.commands]
+lock = "session.lock"
+suspend = "session.suspend"
+logout = "session.logout"
+reboot = "session.reboot"
+shutdown = "session.shutdown"
 ```
 
 The session UI should consume command IDs, not raw shell strings.
@@ -1395,48 +1266,34 @@ The session UI should consume command IDs, not raw shell strings.
 
 Per-monitor shell policy.
 
-```jsonc
-{
-  "monitors": {
-    "default": {
-      "bar": {
-        "enabled": true,
-        "edge": "left"
-      },
-      "controlCenter": {
-        "enabled": true
-      }
-    },
+```toml
+[monitors]
+keyboardSurfacePolicy = "focusedWindow"
+notificationPolicy = "focusedWindow"
+osdPolicy = "activeMonitor"
+singleControlCenter = true
+[[monitors.rules]]
 
-    "rules": [
-      {
-        "match": {
-          "name": "eDP-1"
-        },
-        "bar": {
-          "enabled": true,
-          "edge": "left"
-        },
-        "controlCenter": {
-          "enabled": true
-        }
-      },
-      {
-        "match": {
-          "name": "DP-1"
-        },
-        "bar": {
-          "enabled": false
-        }
-      }
-    ],
+[monitors.rules.match]
+name = "eDP-1"
+[monitors.rules.bar]
+enabled = true
+edge = "left"
+[monitors.rules.controlCenter]
+enabled = true
+[[monitors.rules]]
 
-    "keyboardSurfacePolicy": "focusedWindow",
-    "notificationPolicy": "focusedWindow",
-    "osdPolicy": "activeMonitor",
-    "singleControlCenter": true
-  }
-}
+[monitors.rules.match]
+name = "DP-1"
+[monitors.rules.bar]
+enabled = false
+
+[monitors.default.bar]
+enabled = true
+edge = "left"
+
+[monitors.default.controlCenter]
+enabled = true
 ```
 
 ## 19.1 Monitor matching
@@ -1476,57 +1333,39 @@ The final multi-monitor specification may refine these.
 
 Central command registry.
 
-```jsonc
-{
-  "commands": {
-    "vicinae.root": {
-      "executable": "vicinae",
-      "arguments": ["toggle"]
-    },
+```toml
+[commands."vicinae.root"]
+executable = "vicinae"
+arguments = [ "toggle",]
 
-    "vicinae.clipboard": {
-      "executable": "vicinae",
-      "arguments": ["open", "clipboard"]
-    },
+[commands."vicinae.clipboard"]
+executable = "vicinae"
+arguments = [ "open", "clipboard",]
 
-    "overview.toggle": {
-      "executable": "qs",
-      "arguments": [
-        "ipc",
-        "-c",
-        "overview",
-        "call",
-        "overview",
-        "toggle"
-      ]
-    },
+[commands."overview.toggle"]
+executable = "qs"
+arguments = [ "ipc", "-c", "overview", "call", "overview", "toggle",]
 
-    "systemMonitor.open": {
-      "executable": "missioncenter",
-      "arguments": []
-    },
+[commands."systemMonitor.open"]
+executable = "missioncenter"
+arguments = []
 
-    "network.advanced": {
-      "executable": "nm-connection-editor",
-      "arguments": []
-    }
-  }
-}
+[commands."network.advanced"]
+executable = "nm-connection-editor"
+arguments = []
 ```
 
 The exact Vicinae command syntax must be verified during implementation and may differ from these placeholders.
 
 ## 20.1 Command definition
 
-```jsonc
-{
-  "executable": "program",
-  "arguments": ["arg1", "arg2"],
-  "environment": {},
-  "workingDirectory": null,
-  "detached": true,
-  "timeoutMs": 5000
-}
+```toml
+executable = "program"
+arguments = [ "arg1", "arg2",]
+detached = true
+timeoutMs = 5000
+
+[environment]
 ```
 
 ## 20.2 Security rules
@@ -1559,45 +1398,30 @@ The registry should support both internal and external command targets.
 
 External component configuration.
 
-```jsonc
-{
-  "integrations": {
-    "caelestia": {
-      "enabled": true,
-      "dynamicColors": true,
-      "services": []
-    },
+```toml
+[integrations.caelestia]
+enabled = true
+dynamicColors = true
+services = []
 
-    "vicinae": {
-      "enabled": true,
-      "required": false,
-      "themeSync": true,
-      "extensionEnabled": true,
-      "shortcutMenu": [
-        "vicinae.root",
-        "vicinae.clipboard",
-        "vicinae.windows",
-        "vicinae.files",
-        "vicinae.shell"
-      ]
-    },
+[integrations.vicinae]
+enabled = true
+required = false
+themeSync = true
+extensionEnabled = true
+shortcutMenu = [ "vicinae.root", "vicinae.clipboard", "vicinae.windows", "vicinae.files", "vicinae.shell",]
 
-    "overview": {
-      "enabled": true,
-      "provider": "quickshell-overview",
-      "required": false,
-      "instanceName": "overview",
-      "themeSync": true,
-      "configSync": true,
-      "expectedVersion": null
-    },
+[integrations.overview]
+enabled = true
+provider = "quickshell-overview"
+required = false
+instanceName = "overview"
+themeSync = true
+configSync = true
 
-    "autoCpuFreq": {
-      "enabled": true,
-      "required": false
-    }
-  }
-}
+[integrations.autoCpuFreq]
+enabled = true
+required = false
 ```
 
 ## 21.1 `required`
@@ -1622,19 +1446,16 @@ Do not import all Caelestia modules by default.
 
 Accessibility-specific configuration.
 
-```jsonc
-{
-  "accessibility": {
-    "visibleFocus": true,
-    "tooltips": true,
-    "tooltipDelayMs": 500,
-    "largerTargets": false,
-    "textScale": 1.0,
-    "reducedMotion": false,
-    "highContrast": false,
-    "notificationTimeoutMultiplier": 1.0
-  }
-}
+```toml
+[accessibility]
+visibleFocus = true
+tooltips = true
+tooltipDelayMs = 500
+largerTargets = false
+textScale = 1.0
+reducedMotion = false
+highContrast = false
+notificationTimeoutMultiplier = 1.0
 ```
 
 Some fields overlap appearance.
@@ -1649,17 +1470,14 @@ Avoid two independently writable settings for the same result.
 
 Diagnostics and logging.
 
-```jsonc
-{
-  "diagnostics": {
-    "logLevel": "info",
-    "logNotificationContents": false,
-    "logCommandArguments": true,
-    "serviceHealthChecks": true,
-    "warnOnUntestedVersions": true,
-    "showIntegrationFailures": true
-  }
-}
+```toml
+[diagnostics]
+logLevel = "info"
+logNotificationContents = false
+logCommandArguments = true
+serviceHealthChecks = true
+warnOnUntestedVersions = true
+showIntegrationFailures = true
 ```
 
 ## 23.1 Sensitive argument redaction
@@ -1771,7 +1589,9 @@ $XDG_STATE_HOME/franken-shell/session.json
 
 Possible contents:
 
-```jsonc
+The following is runtime-state JSON, not user configuration:
+
+```json
 {
   "schemaVersion": 1,
   "doNotDisturb": false,
@@ -1796,7 +1616,7 @@ Session state writes should be debounced and atomic.
 
 # 28. Secret Storage
 
-Secrets must never be placed in `config.jsonc`.
+Secrets must never be placed in `config.toml`.
 
 ## Wi-Fi
 
@@ -1885,6 +1705,11 @@ Checks:
 - required IDs;
 - object structure.
 
+Unknown fields produce structured warnings where useful. Runtime normalization
+may ignore unsupported unknown fields, but validation must not trigger
+destructive rewriting. Because Phase 1 does not write `config.toml`, the
+original unknown-field source remains preserved.
+
 ## 30.2 Semantic validation
 
 Checks relationships.
@@ -1913,18 +1738,19 @@ Examples:
 A configuration error should report:
 
 ```text
-file
+severity
+code
+message
+configuration path
+source file
 line/column where available
-JSON path
-invalid value
-expected form
-repair suggestion
+repair hint
 ```
 
 Example:
 
 ```text
-config.jsonc:142
+config.toml:142
 notifications.sounds.rules[2].match.titleRegex
 
 Invalid regular expression: unclosed group.
@@ -2007,7 +1833,7 @@ Generated files must contain a header such as:
 
 ```text
 Generated by Franken Shell.
-Do not edit directly; edit config.jsonc instead.
+Do not edit directly; edit config.toml instead.
 ```
 
 Writes must be atomic.
@@ -2018,127 +1844,102 @@ Writes must be atomic.
 
 A compact initial user file may look like:
 
-```jsonc
-{
-  "schemaVersion": 1,
+```toml
+schemaVersion = 1
 
-  "appearance": {
-    "mode": "dynamic",
-    "dynamicColors": {
-      "enabled": true,
-      "source": "caelestia"
-    }
-  },
+[appearance]
+mode = "dynamic"
 
-  "bar": {
-    "edge": "left",
-    "hideInFullscreen": true,
-    "autohide": {
-      "enabled": false
-    },
-    "workspacePager": {
-      "groupSize": 5
-    },
-    "networkSpeed": {
-      "unit": "bytes",
-      "decimals": 0
-    }
-  },
+[bar]
+edge = "left"
+hideInFullscreen = true
 
-  "controlCenter": {
-    "defaultPage": "notifications",
-    "quickControls": [
-      "wifi",
-      "bluetooth",
-      "doNotDisturb",
-      "nightLight",
-      "idleInhibitor"
-    ]
-  },
+[controlCenter]
+defaultPage = "notifications"
+quickControls = [ "wifi", "bluetooth", "doNotDisturb", "nightLight", "idleInhibitor",]
 
-  "workspaces": {
-    "numbered": {
-      "minimum": 1,
-      "maximum": 10,
-      "groupSize": 5
-    },
-    "special": [
-      {
-        "id": "music",
-        "hyprlandName": "music",
-        "label": "Music",
-        "icon": "music",
-        "shortcutHint": "Super+M"
-      },
-      {
-        "id": "movies",
-        "hyprlandName": "movies",
-        "label": "Movies",
-        "icon": "movie",
-        "shortcutHint": "Super+A"
-      },
-      {
-        "id": "books",
-        "hyprlandName": "books",
-        "label": "Books",
-        "icon": "book",
-        "shortcutHint": "Super+B"
-      },
-      {
-        "id": "discord",
-        "hyprlandName": "discord",
-        "label": "Discord",
-        "icon": "discord",
-        "shortcutHint": "Super+D"
-      },
-      {
-        "id": "scratchpad",
-        "hyprlandName": "scratchpad",
-        "label": "Scratchpad",
-        "icon": "terminal",
-        "shortcutHint": "Super+S"
-      },
-      {
-        "id": "todo",
-        "hyprlandName": "todo",
-        "label": "Todo",
-        "icon": "checklist",
-        "shortcutHint": "Super+T"
-      }
-    ]
-  },
+[workspaces]
+[[workspaces.special]]
+id = "music"
+hyprlandName = "music"
+label = "Music"
+icon = "music"
+shortcutHint = "Super+M"
 
-  "notifications": {
-    "sounds": {
-      "enabled": true,
-      "default": null,
-      "rules": []
-    }
-  },
+[[workspaces.special]]
+id = "movies"
+hyprlandName = "movies"
+label = "Movies"
+icon = "movie"
+shortcutHint = "Super+A"
 
-  "commands": {
-    "systemMonitor.open": {
-      "executable": "missioncenter",
-      "arguments": []
-    }
-  },
+[[workspaces.special]]
+id = "books"
+hyprlandName = "books"
+label = "Books"
+icon = "book"
+shortcutHint = "Super+B"
 
-  "integrations": {
-    "caelestia": {
-      "enabled": true
-    },
-    "vicinae": {
-      "enabled": true
-    },
-    "overview": {
-      "enabled": true,
-      "provider": "quickshell-overview"
-    },
-    "autoCpuFreq": {
-      "enabled": true
-    }
-  }
-}
+[[workspaces.special]]
+id = "discord"
+hyprlandName = "discord"
+label = "Discord"
+icon = "discord"
+shortcutHint = "Super+D"
+
+[[workspaces.special]]
+id = "scratchpad"
+hyprlandName = "scratchpad"
+label = "Scratchpad"
+icon = "terminal"
+shortcutHint = "Super+S"
+
+[[workspaces.special]]
+id = "todo"
+hyprlandName = "todo"
+label = "Todo"
+icon = "checklist"
+shortcutHint = "Super+T"
+
+[appearance.dynamicColors]
+enabled = true
+source = "caelestia"
+
+[bar.autohide]
+enabled = false
+
+[bar.workspacePager]
+groupSize = 5
+
+[bar.networkSpeed]
+unit = "bytes"
+decimals = 0
+
+[workspaces.numbered]
+minimum = 1
+maximum = 10
+groupSize = 5
+
+[notifications.sounds]
+enabled = true
+rules = []
+
+[commands."systemMonitor.open"]
+executable = "missioncenter"
+arguments = []
+
+[integrations.caelestia]
+enabled = true
+
+[integrations.vicinae]
+enabled = true
+
+[integrations.overview]
+enabled = true
+provider = "quickshell-overview"
+
+[integrations.autoCpuFreq]
+enabled = true
 ```
 
 ---
@@ -2157,10 +1958,12 @@ The configuration system is ready when:
 8. runtime state is separated from persistent preferences;
 9. secrets never enter configuration;
 10. generated integration files are reproducible;
-11. schema migrations create backups;
-12. the settings UI can edit the same model without a parallel schema;
+11. schema migrations are sequential, versioned, and tested in memory;
+12. startup never rewrites user configuration automatically;
 13. configuration changes can be tested with fixture files;
-14. optional integration absence is represented through capability state, not config failure.
+14. optional integration absence is represented through capability state, not config failure;
+15. the helper protocol is explicitly versioned;
+16. Phase 1 has no persistent last-valid disk cache.
 
 ---
 
@@ -2168,9 +1971,11 @@ The configuration system is ready when:
 
 The following require later decisions:
 
-- final file format: JSONC, TOML, or another structured format;
-- comment-preserving writer strategy;
-- exact schema-validation implementation;
+- Rust TOML parser-library and helper packaging strategy;
+- future source-preserving patch semantics;
+- future JSON Schema and editor integration;
+- persistent last-valid disk-cache policy;
+- explicit source-preserving migration-write workflow;
 - whether machine-specific overrides are needed in the first release;
 - whether notification history limits should be configurable initially;
 - final throughput unit default;

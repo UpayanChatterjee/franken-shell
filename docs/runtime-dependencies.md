@@ -4,7 +4,7 @@
 
 This inventory covers the active QML and shipped helper assets under `shell/`. Historical prose in `shell/changes.md` and editor policy under `shell/.claude/` are excluded. Caelestia reference-plugin `CMakeLists.txt` files are used only as provenance for native QML module declarations and build/link dependencies; they do not prove that the locally installed plugin has the same binary graph. Facts are directly observed and source-cited. `[INFERENCE]` marks a derived consequence. An **opaque** value or transport is not exposed by the inspected source.
 
-The native QML imports are load-bearing: active files import them without an import fallback. The `caelestia` executable is not classified globally as either required or optional; each CLI-backed feature below records its own behavior. Except for the provisional migration classification accepted by D-072, this document contains no proposed architecture or visual direction.
+The native QML imports are load-bearing: active files import them without an import fallback. The `caelestia` executable is not classified globally as either required or optional; each CLI-backed feature below records its own behavior. Except for the provisional migration classification accepted by D-072 and the D-075/D-076 replacement-boundary note, this document contains no proposed architecture or visual direction.
 
 ## Provisional migration classification
 
@@ -41,6 +41,12 @@ does not authorize immediate or bulk copying.
 The current running Caelestia shell continues to own notifications, tray
 watching, lock/session behaviour, and other exclusive session responsibilities
 while the Phase 0 development instance runs in non-owning mode.
+
+The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
+user TOML is parsed and validated by a small versioned Rust helper, while QML
+`ConfigService` owns watching and atomic typed snapshot publication. The exact
+Rust parser library and packaging strategy remain Q-116; this inventory does
+not classify them as existing runtime dependencies.
 
 ## Runtime host and compositor
 

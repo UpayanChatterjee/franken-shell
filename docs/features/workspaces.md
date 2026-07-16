@@ -474,7 +474,12 @@ FocusedWindowActionConfig {
 }
 ```
 
-The final file format remains outside this specification. Feature components consume typed, validated objects from `ConfigService`.
+The authoritative user configuration is TOML at
+`$XDG_CONFIG_HOME/franken-shell/config.toml` under D-075. Workspace feature
+code consumes only the typed immutable runtime snapshot published by
+`ConfigService`; it does not parse TOML or invoke the Rust helper directly.
+The shared boundary is defined by `docs/decisions.md`,
+`docs/configuration-model.md`, and `docs/architecture.md`.
 
 ## 5.2 Configuration validation
 
@@ -1909,7 +1914,6 @@ The following broader unresolved items affect complete implementation:
 
 - **Q-001:** Exact Quickshell baseline and Hyprland module capabilities.
 - **Q-002:** Retained Caelestia service inventory.
-- **Q-004 / Q-005:** Final configuration format and validation implementation.
 - startup/supervision and reload behaviour;
 - final icon strategy;
 - final multi-monitor policy;
