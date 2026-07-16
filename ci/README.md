@@ -59,3 +59,6 @@ use Rust 1.85.0, Node 24, and the repository lockfiles.
 The pinned package recipe is adapted from the AUR `quickshell-git` recipe at
 commit `2494139bce7b7fc71372da00b68fb745a2c72d90`. It deliberately fixes both
 the source revision and package version instead of following the AUR branch.
+GitHub Actions caches the resulting package by Arch snapshot, runner
+architecture, and PKGBUILD content. The first run for a new key builds from
+source; later pinned runs install the cached package directly.

@@ -63,18 +63,46 @@ if [ "$lane" = pinned ]; then
 		wayland \
 		wayland-protocols
 
-	build_root=$(mktemp -d /tmp/franken-quickshell-build.XXXXXX)
-	useradd --create-home --home-dir "$build_root/home" franken-build
-	cp "$repo_root/ci/pinned-quickshell/PKGBUILD" "$build_root/PKGBUILD"
-	chown -R franken-build:franken-build "$build_root"
-	(
-		cd "$build_root"
-		runuser -u franken-build -- \
-			env HOME="$build_root/home" PKGDEST="$build_root" \
-			makepkg --cleanbuild --force --noconfirm
-	)
-	pacman -U --noconfirm "$build_root"/quickshell-git-0.3.0.r15.g4df562d-1-*.pkg.tar.zst
-	rm -rf "$build_root"
+	package_dir=${CI_PINNED_PACKAGE_DIR:-"$repo_root/.ci-cache/pinned-quickshell"}
+	mkdir -p "$package_dir"
+	package_file=
+	for candidate in \
+		"$package_dir"/quickshell-git-0.3.0.r15.g4df562d-1-*.pkg.tar.zst; do
+		if [ -f "$candidate" ]; then
+			package_file=$candidate
+			break
+		fi
+	done
+
+	if [ -z "$package_file" ]; then
+		build_root=$(mktemp -d /tmp/franken-quickshell-build.XXXXXX)
+		useradd --create-home --home-dir "$build_root/home" franken-build
+		cp "$repo_root/ci/pinned-quickshell/PKGBUILD" "$build_root/PKGBUILD"
+		chown -R franken-build:franken-build "$build_root" "$package_dir"
+		(
+			cd "$build_root"
+			runuser -u franken-build -- \
+				env HOME="$build_root/home" PKGDEST="$package_dir" \
+				makepkg --cleanbuild --force --noconfirm
+		)
+		rm -rf "$build_root"
+		for candidate in \
+			"$package_dir"/quickshell-git-0.3.0.r15.g4df562d-1-*.pkg.tar.zst; do
+			if [ -f "$candidate" ]; then
+				package_file=$candidate
+				break
+			fi
+		done
+		[ -n "$package_file" ] ||
+			{
+				printf 'Pinned Quickshell package build produced no installable artifact.\n' >&2
+				exit 1
+			}
+	else
+		printf 'Using cached pinned Quickshell package: %s\n' "$package_file"
+	fi
+
+	pacman -U --noconfirm "$package_file"
 else
 	pacman -S --needed --noconfirm quickshell
 fi
@@ -84,6 +112,10 @@ rustup toolchain install 1.85.0 \
 	--component clippy \
 	--component rustfmt
 rustup default 1.85.0
+
+if [ "${GITHUB_ACTIONS:-}" = true ]; then
+	git config --global --add safe.directory "$repo_root"
+fi
 
 if [ "$lane" = pinned ]; then
 	pacman -Q quickshell-git qt6-base hyprland

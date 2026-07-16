@@ -216,6 +216,7 @@ jobs:
     steps:
       - name: Prepare pinned Git checkout
         run: |
+          # shellcheck disable=SC2016
           printf '%s\n' \
             'Server = https://archive.archlinux.org/repos/2026/07/01/$repo/os/$arch' \
             > /etc/pacman.d/mirrorlist
@@ -225,6 +226,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Restore pinned Quickshell package
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .ci-cache/pinned-quickshell
+          key: pinned-quickshell-arch-2026-07-01-${{ runner.arch }}-${{ hashFiles('ci/pinned-quickshell/PKGBUILD') }}
+          save-always: true
       - name: Install pinned Arch dependencies
         run: ./ci/install-arch-deps pinned
       - name: Set up Node
