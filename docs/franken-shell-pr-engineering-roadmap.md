@@ -264,7 +264,7 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | ID | Milestone | Brief outcome | Branch | Test-validated cutoff | Status |
 |---|---|---|---|---|---|
 | **B-000** | Repository baseline | Publish the current committed local project unchanged, establish `main` as the remote baseline, and preserve the pre-PR history with an annotated tag. | `main` | Remote `main` exactly represents the current committed local state, tags are present, and a fresh clone is usable. | **closed** |
-| **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **in-progress** |
+| **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **closed** |
 | **PR-002** | Core baseline | Backfill tests and smoke coverage for the already implemented ConfigService, typed snapshots, helper/client foundation, MonitorRegistry, and CommandRegistry. | `test/core-baseline` | Every currently implemented core subsystem has direct contract tests, startup/reload smoke passes, and there are no unexplained warnings or leaked child processes. | **open** |
 | **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **open** |
 | **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **open** |
@@ -359,8 +359,14 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Engineering foundation
 - **Branch:** `chore/engineering-foundation`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR [#1](https://github.com/UpayanChatterjee/franken-shell/pull/1), merge commit `7e8086fb904c85b4c88a12fed5d28790cc23a5d1`.
+
+#### Closure record
+
+- **Closed:** 2026-07-17
+- **Evidence:** all seven stable CI jobs and the external security check passed; local CI-equivalent commands and disposable failure paths were verified; the pinned Quickshell package cache reduced the measured cache-hit run from 9m15s to 1m56s.
+- **Repository protection:** `main` requires pull requests, linear history, resolved conversations, and the seven stable CI checks; force-pushes and deletion are blocked, with no mandatory human approval while solo-maintained.
 
 #### Scope
 - Add `.github/pull_request_template.md`, contribution conventions, and the roadmap status-update rule.
