@@ -263,6 +263,42 @@ test_shell_ipc() {
 	return "$result"
 }
 
+check_bar_host() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/core/FixtureMonitorBackend.qml" \
+		"$SHELL_DIR/features/bar/BarFixtureCell.qml" \
+		"$SHELL_DIR/features/bar/BarFixtureModel.qml" \
+		"$SHELL_DIR/features/bar/BarGeometry.qml" \
+		"$SHELL_DIR/features/bar/BarLayout.qml" \
+		"$SHELL_DIR/features/bar/BarZone.qml" \
+		"$SHELL_DIR/surfaces/BarHost.qml" \
+		"$SHELL_DIR/surfaces/BarHostSet.qml" \
+		"$SHELL_DIR/surfaces/BarFixtureWindow.qml" \
+		"$SHELL_DIR/surfaces/BarPanelWindow.qml" \
+		"$SHELL_DIR/surfaces/BarSurface.qml" \
+		"$SHELL_DIR/tests/bar_host/FakeBarConfig.qml" \
+		"$SHELL_DIR/tests/bar_host/FakeBarMonitor.qml" \
+		"$SHELL_DIR/tests/bar_host/FakeBarSurfaceCoordinator.qml" \
+		"$SHELL_DIR/tests/bar_host/FakeBarTheme.qml" \
+		"$SHELL_DIR/tests/bar_host/BarHostTests.qml"
+}
+
+test_bar_host() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-bar-runtime.XXXXXX")
+	artifact_dir=${FRANKEN_SHELL_ARTIFACT_DIR:-"$runtime_dir/bar-fixtures"}
+	chmod 700 "$runtime_dir"
+	mkdir -p "$artifact_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_ARTIFACT_DIR="$artifact_dir" \
+		FRANKEN_SHELL_MODE=bar-host-test \
+		qs --no-duplicate --path "$SHELL_DIR/bar-host-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 check_config_service() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/core/ConfigDefaults.js" \
@@ -610,6 +646,10 @@ usage() {
 		"                    Statically check the minimal versioned shell IPC" \
 		"  shell-ipc-test" \
 		"                    Run shell IPC routing and malformed-request fixtures" \
+		"  bar-host-check" \
+		"                    Statically check monitor-aware bar host and layout fixtures" \
+		"  bar-host-test" \
+		"                    Run bar geometry fixtures and capture review screenshots" \
 		"  config-service-check" \
 		"                    Statically check ConfigService and its typed snapshot files" \
 		"  config-service-test" \
@@ -746,6 +786,12 @@ shell-ipc-check)
 	;;
 shell-ipc-test)
 	test_shell_ipc
+	;;
+bar-host-check)
+	check_bar_host
+	;;
+bar-host-test)
+	test_bar_host
 	;;
 config-service-check)
 	check_config_service

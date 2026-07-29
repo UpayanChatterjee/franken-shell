@@ -161,6 +161,15 @@ jobs:
         run: ./ci/bootstrap-tools
       - name: Run unit and fixture suites
         run: ./ci/run unit
+      - name: Upload bar fixture screenshots
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bar-fixture-screenshots
+          path: .ci-artifacts/unit/bar-fixtures/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Collect failure diagnostics
         if: failure()
         run: ./ci/collect-diagnostics unit

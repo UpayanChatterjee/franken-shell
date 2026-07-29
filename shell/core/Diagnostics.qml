@@ -5,6 +5,7 @@ import Quickshell.Io
 Scope {
     id: root
 
+    required property var barHostProvider
     required property var capabilityRegistry
     required property var commandRegistry
     required property string configHelperExecutable
@@ -23,6 +24,7 @@ Scope {
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
         const commands = root.commandRegistry.registrySummary();
+        const barHosts = root.barHostProvider.summary();
         const capabilities = root.capabilityRegistry.summary();
         const diagnostics = root.diagnosticRegistry.summary();
         const shell = root.shellState.summary();
@@ -82,6 +84,10 @@ Scope {
             "commandRegistryGeneration": commands.registryGeneration,
             "commandSnapshotSequence": commands.snapshotSequence,
             "commandLastAvailabilityRefresh": commands.lastAvailabilityRefresh,
+            "barHostCount": barHosts.hostCount,
+            "barResolvedHostCount": barHosts.resolvedHostCount,
+            "barVisibleHostCount": barHosts.visibleHostCount,
+            "barHosts": barHosts.hosts,
             "capabilityEvaluated": capabilities.evaluated,
             "capabilityRevision": capabilities.revision,
             "capabilityAvailableCount": capabilities.availableCount,

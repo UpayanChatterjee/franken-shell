@@ -1,2 +1,7 @@
 module FrankenShell.Surfaces
+BarHost 1.0 BarHost.qml
+BarHostSet 1.0 BarHostSet.qml
+internal BarFixtureWindow BarFixtureWindow.qml
+internal BarPanelWindow BarPanelWindow.qml
+internal BarSurface BarSurface.qml
 DiagnosticSurface 1.0 DiagnosticSurface.qml

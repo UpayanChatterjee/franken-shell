@@ -54,8 +54,13 @@ assert_degraded_summary() {
         and .configHealth == "healthy"
         and .configSourceState == "defaultsOnly"
         and .surfaceVisible == true
-        and .monitorBackendAvailability == "unavailable"
-        and .monitorConnectedCount == 0
+        and .monitorBackendAvailability == "fixture"
+        and .monitorConnectedCount == 1
+        and .monitorMappedCount == 1
+        and .monitorUnmappedCount == 0
+        and .barHostCount == 1
+        and .barResolvedHostCount == 1
+        and .barVisibleHostCount == 1
         and .commandActiveRequestCount == 0
         and .commandQueuedRequestCount == 0
         and .capabilityEvaluated == true
@@ -170,6 +175,9 @@ printf '%s\n' "$healthy_summary" | jq -e '
     and .capabilityUnavailableCount == 0
     and .diagnosticErrorCount == 0
     and .diagnosticServiceCount == 5
+    and .barHostCount == 1
+    and .barResolvedHostCount == 1
+    and .barVisibleHostCount == 1
     and .surfaceActiveCount == 0
     and .surfaceLastTransition == "idle"
     and .themeHealth == "healthy"
@@ -190,6 +198,8 @@ printf '%s\n' "$ipc_diagnostics" | jq -e '
     and .operation == "diagnostics"
     and .result.shellReady == true
     and .result.surfaceActiveCount == 0
+    and .result.barHostCount == 1
+    and .result.barVisibleHostCount == 1
 ' >/dev/null
 
 ipc_malformed=$(qs ipc --path "$REPO_ROOT/shell" call shell request '{' | sed -n '1p')
@@ -249,6 +259,14 @@ jq -e '.apiVersion == 1' "$smoke_artifact_dir/ipc-version-after-reload.json" >/d
 ./dev/franken-shell close-transients >"$smoke_artifact_dir/ipc-close-after-reload.json"
 jq -e '.ok == true and .result.state == "alreadyClosed"' \
 	"$smoke_artifact_dir/ipc-close-after-reload.json" >/dev/null
+reloaded_bar_summary=$(./dev/franken-shell ipc-diagnostics | sed -n '1p')
+printf '%s\n' "$reloaded_bar_summary" >"$smoke_artifact_dir/bar-after-reload.json"
+printf '%s\n' "$reloaded_bar_summary" | jq -e '
+    .ok == true
+    and .result.barHostCount == 1
+    and .result.barResolvedHostCount == 1
+    and .result.barVisibleHostCount == 1
+' >/dev/null
 reloaded_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
 printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/degraded-reloaded-summary.json"
 printf '%s\n' "$reloaded_summary" | assert_degraded_summary
