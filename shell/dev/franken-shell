@@ -20,7 +20,8 @@ is_running() {
 diagnostics_ready() {
 	summary=$(qs ipc --path "$SHELL_DIR" call diagnostics summary 2>/dev/null) || return 1
 	case "$summary" in
-	\{*) return 0 ;;
+	*'"shellReady":true'*) return 0 ;;
+	*'"shellFailed":true'*'"diagnosticCriticalCount":1'*) return 0 ;;
 	*) return 1 ;;
 	esac
 }
@@ -164,6 +165,29 @@ test_config_snapshot() {
 	return "$result"
 }
 
+check_core_state() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/core/CapabilityRegistry.qml" \
+		"$SHELL_DIR/core/DiagnosticRegistry.qml" \
+		"$SHELL_DIR/core/ShellState.qml" \
+		"$SHELL_DIR/core/CoreReadinessCoordinator.qml" \
+		"$SHELL_DIR/core/Diagnostics.qml" \
+		"$SHELL_DIR/tests/core_state/CoreStateTests.qml"
+}
+
+test_core_state() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-core-state-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=core-state-test \
+		qs --no-duplicate --path "$SHELL_DIR/core-state-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 check_config_service() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/core/ConfigDefaults.js" \
@@ -266,6 +290,32 @@ show_command_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics commandStatus
+}
+
+show_readiness() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 2
+	fi
+	summary=$(qs ipc --path "$SHELL_DIR" call diagnostics readiness)
+	printf '%s\n' "$summary"
+	case "$summary" in
+	*'"failed":true'*) return 1 ;;
+	*'"ready":true'*) return 0 ;;
+	*) return 2 ;;
+	esac
+}
+
+show_capabilities() {
+	qs ipc --path "$SHELL_DIR" call diagnostics capabilities
+}
+
+show_services() {
+	qs ipc --path "$SHELL_DIR" call diagnostics services
+}
+
+show_errors() {
+	qs ipc --path "$SHELL_DIR" call diagnostics errors
 }
 
 run_command_demo() {
@@ -419,12 +469,19 @@ usage() {
 		"Commands:" \
 		"  start             Start non-owning development mode" \
 		"  mock              Start non-owning mock mode" \
+		"  mock-healthy      Start the all-capabilities-ready smoke fixture" \
+		"  mock-required-failure" \
+		"                    Start the required-core-failure smoke fixture" \
 		"  stop              Stop only this repository-path instance" \
 		"  restart           Full process restart in development mode" \
 		"  reload            Request an in-process soft reload" \
 		"  config-reload     Request ConfigService to reread its current path" \
 		"  logs [LINES]      Show recent Quickshell logs" \
 		"  diagnostics       Show bootstrap and runtime diagnostics" \
+		"  readiness         Show readiness and fail if required core failed" \
+		"  capabilities      Show sanitized capability state" \
+		"  service-status    Show sanitized service-health diagnostics" \
+		"  errors            Show sanitized coalesced errors" \
 		"  config-status     Show sanitized active configuration status" \
 		"  verify-baseline   Verify the tested local runtime baseline" \
 		"  check             Check QML syntax and imports" \
@@ -438,6 +495,10 @@ usage() {
 		"                    Statically check typed snapshot projection and fixtures" \
 		"  config-snapshot-test" \
 		"                    Run typed snapshot projection and immutability contracts" \
+		"  core-state-check" \
+		"                    Statically check capabilities, diagnostics, and readiness" \
+		"  core-state-test" \
+		"                    Run deterministic core state and error aggregation contracts" \
 		"  config-service-check" \
 		"                    Statically check ConfigService and its typed snapshot files" \
 		"  config-service-test" \
@@ -474,6 +535,12 @@ start)
 mock)
 	start_instance mock
 	;;
+mock-healthy)
+	start_instance readiness-healthy-test
+	;;
+mock-required-failure)
+	start_instance readiness-required-failure-test
+	;;
 stop)
 	stop_instance
 	;;
@@ -496,6 +563,18 @@ logs)
 	;;
 diagnostics)
 	show_diagnostics
+	;;
+readiness)
+	show_readiness
+	;;
+capabilities)
+	show_capabilities
+	;;
+service-status)
+	show_services
+	;;
+errors)
+	show_errors
 	;;
 config-status)
 	qs ipc --path "$SHELL_DIR" call diagnostics configStatus
@@ -520,6 +599,12 @@ config-snapshot-check)
 	;;
 config-snapshot-test)
 	test_config_snapshot
+	;;
+core-state-check)
+	check_core_state
+	;;
+core-state-test)
+	test_core_state
 	;;
 config-service-check)
 	check_config_service

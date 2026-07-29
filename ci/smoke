@@ -44,10 +44,13 @@ shell_instances() {
 			'[.[] | select(.config_path == $config)]' 2>/dev/null
 }
 
-assert_ready_summary() {
+assert_degraded_summary() {
 	jq -e '
         .mode == "mock"
-        and .startupState == "SurfacesReady"
+        and .startupState == "Degraded"
+        and .shellReady == true
+        and .shellDegraded == true
+        and .shellFailed == false
         and .configHealth == "healthy"
         and .configSourceState == "defaultsOnly"
         and .surfaceVisible == true
@@ -55,6 +58,9 @@ assert_ready_summary() {
         and .monitorConnectedCount == 0
         and .commandActiveRequestCount == 0
         and .commandQueuedRequestCount == 0
+        and .capabilityEvaluated == true
+        and .capabilityUnavailableCount == 7
+        and .diagnosticServiceCount == 4
     ' >/dev/null
 }
 
@@ -99,17 +105,85 @@ wait_for_process_exit() {
 	return 1
 }
 
+capture_log_policy() {
+	label=$1
+	expected_startups=$2
+	additional_baseline=${3:-}
+	log_output=$(qs log --path "$REPO_ROOT/shell" --tail 1000)
+	printf '%s\n' "$log_output" >"$smoke_artifact_dir/$label-quickshell.log"
+	startup_count=$(printf '%s\n' "$log_output" |
+		rg -c 'franken\.core: .*"event":"startup"' || true)
+	if [ "$startup_count" -ne "$expected_startups" ]; then
+		die "expected $expected_startups startup events for $label, found $startup_count"
+	fi
+
+	suspect_log=$(printf '%s\n' "$log_output" |
+		rg -i '(^|[[:space:]])(WARN|ERROR):|binding[ -]?loop|QQmlComponent' || true)
+	if [ -n "$additional_baseline" ]; then
+		unexpected_log=$(printf '%s\n' "$suspect_log" |
+			rg -v -f "$CI_DIR/baselines/smoke-known.txt" \
+				-f "$additional_baseline" || true)
+	else
+		unexpected_log=$(printf '%s\n' "$suspect_log" |
+			rg -v -f "$CI_DIR/baselines/smoke-known.txt" || true)
+	fi
+	if [ -n "$unexpected_log" ]; then
+		printf '%s\n' "$unexpected_log" >"$smoke_artifact_dir/$label-unexpected-warnings.log"
+		die "$label smoke logs contain an unexpected warning or error"
+	fi
+}
+
+stop_and_check() {
+	label=$1
+	pid=$2
+	descendant_pids=$(collect_descendants "$pid")
+	printf '%s\n' "$descendant_pids" >"$smoke_artifact_dir/$label-descendant-pids.txt"
+	./dev/franken-shell stop >"$smoke_artifact_dir/$label-stop.log"
+
+	if ! wait_for_unregistered; then
+		die "Franken Shell remained registered after $label smoke teardown"
+	fi
+	if ! wait_for_process_exit "$pid"; then
+		die "Franken Shell process remained alive after $label smoke teardown"
+	fi
+	for child_pid in $descendant_pids; do
+		if ! wait_for_process_exit "$child_pid"; then
+			die "Franken Shell child process $child_pid remained alive after $label smoke teardown"
+		fi
+	done
+}
+
+./dev/franken-shell mock-healthy
+healthy_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
+printf '%s\n' "$healthy_summary" >"$smoke_artifact_dir/healthy-summary.json"
+printf '%s\n' "$healthy_summary" | jq -e '
+    .mode == "readiness-healthy-test"
+    and .startupState == "OptionalIntegrationsReady"
+    and .shellReady == true
+    and .shellDegraded == false
+    and .shellFailed == false
+    and .capabilityAvailableCount == 7
+    and .capabilityUnavailableCount == 0
+    and .diagnosticErrorCount == 0
+' >/dev/null
+healthy_instances=$(shell_instances)
+healthy_pid=$(printf '%s\n' "$healthy_instances" |
+	jq -er 'if length == 1 then .[0].pid else error("expected one healthy fixture instance") end')
+capture_log_policy healthy 1
+stop_and_check healthy "$healthy_pid"
+printf 'healthy-readiness pass\n' >>"$smoke_artifact_dir/results.txt"
+
 ./dev/franken-shell mock
 summary=$(./dev/franken-shell diagnostics | sed -n '1p')
-printf '%s\n' "$summary" >"$smoke_artifact_dir/initial-summary.json"
-printf '%s\n' "$summary" | assert_ready_summary
+printf '%s\n' "$summary" >"$smoke_artifact_dir/degraded-initial-summary.json"
+printf '%s\n' "$summary" | assert_degraded_summary
 
 instances=$(shell_instances)
-printf '%s\n' "$instances" >"$smoke_artifact_dir/initial-instance.json"
+printf '%s\n' "$instances" >"$smoke_artifact_dir/degraded-initial-instance.json"
 shell_pid=$(printf '%s\n' "$instances" |
 	jq -er 'if length == 1 then .[0].pid else error("expected one Franken Shell instance") end')
 
-./dev/franken-shell mock >"$smoke_artifact_dir/duplicate-start.log"
+./dev/franken-shell mock >"$smoke_artifact_dir/degraded-duplicate-start.log"
 duplicate_instances=$(shell_instances)
 duplicate_pid=$(printf '%s\n' "$duplicate_instances" |
 	jq -er 'if length == 1 then .[0].pid else error("duplicate start changed instance count") end')
@@ -118,10 +192,10 @@ if [ "$duplicate_pid" -ne "$shell_pid" ]; then
 fi
 printf 'duplicate-start pass\n' >>"$smoke_artifact_dir/results.txt"
 
-./dev/franken-shell reload >"$smoke_artifact_dir/reload.log"
+./dev/franken-shell reload >"$smoke_artifact_dir/degraded-reload.log"
 reloaded_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
-printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/reloaded-summary.json"
-printf '%s\n' "$reloaded_summary" | assert_ready_summary
+printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/degraded-reloaded-summary.json"
+printf '%s\n' "$reloaded_summary" | assert_degraded_summary
 
 reloaded_instances=$(shell_instances)
 reloaded_pid=$(printf '%s\n' "$reloaded_instances" |
@@ -131,43 +205,37 @@ if [ "$reloaded_pid" -ne "$shell_pid" ]; then
 fi
 printf 'soft-reload pass\n' >>"$smoke_artifact_dir/results.txt"
 
-log_output=$(qs log --path "$REPO_ROOT/shell" --tail 1000)
-printf '%s\n' "$log_output" >"$smoke_artifact_dir/quickshell.log"
-startup_count=$(printf '%s\n' "$log_output" |
-	rg -c 'franken\.core: .*"event":"startup"' || true)
-if [ "$startup_count" -ne 2 ]; then
-	die "expected two startup events across initial load and soft reload, found $startup_count"
-fi
-
-suspect_log=$(printf '%s\n' "$log_output" |
-	rg -i '(^|[[:space:]])(WARN|ERROR):|binding[ -]?loop|QQmlComponent' || true)
-unexpected_log=$(printf '%s\n' "$suspect_log" |
-	rg -v -f "$CI_DIR/baselines/smoke-known.txt" || true)
-if [ -n "$unexpected_log" ]; then
-	printf '%s\n' "$unexpected_log" >"$smoke_artifact_dir/unexpected-warnings.log"
-	die "smoke logs contain an unexpected warning or error"
-fi
+capture_log_policy degraded 2
 printf 'log-policy pass\n' >>"$smoke_artifact_dir/results.txt"
-
-descendant_pids=$(collect_descendants "$shell_pid")
-printf '%s\n' "$descendant_pids" >"$smoke_artifact_dir/descendant-pids.txt"
-
-./dev/franken-shell stop >"$smoke_artifact_dir/stop.log"
-
-if ! wait_for_unregistered; then
-	die "Franken Shell remained registered after smoke teardown"
-fi
-if ! wait_for_process_exit "$shell_pid"; then
-	die "Franken Shell process remained alive after smoke teardown"
-fi
-for child_pid in $descendant_pids; do
-	if ! wait_for_process_exit "$child_pid"; then
-		die "Franken Shell child process $child_pid remained alive after smoke teardown"
-	fi
-done
+stop_and_check degraded "$shell_pid"
 printf 'process-cleanup pass\n' >>"$smoke_artifact_dir/results.txt"
+
+./dev/franken-shell mock-required-failure
+failure_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
+printf '%s\n' "$failure_summary" >"$smoke_artifact_dir/required-failure-summary.json"
+printf '%s\n' "$failure_summary" | jq -e '
+    .mode == "readiness-required-failure-test"
+    and .startupState == "Failed"
+    and .shellReady == false
+    and .shellFailed == true
+    and .shellFailureCode == "FIXTURE_REQUIRED_CORE_FAILURE"
+    and .diagnosticCriticalCount == 1
+' >/dev/null
+failure_instances=$(shell_instances)
+failure_pid=$(printf '%s\n' "$failure_instances" |
+	jq -er 'if length == 1 then .[0].pid else error("expected one required-failure fixture instance") end')
+readiness_status=0
+./dev/franken-shell readiness >"$smoke_artifact_dir/required-failure-readiness.json" ||
+	readiness_status=$?
+if [ "$readiness_status" -ne 1 ]; then
+	die "required-core readiness command returned $readiness_status instead of 1"
+fi
+capture_log_policy required-failure 1 \
+	"$CI_DIR/baselines/smoke-required-failure-known.txt"
+stop_and_check required-failure "$failure_pid"
+printf 'required-core-failure pass\n' >>"$smoke_artifact_dir/results.txt"
 
 trap - EXIT INT TERM
 rm -rf "$runtime_dir"
 
-printf 'Non-owning startup, reload, log, and teardown smoke passed.\n'
+printf 'Healthy, degraded, required-failure, reload, log, and teardown smoke passed.\n'

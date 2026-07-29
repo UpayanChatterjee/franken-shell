@@ -25,9 +25,11 @@ user configuration, environment, notification content, or credentials.
 - `lint`: Rust Clippy, ShellCheck, qmllint, markdownlint, actionlint, and
   workflow-permission policy;
 - `unit`: Rust contracts plus direct typed-snapshot, configuration lifecycle,
-  monitor-registry, command-registry, and helper-client fixture suites;
-- `smoke`: isolated, offscreen, non-owning mock startup, duplicate-start
-  rejection, soft reload, readiness, warning policy, and process teardown.
+  capability/diagnostic/readiness, monitor-registry, command-registry, and
+  helper-client fixture suites;
+- `smoke`: isolated, offscreen, non-owning healthy, degraded, and
+  required-core-failure startup, duplicate-start rejection, soft reload,
+  readiness, warning policy, and process teardown.
 
 Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,
@@ -40,8 +42,10 @@ Quickshell logs, and observed child process IDs.
 
 `ci/baselines/smoke-known.txt` contains the one accepted warning produced by
 Qt's offscreen platform plugin when Quickshell attempts to set a window mask.
-All other smoke warnings, errors, binding loops, and component-load failures
-are rejected.
+The separate `smoke-required-failure-known.txt` baseline admits only the
+intentional structured readiness-transition error from the required-core
+failure fixture. All other smoke warnings, errors, binding loops, and
+component-load failures are rejected.
 
 ## Existing-debt baselines
 
