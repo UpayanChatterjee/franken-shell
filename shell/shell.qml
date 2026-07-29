@@ -45,6 +45,9 @@ ShellRoot {
     Core.UnavailableMonitorBackend {
         id: unavailableMonitorBackend
     }
+    Core.FixtureMonitorBackend {
+        id: fixtureMonitorBackend
+    }
     Loader {
         id: monitorBackendLoader
 
@@ -58,7 +61,7 @@ ShellRoot {
     Core.MonitorRegistry {
         id: monitorRegistry
 
-        backend: monitorBackendLoader.status === Loader.Ready ? monitorBackendLoader.item : unavailableMonitorBackend
+        backend: root.usesFixtureMonitorBackend ? fixtureMonitorBackend : monitorBackendLoader.status === Loader.Ready ? monitorBackendLoader.item : unavailableMonitorBackend
         configService: configService
     }
     Core.SurfaceCoordinator {
@@ -81,6 +84,15 @@ ShellRoot {
         id: themeManager
 
         configService: configService
+    }
+    Surfaces.BarHostSet {
+        id: barHosts
+
+        barConfig: configService.active?.bar ?? null
+        fixtureWindow: root.usesFixtureMonitorBackend
+        monitorRegistry: monitorRegistry
+        surfaceCoordinator: surfaceCoordinator
+        theme: themeManager.active
     }
     Core.CoreReadinessCoordinator {
         id: readinessCoordinator
@@ -107,6 +119,7 @@ ShellRoot {
     Core.Diagnostics {
         id: diagnostics
 
+        barHostProvider: barHosts
         capabilityRegistry: capabilityRegistry
         commandRegistry: commandRegistry
         configHelperExecutable: configHelperClient.resolvedHelperExecutable

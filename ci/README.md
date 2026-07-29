@@ -26,12 +26,16 @@ user configuration, environment, notification content, or credentials.
   workflow-permission policy;
 - `unit`: Rust contracts plus direct typed-snapshot, configuration lifecycle,
   capability/diagnostic/readiness, semantic-theme, surface-coordinator,
-  versioned-shell-IPC, monitor-registry, command-registry, and helper-client
-  fixture suites;
+  versioned-shell-IPC, monitor-aware bar-host geometry, monitor-registry,
+  command-registry, and helper-client fixture suites;
 - `smoke`: isolated, offscreen, non-owning healthy, degraded, and
   required-core-failure startup, duplicate-start rejection, soft reload,
   readiness, theme-health, shell-IPC malformed/version/reload safety, warning
-  policy, and process teardown.
+  policy, one fixture BarHost before/after reload, and process teardown.
+
+The unit lane captures normal, long-text, high-text-scale, and missing-item bar
+fixtures. GitHub uploads these PNGs as a non-blocking review artifact; they are
+evidence for layout review rather than approved visual-regression baselines.
 
 Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,

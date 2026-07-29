@@ -1,0 +1,6 @@
+module FrankenShell.Features.Bar
+BarFixtureCell 1.0 BarFixtureCell.qml
+BarFixtureModel 1.0 BarFixtureModel.qml
+BarGeometry 1.0 BarGeometry.qml
+BarLayout 1.0 BarLayout.qml
+BarZone 1.0 BarZone.qml

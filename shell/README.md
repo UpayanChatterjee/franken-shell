@@ -61,6 +61,8 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell surface-test
 ./dev/franken-shell shell-ipc-check
 ./dev/franken-shell shell-ipc-test
+./dev/franken-shell bar-host-check
+./dev/franken-shell bar-host-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -179,6 +181,29 @@ to reject duplicate ownership.
 monitor removal, rapid requests, and focus handoff. `shell-ipc-test` covers
 valid routing, malformed and unsupported requests, payload rejection, and
 repeated safe requests.
+
+## Fixture bar host
+
+One `BarHostSet` creates a production `PanelWindow` for each Quickshell screen
+and binds it to the corresponding normalized monitor record. Explicit
+offscreen fixture modes load a `FloatingWindow` wrapper around the same bar
+surface because that platform plugin has no layer-shell backend. The host owns
+window geometry only; global services remain rooted once in `shell.qml`. Its
+edge model centralizes orientation, inward direction, theme/config thickness,
+zero-inset prototype geometry, and exclusive-zone release while
+fullscreen-hidden.
+
+The first fixture rail is a continuous semantic layout with start, flexible,
+fixed-capacity context, end, and absolute-end zones. Bounded cells and the
+flexible spacer keep end controls stable when fixture text changes. The same
+cell delegates compose vertically and horizontally without rotating text.
+Workspace behavior, real status adapters, popovers, autohide, final inset
+geometry, and final thickness remain later roadmap work.
+
+`bar-host-test` instantiates normal, long-text, high-text-scale, missing-item,
+fullscreen, and horizontal-edge fixtures. It asserts protected-zone geometry
+and writes non-blocking review screenshots when an artifact directory is
+provided.
 
 ## Configuration lifecycle
 

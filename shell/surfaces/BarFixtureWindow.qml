@@ -1,0 +1,50 @@
+import QtQuick
+import Quickshell
+
+FloatingWindow {
+    id: root
+
+    property var barConfig: null
+    readonly property string edge: barSurface.edge
+    readonly property int exclusiveZone: barSurface.exclusiveZone
+    readonly property alias fixtureModel: barSurface.fixtureModel
+    readonly property string inwardDirection: barSurface.inwardDirection
+    readonly property bool layoutOverflow: barSurface.layoutOverflow
+    property var monitor: null
+    readonly property string orientation: barSurface.orientation
+    readonly property string ownerMonitorId: barSurface.ownerMonitorId
+    property var screenInfo: null
+    property var surfaceCoordinator: null
+    property var theme: null
+
+    signal fixtureCaptured(string path, bool saved)
+
+    function captureFixture(path: string) {
+        barSurface.captureFixture(path);
+    }
+    function layoutSnapshot(): var {
+        return barSurface.layoutSnapshot();
+    }
+    function summary(): var {
+        return barSurface.summary();
+    }
+
+    color: "transparent"
+    implicitHeight: barSurface.vertical ? Math.max(root.screenInfo?.height ?? 720, barSurface.minimumMainAxisExtent) : barSurface.thickness
+    implicitWidth: barSurface.vertical ? barSurface.thickness : Math.max(root.screenInfo?.width ?? 1280, barSurface.minimumMainAxisExtent)
+    reloadableId: "bar-fixture-host-" + (root.screenInfo?.name ?? "unresolved")
+    screen: root.screenInfo
+    title: qsTr("Franken Shell fixture bar")
+    visible: barSurface.windowVisible
+
+    BarSurface {
+        id: barSurface
+
+        anchors.fill: parent
+        barConfig: root.barConfig
+        monitor: root.monitor
+        theme: root.theme
+
+        onFixtureCaptured: (path, saved) => root.fixtureCaptured(path, saved)
+    }
+}

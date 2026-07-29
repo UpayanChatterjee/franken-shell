@@ -46,6 +46,10 @@ run_logged core-state shell/dev/franken-shell core-state-test
 run_logged theme shell/dev/franken-shell theme-test
 run_logged surface-coordinator shell/dev/franken-shell surface-test
 run_logged shell-ipc shell/dev/franken-shell shell-ipc-test
+mkdir -p "$unit_artifact_dir/bar-fixtures"
+run_logged bar-host env \
+	FRANKEN_SHELL_ARTIFACT_DIR="$unit_artifact_dir/bar-fixtures" \
+	shell/dev/franken-shell bar-host-test
 run_logged config-service shell/dev/franken-shell config-service-test
 run_logged monitor-registry shell/dev/franken-shell monitor-registry-test
 run_logged command-registry env HOME="$(dirname -- "$REPO_ROOT")" \
