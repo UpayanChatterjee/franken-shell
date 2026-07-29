@@ -566,7 +566,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - **Milestone:** Shell appears
 - **Branch:** `feat/bar-host-layout`
 - **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Merged PR / commit:** PR [#7](https://github.com/UpayanChatterjee/franken-shell/pull/7); merge commit pending required checks.
 
 #### Scope
 - Create one left-edge BarHost on a selected monitor.
