@@ -17,3 +17,4 @@ internal UnavailableMonitorBackend UnavailableMonitorBackend.qml
 MonitorRecord 1.0 MonitorRecord.qml
 MonitorRegistry 1.0 MonitorRegistry.qml
 ShellState 1.0 ShellState.qml
+SurfaceCoordinator 1.0 SurfaceCoordinator.qml

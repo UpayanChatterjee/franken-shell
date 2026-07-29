@@ -1,0 +1,2 @@
+module FrankenShell.Ipc
+ShellIpc 1.0 ShellIpc.qml

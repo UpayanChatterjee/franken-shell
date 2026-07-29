@@ -221,6 +221,48 @@ test_theme() {
 	return "$result"
 }
 
+check_surface_coordinator() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/core/SurfaceCoordinator.qml" \
+		"$SHELL_DIR/tests/surface_coordinator/FakeSurfaceMonitorRegistry.qml" \
+		"$SHELL_DIR/tests/surface_coordinator/SurfaceCoordinatorTests.qml"
+}
+
+test_surface_coordinator() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-surface-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=surface-coordinator-test \
+		qs --no-duplicate --path "$SHELL_DIR/surface-coordinator-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+check_shell_ipc() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/ipc/ShellIpc.qml" \
+		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcConfigService.qml" \
+		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcDiagnostics.qml" \
+		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcSurfaceCoordinator.qml" \
+		"$SHELL_DIR/tests/shell_ipc/ShellIpcTests.qml"
+}
+
+test_shell_ipc() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-ipc-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=shell-ipc-test \
+		qs --no-duplicate --path "$SHELL_DIR/shell-ipc-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 check_config_service() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/core/ConfigDefaults.js" \
@@ -353,6 +395,22 @@ show_errors() {
 
 show_theme_status() {
 	qs ipc --path "$SHELL_DIR" call diagnostics themeStatus
+}
+
+show_ipc_version() {
+	qs ipc --path "$SHELL_DIR" call shell version
+}
+
+shell_request() {
+	operation=$1
+	request_id=$2
+	api_version=$(show_ipc_version | jq -er '.apiVersion')
+	envelope=$(jq -cn \
+		--argjson apiVersion "$api_version" \
+		--arg requestId "$request_id" \
+		--arg operation "$operation" \
+		'{apiVersion:$apiVersion,requestId:$requestId,operation:$operation,payload:{}}')
+	qs ipc --path "$SHELL_DIR" call shell request "$envelope"
 }
 
 run_command_demo() {
@@ -520,6 +578,9 @@ usage() {
 		"  service-status    Show sanitized service-health diagnostics" \
 		"  errors            Show sanitized coalesced errors" \
 		"  theme-status      Show the active semantic theme summary" \
+		"  ipc-version       Show the stable shell IPC version handshake" \
+		"  ipc-diagnostics   Request diagnostics through versioned shell IPC" \
+		"  close-transients  Close ordinary shell transients through versioned IPC" \
 		"  config-status     Show sanitized active configuration status" \
 		"  verify-baseline   Verify the tested local runtime baseline" \
 		"  check             Check QML syntax and imports" \
@@ -541,6 +602,14 @@ usage() {
 		"                    Statically check the semantic theme ownership boundary" \
 		"  theme-test" \
 		"                    Run atomic theme, contrast, and fixture contracts" \
+		"  surface-check" \
+		"                    Statically check transient coordination contracts" \
+		"  surface-test" \
+		"                    Run surface ownership, dismissal, and focus-handoff fixtures" \
+		"  shell-ipc-check" \
+		"                    Statically check the minimal versioned shell IPC" \
+		"  shell-ipc-test" \
+		"                    Run shell IPC routing and malformed-request fixtures" \
 		"  config-service-check" \
 		"                    Statically check ConfigService and its typed snapshot files" \
 		"  config-service-test" \
@@ -598,7 +667,7 @@ reload)
 	fi
 	;;
 config-reload)
-	qs ipc --path "$SHELL_DIR" call diagnostics reloadConfig
+	shell_request reloadConfig cli.reloadConfig
 	;;
 logs)
 	qs log --path "$SHELL_DIR" --tail "${2:-100}"
@@ -620,6 +689,15 @@ errors)
 	;;
 theme-status)
 	show_theme_status
+	;;
+ipc-version)
+	show_ipc_version
+	;;
+ipc-diagnostics)
+	shell_request diagnostics cli.diagnostics
+	;;
+close-transients)
+	shell_request closeTransients cli.closeTransients
 	;;
 config-status)
 	qs ipc --path "$SHELL_DIR" call diagnostics configStatus
@@ -656,6 +734,18 @@ theme-check)
 	;;
 theme-test)
 	test_theme
+	;;
+surface-check)
+	check_surface_coordinator
+	;;
+surface-test)
+	test_surface_coordinator
+	;;
+shell-ipc-check)
+	check_shell_ipc
+	;;
+shell-ipc-test)
+	test_shell_ipc
 	;;
 config-service-check)
 	check_config_service

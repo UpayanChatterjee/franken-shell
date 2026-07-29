@@ -268,7 +268,7 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-002** | Core baseline | Backfill tests and smoke coverage for the already implemented ConfigService, typed snapshots, helper/client foundation, MonitorRegistry, and CommandRegistry. | `test/core-baseline` | Every currently implemented core subsystem has direct contract tests, startup/reload smoke passes, and there are no unexplained warnings or leaked child processes. | **closed** |
 | **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **closed** |
 | **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **closed** |
-| **PR-005** | Core skeleton | Implement SurfaceCoordinator, focus/dismissal contracts, monitor ownership, and the minimal shell IPC surface. | `feat/surface-coordinator-ipc` | Transient ownership and IPC are deterministic, focus restoration has a testable contract, and reload does not duplicate global owners. | **open** |
+| **PR-005** | Core skeleton | Implement SurfaceCoordinator, focus/dismissal contracts, monitor ownership, and the minimal shell IPC surface. | `feat/surface-coordinator-ipc` | Transient ownership and IPC are deterministic, focus restoration has a testable contract, and reload does not duplicate global owners. | **in-progress** |
 | **PR-006** | Shell appears | Create the monitor-aware BarHost and stable semantic layout zones using fixture content. | `feat/bar-host-layout` | A stable fixture bar renders without layout jitter, is owned by the monitor model, and can later rotate without rewriting each delegate. | **open** |
 | **PR-007** | Shell appears | Implement the fixture numbered-workspace pager and special-workspace selector as controller-driven components. | `feat/workspace-pager` | All documented fixture workspace states pass, commands route through injected controllers, and the pager remains stable under rapid input. | **open** |
 | **PR-008** | Shell appears | Add the anchor-aware PopoverHost, fixture bar items, layout-stability coverage, and normalized fullscreen hide behavior. | `feat/bar-popovers-fixtures` | Milestone A is met: the fixture shell starts, shows a stable bar, changes workspace groups, opens popovers, and distinguishes maximized from fullscreen. | **open** |
@@ -487,7 +487,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - **Milestone:** Core skeleton
 - **Branch:** `feat/theme-manager`
 - **Status:** **closed**
-- **Merged PR / commit:** PR [#5](https://github.com/UpayanChatterjee/franken-shell/pull/5); merge commit pending required checks.
+- **Merged PR / commit:** PR [#5](https://github.com/UpayanChatterjee/franken-shell/pull/5), merge commit `598d9ccfa09eaea75c16735dae3832bf88fd0d0c`.
 
 #### Scope
 - Add semantic colors, typography, spacing, radii, and motion tokens.
@@ -526,7 +526,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Core skeleton
 - **Branch:** `feat/surface-coordinator-ipc`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
