@@ -61,6 +61,8 @@ assert_degraded_summary() {
         and .capabilityEvaluated == true
         and .capabilityUnavailableCount == 7
         and .diagnosticServiceCount == 5
+        and .surfaceActiveCount == 0
+        and .surfaceLastTransition == "idle"
         and .themeHealth == "healthy"
         and .themeSource == "builtInFallback"
     ' >/dev/null
@@ -168,9 +170,53 @@ printf '%s\n' "$healthy_summary" | jq -e '
     and .capabilityUnavailableCount == 0
     and .diagnosticErrorCount == 0
     and .diagnosticServiceCount == 5
+    and .surfaceActiveCount == 0
+    and .surfaceLastTransition == "idle"
     and .themeHealth == "healthy"
     and .themeSource == "builtInFallback"
 ' >/dev/null
+
+ipc_version=$(./dev/franken-shell ipc-version | sed -n '1p')
+printf '%s\n' "$ipc_version" >"$smoke_artifact_dir/ipc-version.json"
+printf '%s\n' "$ipc_version" | jq -e '
+    .apiVersion == 1
+    and .project == "Franken Shell"
+' >/dev/null
+
+ipc_diagnostics=$(./dev/franken-shell ipc-diagnostics | sed -n '1p')
+printf '%s\n' "$ipc_diagnostics" >"$smoke_artifact_dir/ipc-diagnostics.json"
+printf '%s\n' "$ipc_diagnostics" | jq -e '
+    .ok == true
+    and .operation == "diagnostics"
+    and .result.shellReady == true
+    and .result.surfaceActiveCount == 0
+' >/dev/null
+
+ipc_malformed=$(qs ipc --path "$REPO_ROOT/shell" call shell request '{' | sed -n '1p')
+printf '%s\n' "$ipc_malformed" >"$smoke_artifact_dir/ipc-malformed.json"
+printf '%s\n' "$ipc_malformed" | jq -e '
+    .ok == false
+    and .error.code == "IPC_MALFORMED_REQUEST"
+' >/dev/null
+
+ipc_unsupported=$(qs ipc --path "$REPO_ROOT/shell" call shell request \
+	'{"apiVersion":999,"requestId":"smoke.unsupported","operation":"diagnostics","payload":{}}' |
+	sed -n '1p')
+printf '%s\n' "$ipc_unsupported" >"$smoke_artifact_dir/ipc-unsupported.json"
+printf '%s\n' "$ipc_unsupported" | jq -e '
+    .ok == false
+    and .requestId == "smoke.unsupported"
+    and .error.code == "IPC_UNSUPPORTED_VERSION"
+' >/dev/null
+
+./dev/franken-shell close-transients >"$smoke_artifact_dir/ipc-close-first.json"
+./dev/franken-shell close-transients >"$smoke_artifact_dir/ipc-close-repeated.json"
+jq -e '.ok == true and .result.state == "alreadyClosed"' \
+	"$smoke_artifact_dir/ipc-close-first.json" >/dev/null
+jq -e '.ok == true and .result.state == "alreadyClosed"' \
+	"$smoke_artifact_dir/ipc-close-repeated.json" >/dev/null
+printf 'shell-ipc pass\n' >>"$smoke_artifact_dir/results.txt"
+
 healthy_instances=$(shell_instances)
 healthy_pid=$(printf '%s\n' "$healthy_instances" |
 	jq -er 'if length == 1 then .[0].pid else error("expected one healthy fixture instance") end')
@@ -198,6 +244,11 @@ fi
 printf 'duplicate-start pass\n' >>"$smoke_artifact_dir/results.txt"
 
 ./dev/franken-shell reload >"$smoke_artifact_dir/degraded-reload.log"
+./dev/franken-shell ipc-version >"$smoke_artifact_dir/ipc-version-after-reload.json"
+jq -e '.apiVersion == 1' "$smoke_artifact_dir/ipc-version-after-reload.json" >/dev/null
+./dev/franken-shell close-transients >"$smoke_artifact_dir/ipc-close-after-reload.json"
+jq -e '.ok == true and .result.state == "alreadyClosed"' \
+	"$smoke_artifact_dir/ipc-close-after-reload.json" >/dev/null
 reloaded_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
 printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/degraded-reloaded-summary.json"
 printf '%s\n' "$reloaded_summary" | assert_degraded_summary
@@ -244,4 +295,4 @@ printf 'required-core-failure pass\n' >>"$smoke_artifact_dir/results.txt"
 trap - EXIT INT TERM
 rm -rf "$runtime_dir"
 
-printf 'Healthy, degraded, required-failure, reload, log, and teardown smoke passed.\n'
+printf 'Healthy, degraded, required-failure, shell-IPC, reload, log, and teardown smoke passed.\n'

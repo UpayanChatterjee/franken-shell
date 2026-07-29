@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "core" as Core
+import "ipc" as Ipc
 import "surfaces" as Surfaces
 import "theme" as Theme
 
@@ -60,6 +61,11 @@ ShellRoot {
         backend: monitorBackendLoader.status === Loader.Ready ? monitorBackendLoader.item : unavailableMonitorBackend
         configService: configService
     }
+    Core.SurfaceCoordinator {
+        id: surfaceCoordinator
+
+        monitorRegistry: monitorRegistry
+    }
     Core.CommandRegistry {
         id: commandRegistry
 
@@ -99,6 +105,8 @@ ShellRoot {
         surfacesReady: root.surfaceInitialized
     }
     Core.Diagnostics {
+        id: diagnostics
+
         capabilityRegistry: capabilityRegistry
         commandRegistry: commandRegistry
         configHelperExecutable: configHelperClient.resolvedHelperExecutable
@@ -109,8 +117,14 @@ ShellRoot {
         mode: root.mode
         monitorRegistry: monitorRegistry
         shellState: shellState
+        surfaceCoordinator: surfaceCoordinator
         surfaceVisible: diagnosticSurface.visible
         themeManager: themeManager
+    }
+    Ipc.ShellIpc {
+        configService: configService
+        diagnosticsProvider: diagnostics
+        surfaceCoordinator: surfaceCoordinator
     }
     Surfaces.DiagnosticSurface {
         id: diagnosticSurface

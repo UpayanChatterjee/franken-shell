@@ -1,9 +1,10 @@
 # Franken Shell development shell
 
 This directory contains the clean, non-owning Franken Shell bootstrap and the
-Phase 1 configuration, theme, readiness, monitor-normalization, and
-command-registry services. It is selected by its explicit repository path and
-is independent from the live Caelestia configuration at
+Phase 1 configuration, theme, readiness, surface-coordination,
+monitor-normalization, shell-IPC, and command-registry services. It is selected
+by its explicit repository path and is independent from the live Caelestia
+configuration at
 `~/.config/quickshell/caelestia`.
 
 The bootstrap creates one ordinary, noninteractive diagnostic window. It does
@@ -41,6 +42,9 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell service-status
 ./dev/franken-shell errors
 ./dev/franken-shell theme-status
+./dev/franken-shell ipc-version
+./dev/franken-shell ipc-diagnostics
+./dev/franken-shell close-transients
 ./dev/franken-shell config-status
 ./dev/franken-shell verify-baseline
 ./dev/franken-shell check
@@ -53,6 +57,10 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell core-state-test
 ./dev/franken-shell theme-check
 ./dev/franken-shell theme-test
+./dev/franken-shell surface-check
+./dev/franken-shell surface-test
+./dev/franken-shell shell-ipc-check
+./dev/franken-shell shell-ipc-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -137,6 +145,40 @@ health, last error code, and revision. `theme-test` covers dark, light,
 standard-contrast, high-contrast, and reduced-motion fixtures; invalid type,
 missing-role, and contrast rejection; rapid replacement; config mapping; and
 representative surface instantiation.
+
+## Surface coordination and shell IPC
+
+The root owns one `SurfaceCoordinator`. Callers provide a validated explicit
+monitor ID and invocation context; the coordinator does not independently
+choose a pointer, keyboard, primary, or fallback-monitor policy while those
+product decisions remain unresolved. It owns one major transient and one
+ordinary anchored-popover slot. A major opening closes the popover, same-kind
+replacement is atomic, a popover is rejected while a major surface is active,
+and `Escape` or close-all follows the same centralized path.
+
+Focus-taking requests retain opaque origin-control and previous-application
+tokens privately. Opening emits an acquisition handoff, closing emits one
+focus-restoration handoff containing candidate validity and topology context,
+and replacement emits a direct focus transfer instead of briefly restoring
+application focus. This foundation does not select or execute the final
+compositor focus target: exact restoration behaviour remains Q-121. Anchor
+disappearance closes its popover, and owner monitor removal closes affected
+transients while invalidating unsafe focus candidates.
+
+The `shell` IPC target has a version handshake and one strict JSON request
+envelope. API version 1 admits only `diagnostics`, `reloadConfig`, and
+`closeTransients`; unknown fields, payload expansion, malformed JSON,
+unsupported versions, and unknown operations return stable error codes. It
+does not expose general command execution, arbitrary paths, backend calls, or
+internal properties. `config-reload`, `ipc-diagnostics`, and
+`close-transients` use this contract. Soft QML reload reconstructs one root
+handler and coordinator; smoke tests call the target before and after reload
+to reject duplicate ownership.
+
+`surface-test` covers open, replace, close, `Escape`, anchor disappearance,
+monitor removal, rapid requests, and focus handoff. `shell-ipc-test` covers
+valid routing, malformed and unsupported requests, payload rejection, and
+repeated safe requests.
 
 ## Configuration lifecycle
 
