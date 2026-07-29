@@ -269,8 +269,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **closed** |
 | **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **closed** |
 | **PR-005** | Core skeleton | Implement SurfaceCoordinator, focus/dismissal contracts, monitor ownership, and the minimal shell IPC surface. | `feat/surface-coordinator-ipc` | Transient ownership and IPC are deterministic, focus restoration has a testable contract, and reload does not duplicate global owners. | **closed** |
-| **PR-006** | Shell appears | Create the monitor-aware BarHost and stable semantic layout zones using fixture content. | `feat/bar-host-layout` | A stable fixture bar renders without layout jitter, is owned by the monitor model, and can later rotate without rewriting each delegate. | **in-progress** |
-| **PR-007** | Shell appears | Implement the fixture numbered-workspace pager and special-workspace selector as controller-driven components. | `feat/workspace-pager` | All documented fixture workspace states pass, commands route through injected controllers, and the pager remains stable under rapid input. | **open** |
+| **PR-006** | Shell appears | Create the monitor-aware BarHost and stable semantic layout zones using fixture content. | `feat/bar-host-layout` | A stable fixture bar renders without layout jitter, is owned by the monitor model, and can later rotate without rewriting each delegate. | **closed** |
+| **PR-007** | Shell appears | Implement the fixture numbered-workspace pager and special-workspace selector as controller-driven components. | `feat/workspace-pager` | All documented fixture workspace states pass, commands route through injected controllers, and the pager remains stable under rapid input. | **in-progress** |
 | **PR-008** | Shell appears | Add the anchor-aware PopoverHost, fixture bar items, layout-stability coverage, and normalized fullscreen hide behavior. | `feat/bar-popovers-fixtures` | Milestone A is met: the fixture shell starts, shows a stable bar, changes workspace groups, opens popovers, and distinguishes maximized from fullscreen. | **open** |
 | **PR-009** | Drawer works | Select and implement the ControlCenterHost primitive with keyboard/pointer open-close, scrim, focus, and outside dismissal. | `feat/control-centre-host` | The selected primitive is documented, explicit opening and dismissal are reliable, and focus behavior is repeatable without timing sleeps. | **open** |
 | **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **open** |
@@ -565,8 +565,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Shell appears
 - **Branch:** `feat/bar-host-layout`
-- **Status:** **in-progress**
-- **Merged PR / commit:** PR [#7](https://github.com/UpayanChatterjee/franken-shell/pull/7); merge commit pending required checks.
+- **Status:** **closed**
+- **Merged PR / commit:** PR [#7](https://github.com/UpayanChatterjee/franken-shell/pull/7), merge commit `59416137d2f775a7453301f1333d440db28ea223`.
 
 #### Scope
 - Create one left-edge BarHost on a selected monitor.
@@ -604,7 +604,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Shell appears
 - **Branch:** `feat/workspace-pager`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope

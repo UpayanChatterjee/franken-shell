@@ -61,6 +61,10 @@ assert_degraded_summary() {
         and .barHostCount == 1
         and .barResolvedHostCount == 1
         and .barVisibleHostCount == 1
+        and .barHosts[0].workspaceStateAvailable == true
+        and .barHosts[0].workspaceActiveNumber == 1
+        and .barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]
+        and .barHosts[0].specialWorkspaceCount == 6
         and .commandActiveRequestCount == 0
         and .commandQueuedRequestCount == 0
         and .capabilityEvaluated == true
@@ -200,6 +204,9 @@ printf '%s\n' "$ipc_diagnostics" | jq -e '
     and .result.surfaceActiveCount == 0
     and .result.barHostCount == 1
     and .result.barVisibleHostCount == 1
+    and .result.barHosts[0].workspaceStateAvailable == true
+    and .result.barHosts[0].workspaceActiveNumber == 1
+    and .result.barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]
 ' >/dev/null
 
 ipc_malformed=$(qs ipc --path "$REPO_ROOT/shell" call shell request '{' | sed -n '1p')
@@ -266,6 +273,9 @@ printf '%s\n' "$reloaded_bar_summary" | jq -e '
     and .result.barHostCount == 1
     and .result.barResolvedHostCount == 1
     and .result.barVisibleHostCount == 1
+    and .result.barHosts[0].workspaceStateAvailable == true
+    and .result.barHosts[0].workspaceActiveNumber == 1
+    and .result.barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]
 ' >/dev/null
 reloaded_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
 printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/degraded-reloaded-summary.json"

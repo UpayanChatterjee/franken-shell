@@ -14,6 +14,8 @@ Scope {
     required property var surfaceCoordinator
     required property var theme
     readonly property int visibleHostCount: controller.count("visible")
+    required property var workspaceBackend
+    required property var workspaceConfig
 
     function summary(): var {
         const hosts = [];
@@ -48,6 +50,8 @@ Scope {
                 screenInfo: instance.modelData
                 surfaceCoordinator: root.surfaceCoordinator
                 theme: root.theme
+                workspaceBackend: root.workspaceBackend
+                workspaceConfig: root.workspaceConfig
             }
         }
     }

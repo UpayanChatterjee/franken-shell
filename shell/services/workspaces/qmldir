@@ -1,0 +1,3 @@
+module FrankenShell.Services.Workspaces
+FixtureWorkspaceAdapter 1.0 FixtureWorkspaceAdapter.qml
+UnavailableWorkspaceAdapter 1.0 UnavailableWorkspaceAdapter.qml

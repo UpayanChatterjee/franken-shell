@@ -1,5 +1,6 @@
 import QtQuick
 import "../features/bar" as Bar
+import "../features/workspaces" as Workspaces
 
 Item {
     id: root
@@ -16,10 +17,13 @@ Item {
     required property var monitor
     readonly property string orientation: geometry.orientation
     readonly property string ownerMonitorId: root.monitor?.runtimeId ?? ""
+    required property var surfaceCoordinator
     required property var theme
     readonly property real thickness: geometry.thickness
     readonly property bool vertical: geometry.vertical
     readonly property bool windowVisible: root.hostEnabled && !root.fullscreenSuppressed
+    required property var workspaceBackend
+    required property var workspaceConfig
 
     signal fixtureCaptured(string path, bool saved)
 
@@ -46,10 +50,36 @@ Item {
             "mainAxisEndInset": geometry.mainAxisEndInset,
             "outwardInset": geometry.outwardInset,
             "layoutOverflow": layout.layoutOverflow,
-            "contextCapacity": layout.contextCapacity
+            "contextCapacity": layout.contextCapacity,
+            "workspaceStateAvailable": workspaceController.stateAvailable,
+            "workspaceActiveNumber": workspaceController.activeNumber,
+            "workspaceVisibleNumbers": workspaceController.visibleNumbers,
+            "specialWorkspaceCount": specialWorkspaceController.definitionsCount
         });
     }
 
+    Workspaces.ActiveWorkspacePolicy {
+        id: activeWorkspacePolicy
+
+        adapter: root.workspaceBackend
+        enabled: root.workspaceConfig?.overview?.openOnActiveWorkspaceClick === true
+    }
+    Workspaces.WorkspaceController {
+        id: workspaceController
+
+        activeActivationPolicy: activeWorkspacePolicy
+        adapter: root.workspaceBackend
+        monitor: root.monitor
+        numberedConfig: root.workspaceConfig?.numbered ?? null
+        pagerConfig: root.barConfig?.workspacePager ?? null
+    }
+    Workspaces.SpecialWorkspaceController {
+        id: specialWorkspaceController
+
+        adapter: root.workspaceBackend
+        definitions: root.workspaceConfig?.special ?? null
+        monitor: root.monitor
+    }
     Bar.BarGeometry {
         id: geometry
 
@@ -74,8 +104,11 @@ Item {
             anchors.margins: root.theme.spacing.space1
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
             fixtureModel: fixtureState
+            specialWorkspaceController: specialWorkspaceController
+            surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: geometry.vertical
+            workspaceController: workspaceController
         }
     }
 }

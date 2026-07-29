@@ -3,6 +3,7 @@ import Quickshell
 import "core" as Core
 import "ipc" as Ipc
 import "surfaces" as Surfaces
+import "services/workspaces" as WorkspaceServices
 import "theme" as Theme
 
 ShellRoot {
@@ -47,6 +48,12 @@ ShellRoot {
     }
     Core.FixtureMonitorBackend {
         id: fixtureMonitorBackend
+    }
+    WorkspaceServices.FixtureWorkspaceAdapter {
+        id: fixtureWorkspaceAdapter
+    }
+    WorkspaceServices.UnavailableWorkspaceAdapter {
+        id: unavailableWorkspaceAdapter
     }
     Loader {
         id: monitorBackendLoader
@@ -93,6 +100,8 @@ ShellRoot {
         monitorRegistry: monitorRegistry
         surfaceCoordinator: surfaceCoordinator
         theme: themeManager.active
+        workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : unavailableWorkspaceAdapter
+        workspaceConfig: configService.active?.workspaces ?? null
     }
     Core.CoreReadinessCoordinator {
         id: readinessCoordinator

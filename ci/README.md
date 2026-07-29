@@ -9,6 +9,7 @@ them from any directory inside the checkout.
 ./ci/run format
 ./ci/run lint
 ./ci/run unit
+./ci/run workspace
 ./ci/run smoke
 ```
 
@@ -28,6 +29,9 @@ user configuration, environment, notification content, or credentials.
   capability/diagnostic/readiness, semantic-theme, surface-coordinator,
   versioned-shell-IPC, monitor-aware bar-host geometry, monitor-registry,
   command-registry, and helper-client fixture suites;
+- `workspace`: blocking controller/component fixtures for numbered grouping,
+  wrap boundaries, scroll coalescing, active-action policy injection, keyboard
+  focus, special-workspace selection, and unavailable/failure containment;
 - `smoke`: isolated, offscreen, non-owning healthy, degraded, and
   required-core-failure startup, duplicate-start rejection, soft reload,
   readiness, theme-health, shell-IPC malformed/version/reload safety, warning
