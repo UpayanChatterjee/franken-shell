@@ -60,7 +60,9 @@ assert_degraded_summary() {
         and .commandQueuedRequestCount == 0
         and .capabilityEvaluated == true
         and .capabilityUnavailableCount == 7
-        and .diagnosticServiceCount == 4
+        and .diagnosticServiceCount == 5
+        and .themeHealth == "healthy"
+        and .themeSource == "builtInFallback"
     ' >/dev/null
 }
 
@@ -165,6 +167,9 @@ printf '%s\n' "$healthy_summary" | jq -e '
     and .capabilityAvailableCount == 7
     and .capabilityUnavailableCount == 0
     and .diagnosticErrorCount == 0
+    and .diagnosticServiceCount == 5
+    and .themeHealth == "healthy"
+    and .themeSource == "builtInFallback"
 ' >/dev/null
 healthy_instances=$(shell_instances)
 healthy_pid=$(printf '%s\n' "$healthy_instances" |
@@ -220,6 +225,7 @@ printf '%s\n' "$failure_summary" | jq -e '
     and .shellFailed == true
     and .shellFailureCode == "FIXTURE_REQUIRED_CORE_FAILURE"
     and .diagnosticCriticalCount == 1
+    and .themeHealth == "healthy"
 ' >/dev/null
 failure_instances=$(shell_instances)
 failure_pid=$(printf '%s\n' "$failure_instances" |

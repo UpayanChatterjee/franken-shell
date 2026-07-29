@@ -188,6 +188,39 @@ test_core_state() {
 	return "$result"
 }
 
+check_theme() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/theme/ThemeDefaults.js" \
+		"$SHELL_DIR/theme/ThemeSnapshot.qml" \
+		"$SHELL_DIR/theme/ThemeManager.qml" \
+		"$SHELL_DIR/surfaces/DiagnosticSurface.qml" \
+		"$SHELL_DIR/tests/theme/FakeThemeConfigService.qml" \
+		"$SHELL_DIR/tests/theme/ThemeManagerTests.qml"
+
+	if rg -n 'FallbackTheme|#[0-9A-Fa-f]{6,8}' \
+		"$SHELL_DIR" \
+		-g '*.qml' \
+		-g '*.js' \
+		-g '!**/theme/ThemeDefaults.js' \
+		-g '!**/tests/theme/ThemeManagerTests.qml'; then
+		printf 'Raw palette values or the retired fallback singleton remain outside the theme source boundary.\n' >&2
+		return 1
+	fi
+}
+
+test_theme() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-theme-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=theme-test \
+		qs --no-duplicate --path "$SHELL_DIR/theme-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 check_config_service() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/core/ConfigDefaults.js" \
@@ -316,6 +349,10 @@ show_services() {
 
 show_errors() {
 	qs ipc --path "$SHELL_DIR" call diagnostics errors
+}
+
+show_theme_status() {
+	qs ipc --path "$SHELL_DIR" call diagnostics themeStatus
 }
 
 run_command_demo() {
@@ -482,6 +519,7 @@ usage() {
 		"  capabilities      Show sanitized capability state" \
 		"  service-status    Show sanitized service-health diagnostics" \
 		"  errors            Show sanitized coalesced errors" \
+		"  theme-status      Show the active semantic theme summary" \
 		"  config-status     Show sanitized active configuration status" \
 		"  verify-baseline   Verify the tested local runtime baseline" \
 		"  check             Check QML syntax and imports" \
@@ -499,6 +537,10 @@ usage() {
 		"                    Statically check capabilities, diagnostics, and readiness" \
 		"  core-state-test" \
 		"                    Run deterministic core state and error aggregation contracts" \
+		"  theme-check" \
+		"                    Statically check the semantic theme ownership boundary" \
+		"  theme-test" \
+		"                    Run atomic theme, contrast, and fixture contracts" \
 		"  config-service-check" \
 		"                    Statically check ConfigService and its typed snapshot files" \
 		"  config-service-test" \
@@ -576,6 +618,9 @@ service-status)
 errors)
 	show_errors
 	;;
+theme-status)
+	show_theme_status
+	;;
 config-status)
 	qs ipc --path "$SHELL_DIR" call diagnostics configStatus
 	;;
@@ -605,6 +650,12 @@ core-state-check)
 	;;
 core-state-test)
 	test_core_state
+	;;
+theme-check)
+	check_theme
+	;;
+theme-test)
+	test_theme
 	;;
 config-service-check)
 	check_config_service
