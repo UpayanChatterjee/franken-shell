@@ -605,7 +605,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - **Milestone:** Shell appears
 - **Branch:** `feat/workspace-pager`
 - **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Merged PR / commit:** PR [#8](https://github.com/UpayanChatterjee/franken-shell/pull/8); merge commit pending required checks.
 
 #### Scope
 - Implement configurable contiguous workspace groups, defaulting to groups of five.
