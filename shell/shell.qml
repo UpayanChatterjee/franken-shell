@@ -7,7 +7,8 @@ ShellRoot {
     id: root
 
     readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
-    property string startupState: "Bootstrapping"
+    property bool surfaceInitialized: false
+    readonly property bool usesFixtureMonitorBackend: root.mode === "mock" || root.mode === "readiness-healthy-test" || root.mode === "readiness-required-failure-test"
 
     settings.watchFiles: false
 
@@ -24,7 +25,7 @@ ShellRoot {
         Core.Logger.info("theme", "fallback-theme-active", {
             "theme": "FallbackTheme"
         });
-        root.startupState = "SurfacesReady";
+        root.surfaceInitialized = true;
         Core.Logger.info("surfaces", "diagnostic-surface-ready", {
             "visible": diagnosticSurface.visible
         });
@@ -44,7 +45,7 @@ ShellRoot {
     Loader {
         id: monitorBackendLoader
 
-        active: root.mode !== "mock"
+        active: !root.usesFixtureMonitorBackend
 
         sourceComponent: Component {
             Core.HyprlandMonitorAdapter {
@@ -62,21 +63,65 @@ ShellRoot {
 
         configService: configService
     }
+    Core.CapabilityRegistry {
+        id: capabilityRegistry
+    }
+    Core.DiagnosticRegistry {
+        id: diagnosticRegistry
+    }
+    Core.CoreReadinessCoordinator {
+        id: readinessCoordinator
+
+        capabilityRegistry: capabilityRegistry
+        commandRegistry: commandRegistry
+        configService: configService
+        diagnosticRegistry: diagnosticRegistry
+        mode: root.mode
+        monitorRegistry: monitorRegistry
+        surfaceReady: root.surfaceInitialized
+    }
+    Core.ShellState {
+        id: shellState
+
+        capabilityRegistry: capabilityRegistry
+        configLoaded: readinessCoordinator.configLoaded
+        coreDegraded: readinessCoordinator.coreDegraded
+        coreServicesReady: readinessCoordinator.coreServicesReady
+        requiredFailureCode: readinessCoordinator.requiredFailureCode
+        surfacesReady: root.surfaceInitialized
+    }
     Core.Diagnostics {
+        capabilityRegistry: capabilityRegistry
         commandRegistry: commandRegistry
         configHelperExecutable: configHelperClient.resolvedHelperExecutable
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperState: configHelperClient.state
         configService: configService
+        diagnosticRegistry: diagnosticRegistry
         mode: root.mode
         monitorRegistry: monitorRegistry
-        startupState: root.startupState
+        shellState: shellState
         surfaceVisible: diagnosticSurface.visible
     }
     Surfaces.DiagnosticSurface {
         id: diagnosticSurface
 
         mode: root.mode
-        startupState: root.startupState
+        startupState: shellState.state
+    }
+    Connections {
+        function onStateTransitioned(previousState, currentState) {
+            const fields = {
+                "previousState": previousState,
+                "currentState": currentState,
+                "failureCode": shellState.failureCode
+            };
+            if (currentState === "Failed")
+                Core.Logger.error("core", "readiness-transition", fields);
+            else
+                Core.Logger.info("core", "readiness-transition", fields);
+        }
+
+        target: shellState
     }
 }

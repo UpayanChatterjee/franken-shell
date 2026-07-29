@@ -5,35 +5,81 @@ import Quickshell.Io
 Scope {
     id: root
 
-    required property string mode
-    required property string startupState
-    required property bool surfaceVisible
-    required property var configService
-    required property var monitorRegistry
+    required property var capabilityRegistry
     required property var commandRegistry
-    required property string configHelperState
-    required property string configHelperResolution
     required property string configHelperExecutable
+    required property string configHelperResolution
+    required property string configHelperState
+    required property var configService
+    required property var diagnosticRegistry
+    required property string mode
+    required property var monitorRegistry
+    required property var shellState
+    required property bool surfaceVisible
 
     Timer {
         id: reloadTimer
 
         interval: 0
+
         onTriggered: Quickshell.reload(false)
     }
-
     IpcHandler {
-        target: "diagnostics"
-
+        function capabilities(): string {
+            return JSON.stringify(root.capabilityRegistry.summary());
+        }
+        function commandDemo(): string {
+            if (root.mode !== "command-demo") {
+                return JSON.stringify({
+                    state: "unavailable",
+                    failureCategory: "commandDemoModeRequired"
+                });
+            }
+            return JSON.stringify(root.commandRegistry.execute("development.commandDemo"));
+        }
+        function commandStatus(): string {
+            return JSON.stringify(root.commandRegistry.registrySummary());
+        }
+        function configStatus(): string {
+            return JSON.stringify(root.configService.configurationSummary());
+        }
+        function errors(): string {
+            return JSON.stringify(root.diagnosticRegistry.errorsSummary());
+        }
+        function monitorStatus(): string {
+            return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
+        }
+        function readiness(): string {
+            return JSON.stringify(root.shellState.summary());
+        }
+        function reload(): string {
+            Logger.info("core", "soft-reload-requested", {});
+            reloadTimer.start();
+            return "soft reload requested";
+        }
+        function reloadConfig(): string {
+            Logger.info("config", "explicit-reload-requested", {});
+            return root.configService.requestReload();
+        }
+        function services(): string {
+            return JSON.stringify(root.diagnosticRegistry.servicesSummary());
+        }
         function summary(): string {
             const config = root.configService.configurationSummary();
             const monitors = root.monitorRegistry.diagnosticsSummary();
             const commands = root.commandRegistry.registrySummary();
+            const capabilities = root.capabilityRegistry.summary();
+            const diagnostics = root.diagnosticRegistry.summary();
+            const shell = root.shellState.summary();
             return JSON.stringify({
                 project: ProjectInfo.projectName,
                 projectVersion: ProjectInfo.projectVersion,
                 mode: root.mode,
-                startupState: root.startupState,
+                startupState: shell.state,
+                shellReady: shell.ready,
+                shellDegraded: shell.degraded,
+                shellFailed: shell.failed,
+                shellFailureCode: shell.failureCode,
                 shellPath: ProjectInfo.shellPath,
                 configPath: config.authoritativePath,
                 surfaceVisible: root.surfaceVisible,
@@ -79,6 +125,17 @@ Scope {
                 commandRegistryGeneration: commands.registryGeneration,
                 commandSnapshotSequence: commands.snapshotSequence,
                 commandLastAvailabilityRefresh: commands.lastAvailabilityRefresh,
+                capabilityEvaluated: capabilities.evaluated,
+                capabilityRevision: capabilities.revision,
+                capabilityAvailableCount: capabilities.availableCount,
+                capabilityUnavailableCount: capabilities.unavailableCount,
+                capabilityDegradedCount: capabilities.degradedCount,
+                capabilityFailedCount: capabilities.failedCount,
+                capabilityRequiredFailureCount: capabilities.requiredFailureCount,
+                diagnosticServiceCount: diagnostics.serviceCount,
+                diagnosticErrorCount: diagnostics.errorCount,
+                diagnosticCriticalCount: diagnostics.criticalCount,
+                diagnosticRecoverableCount: diagnostics.recoverableCount,
                 configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
                 configHelperState: root.configHelperState,
                 configHelperResolution: root.configHelperResolution,
@@ -86,7 +143,13 @@ Scope {
                 ipcVersion: ProjectInfo.ipcVersion
             });
         }
-
+        function themeStatus(): string {
+            return JSON.stringify({
+                status: "Ready",
+                source: "built-in",
+                theme: "FallbackTheme"
+            });
+        }
         function version(): string {
             return JSON.stringify({
                 projectVersion: ProjectInfo.projectVersion,
@@ -99,45 +162,6 @@ Scope {
             });
         }
 
-        function configStatus(): string {
-            return JSON.stringify(root.configService.configurationSummary());
-        }
-
-        function monitorStatus(): string {
-            return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
-        }
-
-        function commandStatus(): string {
-            return JSON.stringify(root.commandRegistry.registrySummary());
-        }
-
-        function commandDemo(): string {
-            if (root.mode !== "command-demo") {
-                return JSON.stringify({
-                    state: "unavailable",
-                    failureCategory: "commandDemoModeRequired"
-                });
-            }
-            return JSON.stringify(root.commandRegistry.execute("development.commandDemo"));
-        }
-
-        function themeStatus(): string {
-            return JSON.stringify({
-                status: "Ready",
-                source: "built-in",
-                theme: "FallbackTheme"
-            });
-        }
-
-        function reload(): string {
-            Logger.info("core", "soft-reload-requested", {});
-            reloadTimer.start();
-            return "soft reload requested";
-        }
-
-        function reloadConfig(): string {
-            Logger.info("config", "explicit-reload-requested", {});
-            return root.configService.requestReload();
-        }
+        target: "diagnostics"
     }
 }

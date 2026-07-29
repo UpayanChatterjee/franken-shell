@@ -42,6 +42,7 @@ export QT_QPA_PLATFORM=offscreen
 
 run_logged config-helper-client shell/dev/franken-shell config-helper-client-test
 run_logged config-snapshot shell/dev/franken-shell config-snapshot-test
+run_logged core-state shell/dev/franken-shell core-state-test
 run_logged config-service shell/dev/franken-shell config-service-test
 run_logged monitor-registry shell/dev/franken-shell monitor-registry-test
 run_logged command-registry env HOME="$(dirname -- "$REPO_ROOT")" \

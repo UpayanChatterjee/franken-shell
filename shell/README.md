@@ -27,12 +27,18 @@ Run every command from this directory or invoke the script by absolute path:
 ```sh
 ./dev/franken-shell start
 ./dev/franken-shell mock
+./dev/franken-shell mock-healthy
+./dev/franken-shell mock-required-failure
 ./dev/franken-shell stop
 ./dev/franken-shell restart
 ./dev/franken-shell reload
 ./dev/franken-shell config-reload
 ./dev/franken-shell logs
 ./dev/franken-shell diagnostics
+./dev/franken-shell readiness
+./dev/franken-shell capabilities
+./dev/franken-shell service-status
+./dev/franken-shell errors
 ./dev/franken-shell config-status
 ./dev/franken-shell verify-baseline
 ./dev/franken-shell check
@@ -41,6 +47,8 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-helper-client-test
 ./dev/franken-shell config-snapshot-check
 ./dev/franken-shell config-snapshot-test
+./dev/franken-shell core-state-check
+./dev/franken-shell core-state-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -69,6 +77,33 @@ stop and new process launch. These are different lifecycle operations.
 The headless CI smoke runner sets `QS_NO_RELOAD_POPUP=1` so an offscreen soft
 reload does not wait for an interactive reload confirmation surface. Ordinary
 development commands leave Quickshell's reload UI policy unchanged.
+
+## Core readiness and diagnostics
+
+The root shell owns one `CapabilityRegistry`, one `DiagnosticRegistry`, and one
+`ShellState`. Existing services feed a private readiness coordinator; views and
+IPC methods consume the resulting snapshots rather than deriving parallel
+health state.
+
+Readiness advances through `Bootstrapping`, `ConfigLoaded`,
+`CoreServicesReady`, `SurfacesReady`, and `OptionalIntegrationsReady`. Missing
+optional capabilities produce a usable `Degraded` state. A required capability
+or required-core failure produces `Failed` with a stable failure code.
+`readiness` prints the sanitized readiness summary and returns nonzero only for
+`Failed`, allowing CI to wait on observable state instead of a fixed sleep.
+
+The initial capability IDs are `hasHyprland`, `hasVicinae`, `hasOverview`,
+`hasBattery`, `hasNetworkBackend`, `hasBluetoothBackend`, and
+`hasAudioBackend`. Availability is reported truthfully: adapters not yet
+implemented remain unavailable. Capability and service snapshots replace
+atomically. Structured errors expose only approved fields, coalesce repeated
+domain/code pairs, and retain at most 128 active records.
+
+`mock-healthy` and `mock-required-failure` are test-only readiness fixtures.
+Ordinary `mock` remains the degraded, all-optional-integrations-missing
+scenario. `core-state-test` covers transitions, recovery, atomic replacement,
+aggregation, coalescing, redaction, and bounded retention without using live
+desktop services.
 
 ## Configuration lifecycle
 

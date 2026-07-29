@@ -1,0 +1,1 @@
+ERROR franken\.core: .*"event":"readiness-transition".*"currentState":"Failed".*"failureCode":"FIXTURE_REQUIRED_CORE_FAILURE"

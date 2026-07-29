@@ -266,7 +266,7 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **B-000** | Repository baseline | Publish the current committed local project unchanged, establish `main` as the remote baseline, and preserve the pre-PR history with an annotated tag. | `main` | Remote `main` exactly represents the current committed local state, tags are present, and a fresh clone is usable. | **closed** |
 | **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **closed** |
 | **PR-002** | Core baseline | Backfill tests and smoke coverage for the already implemented ConfigService, typed snapshots, helper/client foundation, MonitorRegistry, and CommandRegistry. | `test/core-baseline` | Every currently implemented core subsystem has direct contract tests, startup/reload smoke passes, and there are no unexplained warnings or leaked child processes. | **closed** |
-| **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **open** |
+| **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **in-progress** |
 | **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **open** |
 | **PR-005** | Core skeleton | Implement SurfaceCoordinator, focus/dismissal contracts, monitor ownership, and the minimal shell IPC surface. | `feat/surface-coordinator-ipc` | Transient ownership and IPC are deterministic, focus restoration has a testable contract, and reload does not duplicate global owners. | **open** |
 | **PR-006** | Shell appears | Create the monitor-aware BarHost and stable semantic layout zones using fixture content. | `feat/bar-host-layout` | A stable fixture bar renders without layout jitter, is owned by the monitor model, and can later rotate without rewriting each delegate. | **open** |
@@ -408,7 +408,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - **Milestone:** Core baseline
 - **Branch:** `test/core-baseline`
 - **Status:** **closed**
-- **Merged PR / commit:** PR [#3](https://github.com/UpayanChatterjee/franken-shell/pull/3); merge commit pending required checks.
+- **Merged PR / commit:** PR [#3](https://github.com/UpayanChatterjee/franken-shell/pull/3), merge commit `8db82a4fd087919052a85199514526c99834b068`.
 
 #### Scope
 - Inventory the existing Phase 0 and Phase 1 implementation without redesigning it.
@@ -447,7 +447,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Core skeleton
 - **Branch:** `feat/core-readiness-diagnostics`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
