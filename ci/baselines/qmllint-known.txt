@@ -14,5 +14,3 @@ shell/core/ConfigService.qml:missing-property
 shell/core/ConfigService.qml:missing-property
 shell/core/ConfigService.qml:missing-property
 shell/core/ConfigSnapshot.qml:missing-property
-shell/surfaces/DiagnosticSurface.qml:unqualified
-shell/surfaces/DiagnosticSurface.qml:unqualified

@@ -267,7 +267,7 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-001** | Engineering foundation | Add the repository workflow, PR bookkeeping, language-aware validation scripts, fast CI, and nightly compatibility structure. | `chore/engineering-foundation` | A pull request receives real format, lint, test, and smoke results in both pinned and Arch lanes; failures upload diagnostics; the same commands run locally. | **closed** |
 | **PR-002** | Core baseline | Backfill tests and smoke coverage for the already implemented ConfigService, typed snapshots, helper/client foundation, MonitorRegistry, and CommandRegistry. | `test/core-baseline` | Every currently implemented core subsystem has direct contract tests, startup/reload smoke passes, and there are no unexplained warnings or leaked child processes. | **closed** |
 | **PR-003** | Core skeleton | Implement CapabilityRegistry, diagnostics/error aggregation, ShellState, and explicit readiness/degraded-state reporting. | `feat/core-readiness-diagnostics` | The shell reports truthful readiness and capability state, optional failures remain local, and CI can wait on readiness without arbitrary sleeps. | **closed** |
-| **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **open** |
+| **PR-004** | Core skeleton | Implement ThemeManager and semantic design tokens with atomic fallback and reload behavior. | `feat/theme-manager` | The shell always has a coherent theme, invalid or partial updates cannot leak into UI, and no new feature-facing raw palette ownership is introduced. | **closed** |
 | **PR-005** | Core skeleton | Implement SurfaceCoordinator, focus/dismissal contracts, monitor ownership, and the minimal shell IPC surface. | `feat/surface-coordinator-ipc` | Transient ownership and IPC are deterministic, focus restoration has a testable contract, and reload does not duplicate global owners. | **open** |
 | **PR-006** | Shell appears | Create the monitor-aware BarHost and stable semantic layout zones using fixture content. | `feat/bar-host-layout` | A stable fixture bar renders without layout jitter, is owned by the monitor model, and can later rotate without rewriting each delegate. | **open** |
 | **PR-007** | Shell appears | Implement the fixture numbered-workspace pager and special-workspace selector as controller-driven components. | `feat/workspace-pager` | All documented fixture workspace states pass, commands route through injected controllers, and the pager remains stable under rapid input. | **open** |
@@ -448,7 +448,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - **Milestone:** Core skeleton
 - **Branch:** `feat/core-readiness-diagnostics`
 - **Status:** **closed**
-- **Merged PR / commit:** PR [#4](https://github.com/UpayanChatterjee/franken-shell/pull/4); merge commit pending required checks.
+- **Merged PR / commit:** PR [#4](https://github.com/UpayanChatterjee/franken-shell/pull/4), merge commit `5165c36855ce6d69d0cc0174e84a79b5f9d2d635`.
 
 #### Scope
 - Add one authoritative capability model with available, unavailable, degraded, and failed distinctions.
@@ -486,8 +486,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Core skeleton
 - **Branch:** `feat/theme-manager`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR [#5](https://github.com/UpayanChatterjee/franken-shell/pull/5); merge commit pending required checks.
 
 #### Scope
 - Add semantic colors, typography, spacing, radii, and motion tokens.

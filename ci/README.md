@@ -25,11 +25,11 @@ user configuration, environment, notification content, or credentials.
 - `lint`: Rust Clippy, ShellCheck, qmllint, markdownlint, actionlint, and
   workflow-permission policy;
 - `unit`: Rust contracts plus direct typed-snapshot, configuration lifecycle,
-  capability/diagnostic/readiness, monitor-registry, command-registry, and
-  helper-client fixture suites;
+  capability/diagnostic/readiness, semantic-theme, monitor-registry,
+  command-registry, and helper-client fixture suites;
 - `smoke`: isolated, offscreen, non-owning healthy, degraded, and
   required-core-failure startup, duplicate-start rejection, soft reload,
-  readiness, warning policy, and process teardown.
+  readiness, theme-health, warning policy, and process teardown.
 
 Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,

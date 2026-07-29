@@ -8,13 +8,14 @@ Scope {
     required property var commandRegistry
     readonly property bool configLoaded: root.configService.active !== null
     required property var configService
-    readonly property bool coreDegraded: root.configService.health === "degraded" || root.monitorRegistry.lastMappingError.length > 0
+    readonly property bool coreDegraded: root.configService.health === "degraded" || root.monitorRegistry.lastMappingError.length > 0 || root.themeManager.health === "degraded"
     readonly property bool coreServicesReady: root.configLoaded && root.monitorRegistry.lastRefresh.length > 0 && root.commandRegistry.registryGeneration > 0
     required property var diagnosticRegistry
     required property string mode
     required property var monitorRegistry
     readonly property string requiredFailureCode: root.mode === "readiness-required-failure-test" ? "FIXTURE_REQUIRED_CORE_FAILURE" : ""
     required property bool surfaceReady
+    required property var themeManager
 
     function scheduleSync() {
         syncTimer.restart();
@@ -60,6 +61,19 @@ Scope {
         }
 
         target: root.commandRegistry
+    }
+    Connections {
+        function onActivated() {
+            root.scheduleSync();
+        }
+        function onCandidateRejected() {
+            root.scheduleSync();
+        }
+        function onHealthChanged() {
+            root.scheduleSync();
+        }
+
+        target: root.themeManager
     }
     Timer {
         id: syncTimer
@@ -157,6 +171,17 @@ Scope {
                     "backend": root.monitorRegistry.backendAvailability,
                     "recoverable": true,
                     "repairHint": monitorDegraded ? "Inspect monitor mapping diagnostics." : ""
+                },
+                {
+                    "name": "theme",
+                    "availability": root.themeManager.health === "healthy" ? "available" : "degraded",
+                    "state": root.themeManager.health === "healthy" ? "ready" : "degraded",
+                    "lastError": root.themeManager.lastError,
+                    "lastSuccess": root.themeManager.revision > 0 ? String(root.themeManager.revision) : "builtInFallback",
+                    "version": root.themeManager.activeId,
+                    "backend": root.themeManager.activeSource,
+                    "recoverable": true,
+                    "repairHint": root.themeManager.health === "degraded" ? "Keep the active theme and inspect the rejected candidate." : ""
                 }
             ];
         }
@@ -195,6 +220,21 @@ Scope {
                 }
             } else {
                 root.diagnosticRegistry.clearDomain("config");
+            }
+
+            if (root.themeManager.health === "degraded") {
+                if (root.diagnosticRegistry.error("theme", root.themeManager.lastError) === null) {
+                    root.diagnosticRegistry.report({
+                        "domain": "theme",
+                        "code": root.themeManager.lastError,
+                        "severity": "error",
+                        "summary": "A theme candidate was rejected; the last valid semantic theme remains active.",
+                        "recoverable": true,
+                        "repairHint": "Inspect the theme adapter and candidate diagnostics."
+                    });
+                }
+            } else {
+                root.diagnosticRegistry.clearDomain("theme");
             }
         }
     }

@@ -16,6 +16,7 @@ Scope {
     required property var monitorRegistry
     required property var shellState
     required property bool surfaceVisible
+    required property var themeManager
 
     Timer {
         id: reloadTimer
@@ -71,6 +72,7 @@ Scope {
             const capabilities = root.capabilityRegistry.summary();
             const diagnostics = root.diagnosticRegistry.summary();
             const shell = root.shellState.summary();
+            const theme = root.themeManager.summary();
             return JSON.stringify({
                 project: ProjectInfo.projectName,
                 projectVersion: ProjectInfo.projectVersion,
@@ -136,6 +138,13 @@ Scope {
                 diagnosticErrorCount: diagnostics.errorCount,
                 diagnosticCriticalCount: diagnostics.criticalCount,
                 diagnosticRecoverableCount: diagnostics.recoverableCount,
+                themeActiveId: theme.activeId,
+                themeMode: theme.activeMode,
+                themeSource: theme.activeSource,
+                themeHighContrast: theme.highContrast,
+                themeReducedMotion: theme.reducedMotion,
+                themeHealth: theme.health,
+                themeRevision: theme.revision,
                 configHelperProtocolVersion: ProjectInfo.configHelperProtocolVersion,
                 configHelperState: root.configHelperState,
                 configHelperResolution: root.configHelperResolution,
@@ -144,11 +153,7 @@ Scope {
             });
         }
         function themeStatus(): string {
-            return JSON.stringify({
-                status: "Ready",
-                source: "built-in",
-                theme: "FallbackTheme"
-            });
+            return JSON.stringify(root.themeManager.summary());
         }
         function version(): string {
             return JSON.stringify({

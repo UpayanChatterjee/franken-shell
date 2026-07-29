@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import "core" as Core
 import "surfaces" as Surfaces
+import "theme" as Theme
 
 ShellRoot {
     id: root
@@ -23,7 +24,8 @@ ShellRoot {
             "schemaVersion": Core.ProjectInfo.configSchemaVersion
         });
         Core.Logger.info("theme", "fallback-theme-active", {
-            "theme": "FallbackTheme"
+            "theme": themeManager.activeId,
+            "mode": themeManager.activeMode
         });
         root.surfaceInitialized = true;
         Core.Logger.info("surfaces", "diagnostic-surface-ready", {
@@ -69,6 +71,11 @@ ShellRoot {
     Core.DiagnosticRegistry {
         id: diagnosticRegistry
     }
+    Theme.ThemeManager {
+        id: themeManager
+
+        configService: configService
+    }
     Core.CoreReadinessCoordinator {
         id: readinessCoordinator
 
@@ -79,6 +86,7 @@ ShellRoot {
         mode: root.mode
         monitorRegistry: monitorRegistry
         surfaceReady: root.surfaceInitialized
+        themeManager: themeManager
     }
     Core.ShellState {
         id: shellState
@@ -102,12 +110,14 @@ ShellRoot {
         monitorRegistry: monitorRegistry
         shellState: shellState
         surfaceVisible: diagnosticSurface.visible
+        themeManager: themeManager
     }
     Surfaces.DiagnosticSurface {
         id: diagnosticSurface
 
         mode: root.mode
         startupState: shellState.state
+        theme: themeManager.active
     }
     Connections {
         function onStateTransitioned(previousState, currentState) {

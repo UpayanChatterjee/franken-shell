@@ -1,9 +1,10 @@
 # Franken Shell development shell
 
 This directory contains the clean, non-owning Franken Shell bootstrap and the
-Phase 1 configuration, monitor-normalization, and command-registry services. It is
-selected by its explicit repository path and is independent from the live
-Caelestia configuration at `~/.config/quickshell/caelestia`.
+Phase 1 configuration, theme, readiness, monitor-normalization, and
+command-registry services. It is selected by its explicit repository path and
+is independent from the live Caelestia configuration at
+`~/.config/quickshell/caelestia`.
 
 The bootstrap creates one ordinary, noninteractive diagnostic window. It does
 not import or instantiate notification, tray, Polkit, PAM, session-lock,
@@ -39,6 +40,7 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell capabilities
 ./dev/franken-shell service-status
 ./dev/franken-shell errors
+./dev/franken-shell theme-status
 ./dev/franken-shell config-status
 ./dev/franken-shell verify-baseline
 ./dev/franken-shell check
@@ -49,6 +51,8 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-snapshot-test
 ./dev/franken-shell core-state-check
 ./dev/franken-shell core-state-test
+./dev/franken-shell theme-check
+./dev/franken-shell theme-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -104,6 +108,35 @@ Ordinary `mock` remains the degraded, all-optional-integrations-missing
 scenario. `core-state-test` covers transitions, recovery, atomic replacement,
 aggregation, coalescing, redaction, and bounded retention without using live
 desktop services.
+
+## Semantic theme lifecycle
+
+The root shell owns one `ThemeManager` and publishes one typed active semantic
+snapshot. The snapshot contains colour, typography, spacing, radius, motion,
+opacity, and shared metric groups. The diagnostic surface consumes that
+snapshot; feature and component code must not import raw palette values.
+
+A built-in dark or light fallback is available before optional services start.
+The active typed configuration selects the fallback mode, font scale, surface
+opacity, high-contrast roles, and reduced-motion durations. Dynamic mode uses
+its configured fallback mode until a dynamic-colour adapter supplies a valid
+candidate. Light and animated theme-transition policy remain open product
+questions; the current light profile is a contract fixture and supported
+explicit fallback, not an automatic mode decision.
+
+`applyCandidate(candidate, source)` is the future adapter boundary. An adapter
+must map its raw palette into the complete semantic candidate shape and finish
+any external integration file writes before requesting activation. The manager
+accepts only complete, typed candidates with required contrast. Rejection
+retains the last valid snapshot, degrades the theme service with a stable error
+code, and never publishes raw palette or adapter-private fields. This PR does
+not implement the Caelestia source adapter or wallpaper generation.
+
+`theme-status` exposes only active identity, mode, source, accessibility flags,
+health, last error code, and revision. `theme-test` covers dark, light,
+standard-contrast, high-contrast, and reduced-motion fixtures; invalid type,
+missing-role, and contrast rejection; rapid replacement; config mapping; and
+representative surface instantiation.
 
 ## Configuration lifecycle
 
