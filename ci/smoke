@@ -7,8 +7,10 @@ set -eu
 
 require_tool jq
 require_tool pgrep
+require_tool ps
 require_tool qs
 require_tool rg
+require_tool tr
 
 cd "$REPO_ROOT/shell"
 
@@ -19,6 +21,7 @@ mkdir -p "$smoke_artifact_dir"
 : >"$smoke_artifact_dir/results.txt"
 
 export QT_QPA_PLATFORM=offscreen
+export NO_COLOR=1
 export QS_NO_RELOAD_POPUP=1
 export XDG_RUNTIME_DIR="$runtime_dir"
 unset WAYLAND_DISPLAY
@@ -85,6 +88,11 @@ wait_for_process_exit() {
 		if ! kill -0 "$pid" 2>/dev/null; then
 			return 0
 		fi
+		process_state=$(ps -o stat= -p "$pid" 2>/dev/null |
+			tr -d '[:space:]' || true)
+		case "$process_state" in
+		"" | Z*) return 0 ;;
+		esac
 		attempts=$((attempts + 1))
 		sleep 0.1
 	done
