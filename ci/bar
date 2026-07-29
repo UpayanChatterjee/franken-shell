@@ -1,0 +1,36 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+bar_artifact_dir="$ARTIFACT_DIR/bar"
+mkdir -p "$bar_artifact_dir/fixtures"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if shell/dev/franken-shell bar-host-check >"$bar_artifact_dir/check.log" 2>&1; then
+	cat "$bar_artifact_dir/check.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if FRANKEN_SHELL_ARTIFACT_DIR="$bar_artifact_dir/fixtures" \
+	shell/dev/franken-shell bar-host-test >"$bar_artifact_dir/test.log" 2>&1; then
+	cat "$bar_artifact_dir/test.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Bar component, layout, popover, focus, and fullscreen fixtures passed.\n'

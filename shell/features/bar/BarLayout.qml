@@ -14,6 +14,7 @@ Item {
     readonly property bool layoutOverflow: root.mainAxisLength + 0.5 < root.minimumMainAxisExtent
     readonly property real mainAxisLength: root.vertical ? root.height : root.width
     readonly property real minimumMainAxisExtent: startZone.mainAxisExtent + contextZone.mainAxisExtent + endZone.mainAxisExtent + absoluteEndZone.mainAxisExtent + 4 * root.zoneSpacing
+    required property string monitorId
     required property var specialWorkspaceController
     readonly property real startPosition: root.vertical ? startZone.y : startZone.x
     required property var surfaceCoordinator
@@ -22,6 +23,9 @@ Item {
     required property var workspaceController
     readonly property real zoneSpacing: root.theme.spacing.space2
 
+    function anchorItem(anchorId: string): var {
+        return startZone.anchorItem(anchorId) ?? contextZone.anchorItem(anchorId) ?? endZone.anchorItem(anchorId) ?? absoluteEndZone.anchorItem(anchorId);
+    }
     function snapshot(): var {
         return Object.freeze({
             "vertical": root.vertical,
@@ -76,8 +80,10 @@ Item {
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             cellExtent: root.cellExtent
             items: root.fixtureModel.contextItems
+            monitorId: root.monitorId
             reservedSlots: root.contextCapacity
             spacing: root.theme.spacing.space1
+            surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: root.vertical
         }
@@ -90,7 +96,9 @@ Item {
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             cellExtent: root.cellExtent
             items: root.fixtureModel.endItems
+            monitorId: root.monitorId
             spacing: root.theme.spacing.space1
+            surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: root.vertical
         }
@@ -103,7 +111,9 @@ Item {
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             cellExtent: root.cellExtent
             items: root.fixtureModel.absoluteEndItems
+            monitorId: root.monitorId
             spacing: root.theme.spacing.space1
+            surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: root.vertical
         }

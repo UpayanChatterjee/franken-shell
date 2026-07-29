@@ -15,10 +15,26 @@ Item {
     required property bool vertical
     required property var workspaceController
 
+    // qmllint disable missing-property
+    function anchorItem(anchorId: string): var {
+        const content = contentLoader.item;
+        if (content === null)
+            return null;
+        for (const item of content["children"]) {
+            if (item["anchorId"] === anchorId)
+                return item;
+        }
+        return null;
+    }
+
+    // qmllint enable missing-property
+
     implicitHeight: root.vertical ? root.mainAxisExtent : root.theme.metrics.barThickness
     implicitWidth: root.vertical ? root.theme.metrics.barThickness : root.mainAxisExtent
 
     Loader {
+        id: contentLoader
+
         anchors.fill: parent
         sourceComponent: root.vertical ? verticalContent : horizontalContent
     }

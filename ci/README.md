@@ -10,6 +10,7 @@ them from any directory inside the checkout.
 ./ci/run lint
 ./ci/run unit
 ./ci/run workspace
+./ci/run bar
 ./ci/run smoke
 ```
 
@@ -27,17 +28,21 @@ user configuration, environment, notification content, or credentials.
   workflow-permission policy;
 - `unit`: Rust contracts plus direct typed-snapshot, configuration lifecycle,
   capability/diagnostic/readiness, semantic-theme, surface-coordinator,
-  versioned-shell-IPC, monitor-aware bar-host geometry, monitor-registry,
-  command-registry, and helper-client fixture suites;
+  versioned-shell-IPC, monitor-registry, command-registry, and helper-client
+  fixture suites;
 - `workspace`: blocking controller/component fixtures for numbered grouping,
   wrap boundaries, scroll coalescing, active-action policy injection, keyboard
   focus, special-workspace selection, and unavailable/failure containment;
+- `bar`: blocking bar component and fixture coverage for semantic layout,
+  stable long/localized values, keyboard and pointer popover paths, shared-host
+  replacement, focus restoration, edge-aware placement, and normalized
+  maximized/fullscreen visibility;
 - `smoke`: isolated, offscreen, non-owning healthy, degraded, and
   required-core-failure startup, duplicate-start rejection, soft reload,
   readiness, theme-health, shell-IPC malformed/version/reload safety, warning
   policy, one fixture BarHost before/after reload, and process teardown.
 
-The unit lane captures normal, long-text, high-text-scale, and missing-item bar
+The bar lane captures normal, long-text, high-text-scale, and missing-item
 fixtures. GitHub uploads these PNGs as a non-blocking review artifact; they are
 evidence for layout review rather than approved visual-regression baselines.
 
@@ -45,8 +50,9 @@ Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,
 configuration, and tests required by the roadmap's new-language rule.
 
-Unit task output is retained under `.ci-artifacts/unit/`, including the
-individual fixture log that failed. Smoke evidence is retained under
+Unit task output is retained under `.ci-artifacts/unit/`; bar evidence is
+retained under `.ci-artifacts/bar/`, including component logs and screenshots.
+Smoke evidence is retained under
 `.ci-artifacts/smoke/`, including readiness summaries, instance records,
 Quickshell logs, and observed child process IDs.
 

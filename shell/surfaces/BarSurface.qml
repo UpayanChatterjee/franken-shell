@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import "../features/bar" as Bar
 import "../features/workspaces" as Workspaces
 
@@ -9,6 +10,7 @@ Item {
     readonly property string edge: geometry.edge
     readonly property int exclusiveZone: geometry.exclusiveZone
     property alias fixtureModel: fixtureState
+    required property bool fixtureWindow
     readonly property bool fullscreenSuppressed: root.barConfig?.hideInFullscreen === true && root.monitor?.fullscreenActive === true
     readonly property bool hostEnabled: root.barConfig?.enabled === true && root.monitor?.connected === true && root.monitor?.barEnabled === true
     readonly property string inwardDirection: geometry.inwardDirection
@@ -17,6 +19,7 @@ Item {
     required property var monitor
     readonly property string orientation: geometry.orientation
     readonly property string ownerMonitorId: root.monitor?.runtimeId ?? ""
+    required property var screenInfo
     required property var surfaceCoordinator
     required property var theme
     readonly property real thickness: geometry.thickness
@@ -27,13 +30,44 @@ Item {
 
     signal fixtureCaptured(string path, bool saved)
 
+    function activateFixtureItem(itemId: string, origin: string): var {
+        const anchorId = "bar." + itemId + "." + root.safeToken(root.ownerMonitorId);
+        const item = barLayout.anchorItem(anchorId);
+        return item === null ? Object.freeze({
+            "accepted": false,
+            "changed": false,
+            "errorCode": "FIXTURE_ANCHOR_UNAVAILABLE"
+        }) : item.activate(origin);
+    }
+    function activateSpecialWorkspaceSelector(origin: string): var {
+        const anchorId = "bar.special-workspaces." + root.safeToken(root.ownerMonitorId);
+        const item = barLayout.anchorItem(anchorId);
+        return item === null ? Object.freeze({
+            "accepted": false,
+            "changed": false,
+            "errorCode": "WORKSPACE_SELECTOR_ANCHOR_UNAVAILABLE"
+        }) : item.requestSelector(origin);
+    }
     function captureFixture(path: string) {
         barLayout.grabToImage(result => {
             root.fixtureCaptured(path, result.saveToFile(path));
         });
     }
+    function dismissPopoverEscape(): var {
+        return popoverHost.dismissEscape();
+    }
+    function dismissPopoverOutside(): var {
+        return popoverHost.dismissOutside();
+    }
     function layoutSnapshot(): var {
         return barLayout.snapshot();
+    }
+    function popoverSummary(): var {
+        return popoverHost.summary();
+    }
+    function safeToken(value: string): string {
+        const sanitized = value.replace(/[^A-Za-z0-9._:-]/g, "_");
+        return sanitized.length > 0 ? sanitized : "unresolved";
     }
     function summary(): var {
         const layout = barLayout.snapshot();
@@ -104,11 +138,26 @@ Item {
             anchors.margins: root.theme.spacing.space1
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
             fixtureModel: fixtureState
+            monitorId: root.ownerMonitorId
             specialWorkspaceController: specialWorkspaceController
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: geometry.vertical
             workspaceController: workspaceController
         }
+    }
+    Bar.PopoverHost {
+        id: popoverHost
+
+        anchorResolver: anchorId => barLayout.anchorItem(anchorId)
+        edge: root.edge
+        fixtureModel: fixtureState
+        fixtureWindow: root.fixtureWindow
+        monitorId: root.ownerMonitorId
+        parentWindow: QsWindow.window
+        screenInfo: root.screenInfo
+        specialWorkspaceController: specialWorkspaceController
+        surfaceCoordinator: root.surfaceCoordinator
+        theme: root.theme
     }
 }
