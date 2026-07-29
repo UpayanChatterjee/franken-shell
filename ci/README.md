@@ -24,17 +24,24 @@ user configuration, environment, notification content, or credentials.
 - `format`: Rust, shell, QML, Markdown, JSON, YAML, and CSS formatting;
 - `lint`: Rust Clippy, ShellCheck, qmllint, markdownlint, actionlint, and
   workflow-permission policy;
-- `unit`: Rust contracts and the existing Quickshell fixture suites;
-- `smoke`: isolated, offscreen, non-owning mock startup, readiness, and
-  teardown.
+- `unit`: Rust contracts plus direct typed-snapshot, configuration lifecycle,
+  monitor-registry, command-registry, and helper-client fixture suites;
+- `smoke`: isolated, offscreen, non-owning mock startup, duplicate-start
+  rejection, soft reload, readiness, warning policy, and process teardown.
 
 Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,
 configuration, and tests required by the roadmap's new-language rule.
 
-PR-002 extends smoke coverage to soft reload, unexplained-warning rejection,
-and child-process leak enforcement. Those gaps are not hidden by this
-foundation.
+Unit task output is retained under `.ci-artifacts/unit/`, including the
+individual fixture log that failed. Smoke evidence is retained under
+`.ci-artifacts/smoke/`, including readiness summaries, instance records,
+Quickshell logs, and observed child process IDs.
+
+`ci/baselines/smoke-known.txt` contains the one accepted warning produced by
+Qt's offscreen platform plugin when Quickshell attempts to set a window mask.
+All other smoke warnings, errors, binding loops, and component-load failures
+are rejected.
 
 ## Existing-debt baselines
 

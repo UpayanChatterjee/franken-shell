@@ -6,6 +6,7 @@ set -eu
 . "$(dirname -- "$0")/lib.sh"
 
 require_tool jq
+require_tool pgrep
 require_tool qs
 require_tool rg
 
@@ -13,8 +14,12 @@ cd "$REPO_ROOT/shell"
 
 runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/fsci.XXXXXX")
 chmod 700 "$runtime_dir"
+smoke_artifact_dir="$ARTIFACT_DIR/smoke"
+mkdir -p "$smoke_artifact_dir"
+: >"$smoke_artifact_dir/results.txt"
 
 export QT_QPA_PLATFORM=offscreen
+export QS_NO_RELOAD_POPUP=1
 export XDG_RUNTIME_DIR="$runtime_dir"
 unset WAYLAND_DISPLAY
 unset HYPRLAND_INSTANCE_SIGNATURE
@@ -25,24 +30,136 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+shell_instances() {
+	instance_json=$(qs list --all --json 2>/dev/null) || return 1
+	if [ "$instance_json" = "No running instances." ]; then
+		printf '[]\n'
+		return 0
+	fi
+	printf '%s\n' "$instance_json" |
+		jq --arg config "$REPO_ROOT/shell/shell.qml" \
+			'[.[] | select(.config_path == $config)]' 2>/dev/null
+}
+
+assert_ready_summary() {
+	jq -e '
+        .mode == "mock"
+        and .startupState == "SurfacesReady"
+        and .configHealth == "healthy"
+        and .configSourceState == "defaultsOnly"
+        and .surfaceVisible == true
+        and .monitorBackendAvailability == "unavailable"
+        and .monitorConnectedCount == 0
+        and .commandActiveRequestCount == 0
+        and .commandQueuedRequestCount == 0
+    ' >/dev/null
+}
+
+collect_descendants() {
+	parent=$1
+	children=$(pgrep -P "$parent" 2>/dev/null || true)
+	for child in $children; do
+		printf '%s\n' "$child"
+		collect_descendants "$child"
+	done
+}
+
+wait_for_unregistered() {
+	attempts=0
+	while [ "$attempts" -lt 50 ]; do
+		instances=$(shell_instances || true)
+		if [ -n "$instances" ] &&
+			printf '%s\n' "$instances" | jq -e 'length == 0' >/dev/null 2>&1; then
+			return 0
+		fi
+		attempts=$((attempts + 1))
+		sleep 0.1
+	done
+	return 1
+}
+
+wait_for_process_exit() {
+	pid=$1
+	attempts=0
+	while [ "$attempts" -lt 50 ]; do
+		if ! kill -0 "$pid" 2>/dev/null; then
+			return 0
+		fi
+		attempts=$((attempts + 1))
+		sleep 0.1
+	done
+	return 1
+}
+
 ./dev/franken-shell mock
 summary=$(./dev/franken-shell diagnostics | sed -n '1p')
+printf '%s\n' "$summary" >"$smoke_artifact_dir/initial-summary.json"
+printf '%s\n' "$summary" | assert_ready_summary
 
-printf '%s\n' "$summary" | jq -e '
-    .mode == "mock"
-    and .startupState == "SurfacesReady"
-    and .configHealth == "healthy"
-    and .configSourceState == "defaultsOnly"
-    and .surfaceVisible == true
-' >/dev/null
+instances=$(shell_instances)
+printf '%s\n' "$instances" >"$smoke_artifact_dir/initial-instance.json"
+shell_pid=$(printf '%s\n' "$instances" |
+	jq -er 'if length == 1 then .[0].pid else error("expected one Franken Shell instance") end')
 
-./dev/franken-shell stop
+./dev/franken-shell mock >"$smoke_artifact_dir/duplicate-start.log"
+duplicate_instances=$(shell_instances)
+duplicate_pid=$(printf '%s\n' "$duplicate_instances" |
+	jq -er 'if length == 1 then .[0].pid else error("duplicate start changed instance count") end')
+if [ "$duplicate_pid" -ne "$shell_pid" ]; then
+	die "duplicate start replaced the running Franken Shell process"
+fi
+printf 'duplicate-start pass\n' >>"$smoke_artifact_dir/results.txt"
 
-if qs list --all | rg -F "$REPO_ROOT/shell/shell.qml"; then
+./dev/franken-shell reload >"$smoke_artifact_dir/reload.log"
+reloaded_summary=$(./dev/franken-shell diagnostics | sed -n '1p')
+printf '%s\n' "$reloaded_summary" >"$smoke_artifact_dir/reloaded-summary.json"
+printf '%s\n' "$reloaded_summary" | assert_ready_summary
+
+reloaded_instances=$(shell_instances)
+reloaded_pid=$(printf '%s\n' "$reloaded_instances" |
+	jq -er 'if length == 1 then .[0].pid else error("reload changed instance count") end')
+if [ "$reloaded_pid" -ne "$shell_pid" ]; then
+	die "soft reload replaced the Franken Shell process"
+fi
+printf 'soft-reload pass\n' >>"$smoke_artifact_dir/results.txt"
+
+log_output=$(qs log --path "$REPO_ROOT/shell" --tail 1000)
+printf '%s\n' "$log_output" >"$smoke_artifact_dir/quickshell.log"
+startup_count=$(printf '%s\n' "$log_output" |
+	rg -c 'franken\.core: .*"event":"startup"' || true)
+if [ "$startup_count" -ne 2 ]; then
+	die "expected two startup events across initial load and soft reload, found $startup_count"
+fi
+
+suspect_log=$(printf '%s\n' "$log_output" |
+	rg -i '(^|[[:space:]])(WARN|ERROR):|binding[ -]?loop|QQmlComponent' || true)
+unexpected_log=$(printf '%s\n' "$suspect_log" |
+	rg -v -f "$CI_DIR/baselines/smoke-known.txt" || true)
+if [ -n "$unexpected_log" ]; then
+	printf '%s\n' "$unexpected_log" >"$smoke_artifact_dir/unexpected-warnings.log"
+	die "smoke logs contain an unexpected warning or error"
+fi
+printf 'log-policy pass\n' >>"$smoke_artifact_dir/results.txt"
+
+descendant_pids=$(collect_descendants "$shell_pid")
+printf '%s\n' "$descendant_pids" >"$smoke_artifact_dir/descendant-pids.txt"
+
+./dev/franken-shell stop >"$smoke_artifact_dir/stop.log"
+
+if ! wait_for_unregistered; then
 	die "Franken Shell remained registered after smoke teardown"
 fi
+if ! wait_for_process_exit "$shell_pid"; then
+	die "Franken Shell process remained alive after smoke teardown"
+fi
+for child_pid in $descendant_pids; do
+	if ! wait_for_process_exit "$child_pid"; then
+		die "Franken Shell child process $child_pid remained alive after smoke teardown"
+	fi
+done
+printf 'process-cleanup pass\n' >>"$smoke_artifact_dir/results.txt"
 
 trap - EXIT INT TERM
 rm -rf "$runtime_dir"
 
-printf 'Non-owning startup and teardown smoke passed.\n'
+printf 'Non-owning startup, reload, log, and teardown smoke passed.\n'

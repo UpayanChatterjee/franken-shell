@@ -39,6 +39,8 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell config-helper-build
 ./dev/franken-shell config-helper-test
 ./dev/franken-shell config-helper-client-test
+./dev/franken-shell config-snapshot-check
+./dev/franken-shell config-snapshot-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -63,6 +65,10 @@ running `caelestia` configuration.
 supported. `config-reload` asks the running `ConfigService` to reread its
 current authoritative path without reloading QML. `restart` performs a full
 stop and new process launch. These are different lifecycle operations.
+
+The headless CI smoke runner sets `QS_NO_RELOAD_POPUP=1` so an offscreen soft
+reload does not wait for an interactive reload confirmation surface. Ordinary
+development commands leave Quickshell's reload UI policy unchanged.
 
 ## Configuration lifecycle
 
@@ -114,6 +120,12 @@ client for asynchronous protocol invocation and transport validation. It does
 not read or watch `config.toml` itself. Phase 1 slice 2B adds the root-owned
 `ConfigService`, watched file lifecycle, typed snapshots, atomic publication,
 health, diagnostics, and explicit reload.
+
+`config-snapshot-test` directly checks the normalized-to-typed projection
+boundary: required-field and scalar validation, unknown-field projection,
+deterministic command ordering, sanitized diagnostics, deep freezing, and
+detached collection access. `config-snapshot-check` runs focused static checks
+over the same boundary.
 
 The QML client resolves the development helper deterministically at:
 
