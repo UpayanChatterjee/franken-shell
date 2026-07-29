@@ -27,12 +27,53 @@ Scope {
 
     signal fixtureCaptured(string path, bool saved)
 
+    function activateFixtureItem(itemId: string, origin: string): var {
+        return root.ready ? root.window.activateFixtureItem(itemId, origin) : Object.freeze({
+            "accepted": false,
+            "changed": false,
+            "errorCode": "BAR_HOST_UNAVAILABLE"
+        });
+    }
+    function activateSpecialWorkspaceSelector(origin: string): var {
+        return root.ready ? root.window.activateSpecialWorkspaceSelector(origin) : Object.freeze({
+            "accepted": false,
+            "changed": false,
+            "errorCode": "BAR_HOST_UNAVAILABLE"
+        });
+    }
     function captureFixture(path: string) {
         if (root.ready)
             root.window.captureFixture(path);
     }
+    function dismissPopoverEscape(): var {
+        return root.ready ? root.window.dismissPopoverEscape() : Object.freeze({
+            "accepted": true,
+            "changed": false,
+            "errorCode": ""
+        });
+    }
+    function dismissPopoverOutside(): var {
+        return root.ready ? root.window.dismissPopoverOutside() : Object.freeze({
+            "accepted": true,
+            "changed": false,
+            "errorCode": ""
+        });
+    }
     function layoutSnapshot(): var {
         return root.ready ? root.window.layoutSnapshot() : Object.freeze({});
+    }
+    function popoverSummary(): var {
+        return root.ready ? root.window.popoverSummary() : Object.freeze({
+            "open": false,
+            "surfaceId": "",
+            "anchorId": "",
+            "monitorId": "",
+            "edge": root.edge,
+            "popupEdge": root.inwardDirection,
+            "inwardDirection": root.inwardDirection,
+            "keyboardOpened": false,
+            "anchorResolved": false
+        });
     }
     function summary(): var {
         if (root.ready)

@@ -271,6 +271,9 @@ check_bar_host() {
 		"$SHELL_DIR/features/bar/BarGeometry.qml" \
 		"$SHELL_DIR/features/bar/BarLayout.qml" \
 		"$SHELL_DIR/features/bar/BarZone.qml" \
+		"$SHELL_DIR/features/bar/FixturePopoverContent.qml" \
+		"$SHELL_DIR/features/bar/PopoverHost.qml" \
+		"$SHELL_DIR/features/bar/PopoverPlacement.qml" \
 		"$SHELL_DIR/surfaces/BarHost.qml" \
 		"$SHELL_DIR/surfaces/BarHostSet.qml" \
 		"$SHELL_DIR/surfaces/BarFixtureWindow.qml" \

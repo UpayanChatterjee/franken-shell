@@ -4,3 +4,6 @@ BarFixtureModel 1.0 BarFixtureModel.qml
 BarGeometry 1.0 BarGeometry.qml
 BarLayout 1.0 BarLayout.qml
 BarZone 1.0 BarZone.qml
+FixturePopoverContent 1.0 FixturePopoverContent.qml
+PopoverHost 1.0 PopoverHost.qml
+PopoverPlacement 1.0 PopoverPlacement.qml

@@ -21,11 +21,26 @@ FloatingWindow {
 
     signal fixtureCaptured(string path, bool saved)
 
+    function activateFixtureItem(itemId: string, origin: string): var {
+        return barSurface.activateFixtureItem(itemId, origin);
+    }
+    function activateSpecialWorkspaceSelector(origin: string): var {
+        return barSurface.activateSpecialWorkspaceSelector(origin);
+    }
     function captureFixture(path: string) {
         barSurface.captureFixture(path);
     }
+    function dismissPopoverEscape(): var {
+        return barSurface.dismissPopoverEscape();
+    }
+    function dismissPopoverOutside(): var {
+        return barSurface.dismissPopoverOutside();
+    }
     function layoutSnapshot(): var {
         return barSurface.layoutSnapshot();
+    }
+    function popoverSummary(): var {
+        return barSurface.popoverSummary();
     }
     function summary(): var {
         return barSurface.summary();
@@ -44,7 +59,9 @@ FloatingWindow {
 
         anchors.fill: parent
         barConfig: root.barConfig
+        fixtureWindow: true
         monitor: root.monitor
+        screenInfo: root.screenInfo
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
         workspaceBackend: root.workspaceBackend

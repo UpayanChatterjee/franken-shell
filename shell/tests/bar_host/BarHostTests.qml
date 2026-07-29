@@ -83,10 +83,92 @@ ShellRoot {
             {
                 root.check(!barHost.visible && barHost.exclusiveZone === 0, "true fullscreen hides the host and releases its exclusive zone");
                 fakeMonitor.fullscreenActive = false;
+                fakeMonitor.maximizedActive = true;
+                root.captureIndex = 7;
+                settleTimer.restart();
+                break;
+            }
+        case 7:
+            {
+                root.check(barHost.visible && barHost.exclusiveZone === 48, "maximized state keeps the bar visible and reserved");
+                barHost.fixtureModel.scenario = "localized";
+                root.captureIndex = 8;
+                settleTimer.restart();
+                break;
+            }
+        case 8:
+            {
+                const layout = barHost.layoutSnapshot();
+                root.check(layout.endPosition === root.normalLayout.endPosition && layout.absoluteEndPosition === root.normalLayout.absoluteEndPosition, "localized fixture values do not move protected neighbours");
+                let result = barHost.activateFixtureItem("audio", "pointer");
+                root.check(result.accepted && result.changed, "pointer activation opens a fixture popover");
+                root.captureIndex = 9;
+                settleTimer.restart();
+                break;
+            }
+        case 9:
+            {
+                let popover = barHost.popoverSummary();
+                root.check(popover.open && popover.surfaceId === "fixture.audio" && popover.anchorResolved, "popover host resolves the invoking audio anchor");
+                root.check(popover.edge === "left" && popover.popupEdge === "right" && popover.inwardDirection === "right", "left-edge popover opens inward");
+                let result = barHost.activateFixtureItem("resources", "pointer");
+                root.check(result.accepted && result.changed, "opening another anchor replaces the active popover");
+                root.captureIndex = 10;
+                settleTimer.restart();
+                break;
+            }
+        case 10:
+            {
+                let popover = barHost.popoverSummary();
+                root.check(popover.open && popover.surfaceId === "fixture.resources", "only the replacement popover remains open");
+                let result = barHost.dismissPopoverOutside();
+                root.check(result.accepted && result.changed && !barHost.popoverSummary().open, "outside pointer dismissal closes the popover");
+                result = barHost.activateFixtureItem("audio", "keyboard");
+                root.check(result.accepted && result.changed, "keyboard activation opens the fixture popover");
+                root.captureIndex = 11;
+                settleTimer.restart();
+                break;
+            }
+        case 11:
+            {
+                const popover = barHost.popoverSummary();
+                root.check(popover.open && popover.keyboardOpened && fakeSurfaceCoordinator.focusAcquisitionCount === 1, "keyboard opening requests focus with a deterministic content target");
+                const result = barHost.dismissPopoverEscape();
+                root.check(result.accepted && result.changed && fakeSurfaceCoordinator.focusRestorationCount === 1, "Escape closes and restores the keyboard invocation focus path");
+                fakeMonitor.configuredBarEdge = "top";
+                root.captureIndex = 12;
+                settleTimer.restart();
+                break;
+            }
+        case 12:
+            {
+                let result = barHost.activateFixtureItem("audio", "pointer");
+                root.check(result.accepted && result.changed, "top-edge fixture anchor remains interactive");
+                root.captureIndex = 13;
+                settleTimer.restart();
+                break;
+            }
+        case 13:
+            {
+                const popover = barHost.popoverSummary();
+                root.check(popover.open && popover.edge === "top" && popover.popupEdge === "bottom" && popover.inwardDirection === "down", "top-edge popover opens inward without rotating content");
+                let result = barHost.activateFixtureItem("audio", "pointer");
+                root.check(result.accepted && result.changed && !barHost.popoverSummary().open, "invoking the same anchor toggles its popover closed");
+                result = barHost.activateSpecialWorkspaceSelector("pointer");
+                root.check(result.accepted && result.changed, "special-workspace selector requests the shared host");
+                root.captureIndex = 14;
+                settleTimer.restart();
+                break;
+            }
+        case 14:
+            {
+                const popover = barHost.popoverSummary();
+                root.check(popover.open && popover.surfaceId === "workspace.special-selector" && popover.anchorResolved, "shared host resolves and renders the special-workspace selector anchor");
+                barHost.dismissPopoverOutside();
                 root.check(geometryRight.orientation === "vertical" && geometryRight.inwardDirection === "left", "right-edge abstraction opens inward without rotating delegates");
                 root.check(geometryTop.orientation === "horizontal" && geometryTop.inwardDirection === "down", "top-edge abstraction selects a horizontal composition");
                 root.check(geometryBottom.orientation === "horizontal" && geometryBottom.inwardDirection === "up", "bottom-edge abstraction selects a horizontal composition");
-                console.info("PASS bar-host: monitor ownership, semantic zones, stable geometry, fixtures, fullscreen, and edge abstraction");
+                console.info("PASS bar-host: monitor ownership, stable fixture cells, normalized fullscreen, anchor-aware popovers, dismissal, focus, and edge abstraction");
                 Qt.quit();
                 break;
             }
@@ -130,9 +212,9 @@ ShellRoot {
         onFixtureCaptured: (path, saved) => {
             root.check(saved, "fixture screenshot saved: " + path);
             root.captureIndex += 1;
-            if (root.captureIndex === 1)
+            if (root.captureIndex === 1) {
                 barHost.fixtureModel.scenario = "longText";
-            else if (root.captureIndex === 2) {
+            } else if (root.captureIndex === 2) {
                 barHost.fixtureModel.scenario = "highTextScale";
                 fakeTheme.fontScale = 1.5;
             } else if (root.captureIndex === 3) {

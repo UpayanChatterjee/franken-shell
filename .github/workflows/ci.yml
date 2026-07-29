@@ -161,15 +161,6 @@ jobs:
         run: ./ci/bootstrap-tools
       - name: Run unit and fixture suites
         run: ./ci/run unit
-      - name: Upload bar fixture screenshots
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: bar-fixture-screenshots
-          path: .ci-artifacts/unit/bar-fixtures/*.png
-          if-no-files-found: ignore
-          retention-days: 7
       - name: Collect failure diagnostics
         if: failure()
         run: ./ci/collect-diagnostics unit
@@ -213,6 +204,50 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: workspace-diagnostics
+          path: .ci-artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  bar:
+    name: CI / Bar
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Prepare Git checkout
+        run: pacman -Syu --noconfirm ca-certificates git
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Arch dependencies
+        run: ./ci/install-arch-deps current
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Install repository tools
+        run: ./ci/bootstrap-tools
+      - name: Run bar component and fixture contracts
+        run: ./ci/run bar
+      - name: Upload bar fixture screenshots
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bar-fixture-screenshots
+          path: .ci-artifacts/bar/fixtures/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Collect failure diagnostics
+        if: failure()
+        run: ./ci/collect-diagnostics bar
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bar-diagnostics
           path: .ci-artifacts/
           include-hidden-files: true
           if-no-files-found: error

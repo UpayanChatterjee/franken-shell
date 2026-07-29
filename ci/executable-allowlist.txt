@@ -1,3 +1,4 @@
+ci/bar
 ci/bootstrap-tools
 ci/collect-diagnostics
 ci/format

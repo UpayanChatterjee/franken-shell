@@ -199,13 +199,16 @@ The first fixture rail is a continuous semantic layout with start, flexible,
 fixed-capacity context, end, and absolute-end zones. Bounded cells and the
 flexible spacer keep end controls stable when fixture text changes. The same
 cell delegates compose vertically and horizontally without rotating text.
-Workspace behavior, real status adapters, popovers, autohide, final inset
-geometry, and final thickness remain later roadmap work.
+Workspace behavior is controller-driven, and popover-capable fixture cells
+route through one anchor-aware host per monitor. Real status adapters,
+autohide, final inset geometry, and final thickness remain later roadmap work.
 
 `bar-host-test` instantiates normal, long-text, high-text-scale, missing-item,
-fullscreen, and horizontal-edge fixtures. It asserts protected-zone geometry
-and writes non-blocking review screenshots when an artifact directory is
-provided.
+localized-value, maximized/fullscreen, and horizontal-edge fixtures. It asserts
+protected-zone geometry; shared-host replacement and toggle; pointer and
+keyboard dismissal/focus paths; workspace-selector hosting; and inward edge
+placement. It writes non-blocking review screenshots when an artifact directory
+is provided. `./ci/run bar` promotes this contract to its own blocking CI lane.
 
 ## Fixture workspace navigation
 
@@ -223,9 +226,25 @@ mode intentionally uses an unavailable adapter until the normalized Hyprland
 workspace service arrives in PR-012, so it does not fabricate active state or
 issue backend commands from views. The special-workspace button opens
 `workspace.special-selector` through `SurfaceCoordinator`; its compact selector
-component and focus/dismissal contract are ready for the popover host introduced
-in PR-008. Current single-letter fixture glyphs are placeholders, not a final
-icon-system decision.
+component is rendered by the shared popover host with the same focus and
+dismissal path as the other bar fixtures. Current single-letter fixture glyphs
+are placeholders, not a final icon-system decision.
+
+## Fixture popover host
+
+Each bar monitor owns one `PopoverHost`, while `SurfaceCoordinator` remains the
+global authority for which ordinary popover is active. Bar controls expose
+stable monitor-qualified anchor IDs; the host resolves the active anchor,
+opens inward from the configured edge, and replaces rather than overlaps
+content when another anchor is invoked. Generic fixture content deliberately
+contains no real service workflows. The special-workspace selector uses the
+same host.
+
+Keyboard invocation requests focus and uses the coordinator's restoration path
+on Escape. Pointer invocation, toggle, replacement, and outside dismissal share
+the same close API. Production uses Quickshell's anchored `PopupWindow`; the
+offscreen component harness uses a `FloatingWindow` because Qt's offscreen
+platform does not support popup anchoring.
 
 `workspace-test` covers group boundaries and alternate sizes, wrap/no-wrap,
 coalesced high-resolution scrolling, active-policy unavailable/busy states,
