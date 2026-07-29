@@ -1,4 +1,5 @@
 import "../../features/bar" as Bar
+import "../../services/workspaces" as WorkspaceServices
 import "../../surfaces" as Surfaces
 import QtQuick
 import Quickshell
@@ -108,6 +109,12 @@ ShellRoot {
     FakeBarTheme {
         id: fakeTheme
     }
+    FakeWorkspaceConfig {
+        id: fakeWorkspaceConfig
+    }
+    WorkspaceServices.FixtureWorkspaceAdapter {
+        id: fixtureWorkspaceAdapter
+    }
     Surfaces.BarHost {
         id: barHost
 
@@ -117,6 +124,8 @@ ShellRoot {
         screenInfo: Quickshell.screens[0]
         surfaceCoordinator: fakeSurfaceCoordinator
         theme: fakeTheme
+        workspaceBackend: fixtureWorkspaceAdapter
+        workspaceConfig: fakeWorkspaceConfig
 
         onFixtureCaptured: (path, saved) => {
             root.check(saved, "fixture screenshot saved: " + path);

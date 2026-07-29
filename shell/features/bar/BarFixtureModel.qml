@@ -9,7 +9,6 @@ QtObject {
     readonly property bool longText: root.scenario === "longText"
     readonly property bool missingItems: root.scenario === "missingItems"
     property string scenario: "normal"
-    readonly property var startItems: Object.freeze([root.item("workspaces", qsTr("1–5"), qsTr("Fixture workspace group"), true, "selected"), root.item("specialWorkspaces", qsTr("S"), qsTr("Fixture special workspaces"), !root.missingItems, "neutral")])
 
     function item(id: string, label: string, accessibleName: string, visible: bool, emphasis: string): var {
         return Object.freeze({

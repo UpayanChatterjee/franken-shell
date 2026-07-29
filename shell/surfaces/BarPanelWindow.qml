@@ -18,6 +18,8 @@ PanelWindow {
     property var screenInfo: null
     property var surfaceCoordinator: null
     property var theme: null
+    property var workspaceBackend: null
+    property var workspaceConfig: null
 
     signal fixtureCaptured(string path, bool saved)
 
@@ -52,7 +54,10 @@ PanelWindow {
         anchors.fill: parent
         barConfig: root.barConfig
         monitor: root.monitor
+        surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
+        workspaceBackend: root.workspaceBackend
+        workspaceConfig: root.workspaceConfig
 
         onFixtureCaptured: (path, saved) => root.fixtureCaptured(path, saved)
     }

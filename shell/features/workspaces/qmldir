@@ -1,0 +1,10 @@
+module FrankenShell.Features.Workspaces
+ActiveWorkspacePolicy 1.0 ActiveWorkspacePolicy.qml
+NumberedWorkspacePager 1.0 NumberedWorkspacePager.qml
+SpecialWorkspaceButton 1.0 SpecialWorkspaceButton.qml
+SpecialWorkspaceController 1.0 SpecialWorkspaceController.qml
+SpecialWorkspaceDelegate 1.0 SpecialWorkspaceDelegate.qml
+SpecialWorkspaceSelector 1.0 SpecialWorkspaceSelector.qml
+WorkspaceBarZone 1.0 WorkspaceBarZone.qml
+WorkspaceController 1.0 WorkspaceController.qml
+WorkspaceNumberDelegate 1.0 WorkspaceNumberDelegate.qml

@@ -280,6 +280,7 @@ check_bar_host() {
 		"$SHELL_DIR/tests/bar_host/FakeBarMonitor.qml" \
 		"$SHELL_DIR/tests/bar_host/FakeBarSurfaceCoordinator.qml" \
 		"$SHELL_DIR/tests/bar_host/FakeBarTheme.qml" \
+		"$SHELL_DIR/tests/bar_host/FakeWorkspaceConfig.qml" \
 		"$SHELL_DIR/tests/bar_host/BarHostTests.qml"
 }
 
@@ -295,6 +296,38 @@ test_bar_host() {
 		FRANKEN_SHELL_ARTIFACT_DIR="$artifact_dir" \
 		FRANKEN_SHELL_MODE=bar-host-test \
 		qs --no-duplicate --path "$SHELL_DIR/bar-host-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+check_workspaces() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/workspaces/UnavailableWorkspaceAdapter.qml" \
+		"$SHELL_DIR/services/workspaces/FixtureWorkspaceAdapter.qml" \
+		"$SHELL_DIR/features/workspaces/ActiveWorkspacePolicy.qml" \
+		"$SHELL_DIR/features/workspaces/WorkspaceController.qml" \
+		"$SHELL_DIR/features/workspaces/WorkspaceNumberDelegate.qml" \
+		"$SHELL_DIR/features/workspaces/NumberedWorkspacePager.qml" \
+		"$SHELL_DIR/features/workspaces/SpecialWorkspaceController.qml" \
+		"$SHELL_DIR/features/workspaces/SpecialWorkspaceButton.qml" \
+		"$SHELL_DIR/features/workspaces/SpecialWorkspaceDelegate.qml" \
+		"$SHELL_DIR/features/workspaces/SpecialWorkspaceSelector.qml" \
+		"$SHELL_DIR/features/workspaces/WorkspaceBarZone.qml" \
+		"$SHELL_DIR/tests/workspaces/FakeWorkspaceMonitor.qml" \
+		"$SHELL_DIR/tests/workspaces/FakeWorkspaceSurfaceCoordinator.qml" \
+		"$SHELL_DIR/tests/workspaces/FakeWorkspaceTheme.qml" \
+		"$SHELL_DIR/tests/workspaces/WorkspaceTests.qml"
+}
+
+test_workspaces() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-workspace-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=workspace-test \
+		qs --no-duplicate --path "$SHELL_DIR/workspace-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -650,6 +683,10 @@ usage() {
 		"                    Statically check monitor-aware bar host and layout fixtures" \
 		"  bar-host-test" \
 		"                    Run bar geometry fixtures and capture review screenshots" \
+		"  workspace-check" \
+		"                    Statically check workspace controllers and fixture views" \
+		"  workspace-test" \
+		"                    Run workspace grouping, input, policy, and selector fixtures" \
 		"  config-service-check" \
 		"                    Statically check ConfigService and its typed snapshot files" \
 		"  config-service-test" \
@@ -792,6 +829,12 @@ bar-host-check)
 	;;
 bar-host-test)
 	test_bar_host
+	;;
+workspace-check)
+	check_workspaces
+	;;
+workspace-test)
+	test_workspaces
 	;;
 config-service-check)
 	check_config_service

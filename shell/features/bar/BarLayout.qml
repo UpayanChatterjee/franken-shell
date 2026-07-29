@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import "../workspaces" as Workspaces
 
 Item {
     id: root
@@ -13,9 +14,12 @@ Item {
     readonly property bool layoutOverflow: root.mainAxisLength + 0.5 < root.minimumMainAxisExtent
     readonly property real mainAxisLength: root.vertical ? root.height : root.width
     readonly property real minimumMainAxisExtent: startZone.mainAxisExtent + contextZone.mainAxisExtent + endZone.mainAxisExtent + absoluteEndZone.mainAxisExtent + 4 * root.zoneSpacing
+    required property var specialWorkspaceController
     readonly property real startPosition: root.vertical ? startZone.y : startZone.x
+    required property var surfaceCoordinator
     required property var theme
     required property bool vertical
+    required property var workspaceController
     readonly property real zoneSpacing: root.theme.spacing.space2
 
     function snapshot(): var {
@@ -42,7 +46,7 @@ Item {
         rowSpacing: root.vertical ? root.zoneSpacing : 0
         rows: root.vertical ? 5 : 1
 
-        BarZone {
+        Workspaces.WorkspaceBarZone {
             id: startZone
 
             Layout.fillHeight: !root.vertical
@@ -50,10 +54,12 @@ Item {
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             cellExtent: root.cellExtent
-            items: root.fixtureModel.startItems
             spacing: root.theme.spacing.space1
+            specialWorkspaceController: root.specialWorkspaceController
+            surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             vertical: root.vertical
+            workspaceController: root.workspaceController
         }
         Item {
             Layout.fillHeight: root.vertical

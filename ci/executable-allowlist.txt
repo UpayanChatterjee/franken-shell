@@ -7,6 +7,7 @@ ci/lint
 ci/run
 ci/smoke
 ci/unit
+ci/workspace
 shell/dev/franken-shell
 shell/tests/command_registry/fixtures/arguments
 shell/tests/command_registry/fixtures/failed-start

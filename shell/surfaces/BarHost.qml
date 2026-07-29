@@ -22,6 +22,8 @@ Scope {
     readonly property bool visible: root.window?.visible ?? false
     readonly property real width: root.window?.width ?? 0
     readonly property var window: root.ready ? hostLoader.item : null
+    required property var workspaceBackend
+    required property var workspaceConfig
 
     signal fixtureCaptured(string path, bool saved)
 
@@ -48,7 +50,11 @@ Scope {
             "mainAxisEndInset": 0,
             "outwardInset": 0,
             "layoutOverflow": false,
-            "contextCapacity": 0
+            "contextCapacity": 0,
+            "workspaceStateAvailable": false,
+            "workspaceActiveNumber": -1,
+            "workspaceVisibleNumbers": Object.freeze([]),
+            "specialWorkspaceCount": 0
         });
     }
 
@@ -86,6 +92,18 @@ Scope {
         property: "theme"
         target: root.window
         value: root.theme
+        when: root.ready
+    }
+    Binding {
+        property: "workspaceBackend"
+        target: root.window
+        value: root.workspaceBackend
+        when: root.ready
+    }
+    Binding {
+        property: "workspaceConfig"
+        target: root.window
+        value: root.workspaceConfig
         when: root.ready
     }
     Connections {

@@ -63,6 +63,8 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell shell-ipc-test
 ./dev/franken-shell bar-host-check
 ./dev/franken-shell bar-host-test
+./dev/franken-shell workspace-check
+./dev/franken-shell workspace-test
 ./dev/franken-shell config-service-check
 ./dev/franken-shell config-service-test
 ./dev/franken-shell monitor-registry-check
@@ -204,6 +206,32 @@ geometry, and final thickness remain later roadmap work.
 fullscreen, and horizontal-edge fixtures. It asserts protected-zone geometry
 and writes non-blocking review screenshots when an artifact directory is
 provided.
+
+## Fixture workspace navigation
+
+The bar start zone now uses controller-driven numbered and special-workspace
+components. Numbered groups derive from the typed workspace range and group
+size, stay independent of occupancy and application icons, and keep fixed cell
+geometry across selected-state changes. Pointer, keyboard, and accumulated
+high-resolution scroll input all request actions through the injected workspace
+adapter. Active-number activation is a replaceable policy; the current
+configuration may request overview, but the delegate does not encode that
+choice.
+
+Fixture shell modes inject deterministic workspace state. Normal production
+mode intentionally uses an unavailable adapter until the normalized Hyprland
+workspace service arrives in PR-012, so it does not fabricate active state or
+issue backend commands from views. The special-workspace button opens
+`workspace.special-selector` through `SurfaceCoordinator`; its compact selector
+component and focus/dismissal contract are ready for the popover host introduced
+in PR-008. Current single-letter fixture glyphs are placeholders, not a final
+icon-system decision.
+
+`workspace-test` covers group boundaries and alternate sizes, wrap/no-wrap,
+coalesced high-resolution scrolling, active-policy unavailable/busy states,
+keyboard focus across group changes, six configured special workspaces,
+successful and failed toggles, multiple visible IDs, empty configuration, and
+truthful unavailable/out-of-range states.
 
 ## Configuration lifecycle
 
