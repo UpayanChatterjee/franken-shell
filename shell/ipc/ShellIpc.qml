@@ -8,6 +8,7 @@ Scope {
 
     readonly property int apiVersion: Core.ProjectInfo.ipcVersion
     required property var configService
+    required property var controlCenterHostProvider
     required property var diagnosticsProvider
     required property var surfaceCoordinator
 
@@ -46,6 +47,17 @@ Scope {
                 });
                 break;
             }
+        case "toggleControlCenter":
+            {
+                const toggleResult = root.controlCenterHostProvider.requestKeyboardToggle();
+                result = Object.freeze({
+                    "accepted": toggleResult.accepted,
+                    "errorCode": toggleResult.errorCode,
+                    "revision": toggleResult.revision ?? root.surfaceCoordinator.revision ?? 0,
+                    "state": toggleResult.accepted ? (root.controlCenterHostProvider.openHostCount > 0 ? "open" : "closed") : "rejected"
+                });
+                break;
+            }
         default:
             return controller.errorResponse(request.requestId, "IPC_UNKNOWN_OPERATION");
         }
@@ -72,7 +84,7 @@ Scope {
     QtObject {
         id: controller
 
-        readonly property var operations: Object.freeze(["diagnostics", "reloadConfig", "closeTransients"])
+        readonly property var operations: Object.freeze(["diagnostics", "reloadConfig", "closeTransients", "toggleControlCenter"])
 
         function errorResponse(requestId: string, errorCode: string): var {
             return Object.freeze({

@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD025 -->
+
 # Franken Shell — Control Centre
 
 > **Path:** `docs/features/control-centre.md`  
@@ -8,7 +10,7 @@
 
 This document specifies Franken Shell's right-edge control centre as a Quickshell/QML feature.
 
-It turns the settled product, interaction, and architecture decisions into an implementation contract while preserving every unresolved control-centre question as an explicit prototype or research item. Codex must not choose a window primitive, final width, drag thresholds, header layout, quick-control geometry, scroll policy, or restoration timeout merely because one option is easiest to implement.
+It turns the settled product, interaction, and architecture decisions into an implementation contract while preserving every unresolved control-centre question as an explicit prototype or research item. Codex must preserve the selected window primitive and must not choose a final width, drag thresholds, header layout, quick-control geometry, scroll policy, or restoration timeout merely because one option is easiest to implement.
 
 ---
 
@@ -358,13 +360,15 @@ The network, Bluetooth, notification, and audio feature implementations should r
 
 ## 4.1 `ControlCenterHost`
 
-The exact Quickshell window primitive is unresolved and must be selected through a focused prototype.
+The selected production primitive is one full-monitor `PanelWindow` per
+eligible monitor. It uses the overlay layer, `ExclusionMode.Ignore`, and
+exclusive zone `0`; the owner-monitor scrim and right-attached drawer are items
+inside that window. [ADR-001](../decisions/adr-001-control-centre-window-primitive.md)
+records the prototype comparison and evidence.
 
-Candidate strategies include:
-
-- `PanelWindow` configured without a permanent exclusive zone;
-- `PopupWindow` where focus and layer behaviour are sufficient;
-- another layer-shell or coordinated-window combination supported by the pinned Quickshell baseline.
+The offscreen fixture may use a `FloatingWindow` transport around the same
+surface item because that platform has no layer-shell backend. It is not the
+production window choice.
 
 Required host contract:
 
@@ -1307,6 +1311,11 @@ When opened through a keyboard shortcut:
 - choose a deterministic initial focus target;
 - store enough prior focus context for restoration.
 
+The initial host exposes this path through versioned shell IPC operation
+`toggleControlCenter`, allowing a compositor-configured shortcut to invoke the
+same coordinator-owned transition without importing backend logic into the
+view.
+
 Default initial focus:
 
 1. a recently focused safe control when reopening within the accepted restoration window;
@@ -1327,6 +1336,10 @@ When opened through edge drag:
 - preserve the opening monitor as owner for the lifetime of the open drawer unless hotplug invalidates it.
 
 Exact focus semantics for pointer-opened layer-shell windows must be validated in the Quickshell prototype.
+
+The initial host prototype keeps keyboard focus with the previous application
+for pointer-origin opening. This is implemented evidence, not a final
+resolution of Q-018.11.
 
 ## 9.3 Directional navigation
 
@@ -2235,14 +2248,16 @@ Development fixtures should make reveal progress and state transitions directly 
 
 The following items remain unresolved. Codex must not convert prototype convenience into product policy.
 
-## 18.1 Window primitive
+## 18.1 Window primitive — resolved
 
-- Which exact Quickshell window primitive or coordinated set best satisfies right-edge attachment, no exclusive zone, focus, direct drag, outside click, scrim, layer ordering, fullscreen policy, and mixed-monitor behaviour?
-- Can one window provide both reliable direct manipulation and keyboard focus?
-- Is a separate scrim window required?
-- How does the choice behave across Quickshell reload?
+[D-051](../decisions.md#d-051--control-centre-window-primitive) and
+[ADR-001](../decisions/adr-001-control-centre-window-primitive.md) select one
+full-monitor overlay `PanelWindow` containing both drawer and owner-monitor
+scrim. Smoke evidence verifies one host and no duplicate scrim across reload.
 
-This is a blocker for completing Phase 3.
+PR-010 must still validate continuously adjustable direct reveal on this
+primitive. Activation geometry, fullscreen policy, final pointer-open focus,
+and mixed-monitor policy remain unresolved in their own sections.
 
 ## 18.2 Activation width
 
@@ -2411,7 +2426,7 @@ This is not a Phase 3 dependency.
 
 Codex must follow these rules while implementing the control centre:
 
-1. Do not choose the final Quickshell window primitive without a minimal comparative prototype.
+1. Preserve D-051 and ADR-001; revisit the selected primitive only if direct-manipulation evidence exposes a blocking limitation.
 2. Do not hard-code accepted status onto example width or drag-threshold values.
 3. Do not create hover opening.
 4. Do not reserve a permanent exclusive zone.
@@ -2437,4 +2452,3 @@ Codex must follow these rules while implementing the control centre:
 24. Do not assume pointer-open focus behaviour; test it with the chosen Quickshell primitive.
 25. Do not proceed past Phase 3 mechanics while direct drag, focus, dismissal, and outside-click behaviour remain unreliable.
 26. Record any new product decision in `decisions.md` and any unresolved limitation in `open-questions.md` before relying on it elsewhere.
-

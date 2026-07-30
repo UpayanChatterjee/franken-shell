@@ -34,6 +34,10 @@ ShellRoot {
         root.check(response.ok && response.result.state === "closed" && fakeSurfaceCoordinator.closeCount === 1, "close-transients routes to SurfaceCoordinator");
         response = shellIpc.dispatch(root.envelope("request.close.2", "closeTransients", 1));
         root.check(response.ok && response.result.state === "alreadyClosed" && fakeSurfaceCoordinator.closeCount === 2, "repeated close-transients is safe and observable");
+        response = shellIpc.dispatch(root.envelope("request.control-center.open", "toggleControlCenter", 1));
+        root.check(response.ok && response.result.accepted && response.result.state === "open" && fakeControlCenterHost.toggleCount === 1, "keyboard control-centre opening routes to the coordinator-owned host");
+        response = shellIpc.dispatch(root.envelope("request.control-center.close", "toggleControlCenter", 1));
+        root.check(response.ok && response.result.accepted && response.result.state === "closed" && fakeControlCenterHost.toggleCount === 2, "the same keyboard operation toggles the control centre closed");
         response = shellIpc.dispatch("{");
         root.check(!response.ok && response.requestId === "" && response.error.code === "IPC_MALFORMED_REQUEST", "malformed JSON is rejected without echoing input");
         response = shellIpc.dispatch(JSON.stringify({
@@ -57,7 +61,7 @@ ShellRoot {
             }
         }));
         root.check(!response.ok && response.error.code === "IPC_UNEXPECTED_PAYLOAD" && fakeConfigService.reloadCount === 1, "operation payload cannot expand the write boundary");
-        console.info("PASS shell-ipc: versioning, routing, malformed input, safety, and repeated requests");
+        console.info("PASS shell-ipc: versioning, routing, keyboard control-centre toggle, malformed input, safety, and repeated requests");
         Qt.quit();
     }
 
@@ -65,6 +69,9 @@ ShellRoot {
 
     FakeShellIpcConfigService {
         id: fakeConfigService
+    }
+    FakeShellIpcControlCenterHostProvider {
+        id: fakeControlCenterHost
     }
     FakeShellIpcDiagnostics {
         id: fakeDiagnostics
@@ -76,6 +83,7 @@ ShellRoot {
         id: shellIpc
 
         configService: fakeConfigService
+        controlCenterHostProvider: fakeControlCenterHost
         diagnosticsProvider: fakeDiagnostics
         surfaceCoordinator: fakeSurfaceCoordinator
     }

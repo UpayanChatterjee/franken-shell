@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+control_center_artifact_dir="$ARTIFACT_DIR/control-center"
+mkdir -p "$control_center_artifact_dir/fixtures"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if shell/dev/franken-shell control-center-host-check \
+	>"$control_center_artifact_dir/check.log" 2>&1; then
+	cat "$control_center_artifact_dir/check.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if FRANKEN_SHELL_ARTIFACT_DIR="$control_center_artifact_dir/fixtures" \
+	shell/dev/franken-shell control-center-host-test \
+	>"$control_center_artifact_dir/test.log" 2>&1; then
+	cat "$control_center_artifact_dir/test.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Control-centre primitive, ownership, scrim, focus, and dismissal fixtures passed.\n'

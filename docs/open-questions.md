@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD025 MD029 -->
+
 # Franken Shell — Open Questions
 
 > **Status:** Living design backlog  
@@ -19,14 +21,14 @@ Do not let Codex resolve these silently through implementation convenience.
 
 # 1. Priority Labels
 
-| Label | Meaning |
-|---|---|
-| **Blocker** | Must be resolved before the named implementation phase can complete. |
-| **High** | Strongly affects architecture, interaction, or maintainability. |
-| **Medium** | Important, but can be deferred behind a safe placeholder. |
-| **Low** | Polish or preference question that should be resolved through prototyping. |
-| **Research** | Requires checking current APIs, capabilities, or upstream behaviour. |
-| **Prototype** | Best answered by building and testing alternatives. |
+| Label         | Meaning                                                                    |
+| ------------- | -------------------------------------------------------------------------- |
+| **Blocker**   | Must be resolved before the named implementation phase can complete.       |
+| **High**      | Strongly affects architecture, interaction, or maintainability.            |
+| **Medium**    | Important, but can be deferred behind a safe placeholder.                  |
+| **Low**       | Polish or preference question that should be resolved through prototyping. |
+| **Research**  | Requires checking current APIs, capabilities, or upstream behaviour.       |
+| **Prototype** | Best answered by building and testing alternatives.                        |
 
 ---
 
@@ -537,24 +539,18 @@ Need to decide the default and whether multiple paths are worthwhile.
 
 ## Q-019 — Exact Quickshell window primitive
 
-**Priority:** Blocker, Prototype  
-**Needed by:** Phase 3
+**Status:** Resolved by [D-051](decisions.md#d-051--control-centre-window-primitive)
+and [ADR-001](decisions/adr-001-control-centre-window-primitive.md)
 
-Which Quickshell window type best supports:
+**Resolved:** 2026-07-30
 
-- right-edge attachment;
-- no permanent exclusive zone;
-- keyboard focus;
-- pointer-driven direct reveal;
-- outside click;
-- scrim;
-- layer ordering;
-- fullscreen policy;
-- multi-monitor placement?
+The selected production primitive is a full-monitor `PanelWindow` using the
+overlay layer, `ExclusionMode.Ignore`, and exclusive zone `0`. The drawer and
+owner-monitor scrim share that window.
 
-Candidates may include a panel/layer-shell window, popup window, or custom combination.
-
-This must be decided through a minimal prototype.
+Continuous pointer-driven reveal, activation geometry, fullscreen policy, and
+final multi-monitor behaviour remain separate open questions and PR-010
+acceptance work; they do not reopen the host-primitive choice by themselves.
 
 ---
 
@@ -2315,9 +2311,11 @@ D-076. Before Phase 1 implementation, resolve or bound:
 
 ## Before Phase 3
 
-8. control-centre window primitive.
-9. edge activation feasibility.
-10. focus-grab and outside-click behaviour.
+The control-centre window primitive is resolved by D-051 and ADR-001. Before
+completing Phase 3, resolve or bound:
+
+8. edge activation feasibility.
+9. final focus-grab and outside-click behaviour.
 
 ## Before Phase 4
 
@@ -2361,7 +2359,7 @@ When resolving a question, record:
 **Evidence or prototype:**  
 **Alternatives rejected:**  
 **Consequences:**  
-**Documents updated:**  
+**Documents updated:**
 ```
 
 Then:

@@ -245,6 +245,7 @@ check_shell_ipc() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/ipc/ShellIpc.qml" \
 		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcConfigService.qml" \
+		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcControlCenterHostProvider.qml" \
 		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcDiagnostics.qml" \
 		"$SHELL_DIR/tests/shell_ipc/FakeShellIpcSurfaceCoordinator.qml" \
 		"$SHELL_DIR/tests/shell_ipc/ShellIpcTests.qml"
@@ -299,6 +300,37 @@ test_bar_host() {
 		FRANKEN_SHELL_ARTIFACT_DIR="$artifact_dir" \
 		FRANKEN_SHELL_MODE=bar-host-test \
 		qs --no-duplicate --path "$SHELL_DIR/bar-host-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+check_control_center_host() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/features/controlcenter/ControlCenterPlaceholder.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterHost.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterHostSet.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterFixtureWindow.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterPanelWindow.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterSurface.qml" \
+		"$SHELL_DIR/tests/control_center_host/FakeControlCenterConfig.qml" \
+		"$SHELL_DIR/tests/control_center_host/FakeControlCenterMonitor.qml" \
+		"$SHELL_DIR/tests/control_center_host/FakeControlCenterMonitorRegistry.qml" \
+		"$SHELL_DIR/tests/control_center_host/FakeControlCenterTheme.qml" \
+		"$SHELL_DIR/tests/control_center_host/ControlCenterHostTests.qml"
+}
+
+test_control_center_host() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-control-center-runtime.XXXXXX")
+	artifact_dir=${FRANKEN_SHELL_ARTIFACT_DIR:-"$runtime_dir/control-center-fixtures"}
+	chmod 700 "$runtime_dir"
+	mkdir -p "$artifact_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_ARTIFACT_DIR="$artifact_dir" \
+		FRANKEN_SHELL_MODE=control-center-host-test \
+		qs --no-duplicate --path "$SHELL_DIR/control-center-host-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -653,6 +685,8 @@ usage() {
 		"  ipc-version       Show the stable shell IPC version handshake" \
 		"  ipc-diagnostics   Request diagnostics through versioned shell IPC" \
 		"  close-transients  Close ordinary shell transients through versioned IPC" \
+		"  toggle-control-center" \
+		"                    Toggle the control centre through its keyboard-origin IPC path" \
 		"  config-status     Show sanitized active configuration status" \
 		"  verify-baseline   Verify the tested local runtime baseline" \
 		"  check             Check QML syntax and imports" \
@@ -686,6 +720,10 @@ usage() {
 		"                    Statically check monitor-aware bar host and layout fixtures" \
 		"  bar-host-test" \
 		"                    Run bar geometry fixtures and capture review screenshots" \
+		"  control-center-host-check" \
+		"                    Statically check the control-centre host and fixture" \
+		"  control-center-host-test" \
+		"                    Run control-centre primitive, scrim, focus, and dismissal fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -779,6 +817,9 @@ ipc-diagnostics)
 close-transients)
 	shell_request closeTransients cli.closeTransients
 	;;
+toggle-control-center)
+	shell_request toggleControlCenter cli.toggleControlCenter
+	;;
 config-status)
 	qs ipc --path "$SHELL_DIR" call diagnostics configStatus
 	;;
@@ -832,6 +873,12 @@ bar-host-check)
 	;;
 bar-host-test)
 	test_bar_host
+	;;
+control-center-host-check)
+	check_control_center_host
+	;;
+control-center-host-test)
+	test_control_center_host
 	;;
 workspace-check)
 	check_workspaces

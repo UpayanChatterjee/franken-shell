@@ -11,6 +11,7 @@ them from any directory inside the checkout.
 ./ci/run unit
 ./ci/run workspace
 ./ci/run bar
+./ci/run control-center
 ./ci/run smoke
 ```
 
@@ -37,14 +38,21 @@ user configuration, environment, notification content, or credentials.
   stable long/localized values, keyboard and pointer popover paths, shared-host
   replacement, focus restoration, edge-aware placement, and normalized
   maximized/fullscreen visibility;
+- `control-center`: blocking host-primitive and component fixtures for
+  coordinator ownership, right attachment, zero exclusive zone, pointer and
+  keyboard opening, scrim dismissal, Escape, focus handoff, and major-surface
+  arbitration;
 - `smoke`: isolated, offscreen, non-owning healthy, degraded, and
   required-core-failure startup, duplicate-start rejection, soft reload,
   readiness, theme-health, shell-IPC malformed/version/reload safety, warning
-  policy, one fixture BarHost before/after reload, and process teardown.
+  policy, one fixture BarHost and ControlCenterHost before/after reload,
+  control-centre IPC toggle ownership, and process teardown.
 
 The bar lane captures normal, long-text, high-text-scale, and missing-item
 fixtures. GitHub uploads these PNGs as a non-blocking review artifact; they are
 evidence for layout review rather than approved visual-regression baselines.
+The control-centre lane captures pointer-open and keyboard-open diagnostic
+screenshots and uploads them with the lane's diagnostics if the job fails.
 
 Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,
@@ -52,6 +60,7 @@ configuration, and tests required by the roadmap's new-language rule.
 
 Unit task output is retained under `.ci-artifacts/unit/`; bar evidence is
 retained under `.ci-artifacts/bar/`, including component logs and screenshots.
+Control-centre evidence is retained under `.ci-artifacts/control-center/`.
 Smoke evidence is retained under
 `.ci-artifacts/smoke/`, including readiness summaries, instance records,
 Quickshell logs, and observed child process IDs.
