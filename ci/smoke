@@ -61,6 +61,11 @@ assert_degraded_summary() {
         and .barHostCount == 1
         and .barResolvedHostCount == 1
         and .barVisibleHostCount == 1
+        and .controlCenterHostCount == 1
+        and .controlCenterResolvedHostCount == 1
+        and .controlCenterOpenHostCount == 0
+        and .controlCenterVisibleScrimCount == 0
+        and .controlCenterPrimitive == "PanelWindow"
         and .barHosts[0].workspaceStateAvailable == true
         and .barHosts[0].workspaceActiveNumber == 1
         and .barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]
@@ -182,6 +187,11 @@ printf '%s\n' "$healthy_summary" | jq -e '
     and .barHostCount == 1
     and .barResolvedHostCount == 1
     and .barVisibleHostCount == 1
+    and .controlCenterHostCount == 1
+    and .controlCenterResolvedHostCount == 1
+    and .controlCenterOpenHostCount == 0
+    and .controlCenterVisibleScrimCount == 0
+    and .controlCenterPrimitive == "PanelWindow"
     and .surfaceActiveCount == 0
     and .surfaceLastTransition == "idle"
     and .themeHealth == "healthy"
@@ -204,6 +214,10 @@ printf '%s\n' "$ipc_diagnostics" | jq -e '
     and .result.surfaceActiveCount == 0
     and .result.barHostCount == 1
     and .result.barVisibleHostCount == 1
+    and .result.controlCenterHostCount == 1
+    and .result.controlCenterResolvedHostCount == 1
+    and .result.controlCenterOpenHostCount == 0
+    and .result.controlCenterVisibleScrimCount == 0
     and .result.barHosts[0].workspaceStateAvailable == true
     and .result.barHosts[0].workspaceActiveNumber == 1
     and .result.barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]
@@ -232,6 +246,32 @@ jq -e '.ok == true and .result.state == "alreadyClosed"' \
 	"$smoke_artifact_dir/ipc-close-first.json" >/dev/null
 jq -e '.ok == true and .result.state == "alreadyClosed"' \
 	"$smoke_artifact_dir/ipc-close-repeated.json" >/dev/null
+./dev/franken-shell toggle-control-center \
+	>"$smoke_artifact_dir/control-center-open.json"
+jq -e '.ok == true and .result.accepted == true and .result.state == "open"' \
+	"$smoke_artifact_dir/control-center-open.json" >/dev/null
+open_control_center_summary=$(./dev/franken-shell ipc-diagnostics | sed -n '1p')
+printf '%s\n' "$open_control_center_summary" \
+	>"$smoke_artifact_dir/control-center-open-summary.json"
+printf '%s\n' "$open_control_center_summary" | jq -e '
+    .ok == true
+    and .result.surfaceActiveMajorId == "controlCenter"
+    and .result.controlCenterOpenHostCount == 1
+    and .result.controlCenterVisibleScrimCount == 1
+' >/dev/null
+./dev/franken-shell toggle-control-center \
+	>"$smoke_artifact_dir/control-center-close.json"
+jq -e '.ok == true and .result.accepted == true and .result.state == "closed"' \
+	"$smoke_artifact_dir/control-center-close.json" >/dev/null
+closed_control_center_summary=$(./dev/franken-shell ipc-diagnostics | sed -n '1p')
+printf '%s\n' "$closed_control_center_summary" \
+	>"$smoke_artifact_dir/control-center-closed-summary.json"
+printf '%s\n' "$closed_control_center_summary" | jq -e '
+    .ok == true
+    and .result.surfaceActiveMajorId == ""
+    and .result.controlCenterOpenHostCount == 0
+    and .result.controlCenterVisibleScrimCount == 0
+' >/dev/null
 printf 'shell-ipc pass\n' >>"$smoke_artifact_dir/results.txt"
 
 healthy_instances=$(shell_instances)
@@ -273,6 +313,11 @@ printf '%s\n' "$reloaded_bar_summary" | jq -e '
     and .result.barHostCount == 1
     and .result.barResolvedHostCount == 1
     and .result.barVisibleHostCount == 1
+    and .result.controlCenterHostCount == 1
+    and .result.controlCenterResolvedHostCount == 1
+    and .result.controlCenterOpenHostCount == 0
+    and .result.controlCenterVisibleScrimCount == 0
+    and .result.controlCenterPrimitive == "PanelWindow"
     and .result.barHosts[0].workspaceStateAvailable == true
     and .result.barHosts[0].workspaceActiveNumber == 1
     and .result.barHosts[0].workspaceVisibleNumbers == [1, 2, 3, 4, 5]

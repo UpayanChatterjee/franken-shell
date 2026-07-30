@@ -1,6 +1,7 @@
 ci/bar
 ci/bootstrap-tools
 ci/collect-diagnostics
+ci/control-center
 ci/format
 ci/hygiene
 ci/install-arch-deps

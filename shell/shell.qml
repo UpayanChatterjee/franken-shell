@@ -103,6 +103,15 @@ ShellRoot {
         workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : unavailableWorkspaceAdapter
         workspaceConfig: configService.active?.workspaces ?? null
     }
+    Surfaces.ControlCenterHostSet {
+        id: controlCenterHosts
+
+        controlCenterConfig: configService.active?.controlCenter ?? null
+        fixtureWindow: root.usesFixtureMonitorBackend
+        monitorRegistry: monitorRegistry
+        surfaceCoordinator: surfaceCoordinator
+        theme: themeManager.active
+    }
     Core.CoreReadinessCoordinator {
         id: readinessCoordinator
 
@@ -135,6 +144,7 @@ ShellRoot {
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperState: configHelperClient.state
         configService: configService
+        controlCenterHostProvider: controlCenterHosts
         diagnosticRegistry: diagnosticRegistry
         mode: root.mode
         monitorRegistry: monitorRegistry
@@ -145,6 +155,7 @@ ShellRoot {
     }
     Ipc.ShellIpc {
         configService: configService
+        controlCenterHostProvider: controlCenterHosts
         diagnosticsProvider: diagnostics
         surfaceCoordinator: surfaceCoordinator
     }

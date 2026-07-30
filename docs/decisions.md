@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD025 -->
+
 # Franken Shell — Decision Log
 
 > **Status:** Living design record  
@@ -21,7 +23,7 @@ Statuses:
 - **Deferred** — intentionally postponed;
 - **Superseded** — replaced by a later decision.
 
-The log is not a substitute for detailed feature specifications. It records *why* the project is taking a particular direction.
+The log is not a substitute for detailed feature specifications. It records _why_ the project is taking a particular direction.
 
 ---
 
@@ -1358,20 +1360,34 @@ Gestures could improve the trackpad experience, but platform capability and conf
 
 # D-051 — Control Centre Window Primitive
 
-**Status:** Deferred
+**Status:** Accepted
 
 ## Decision
 
-The exact Quickshell window primitive for the control centre will be selected through prototype testing.
+The production control centre uses one full-monitor Quickshell `PanelWindow`
+per eligible monitor. It is anchored to all four edges on the overlay layer,
+uses `ExclusionMode.Ignore` with an exclusive zone of `0`, and contains both
+the owner-monitor scrim and the right-attached drawer.
+
+`SurfaceCoordinator` remains the single visibility, monitor-ownership,
+dismissal, and focus authority. The offscreen fixture's `FloatingWindow` is a
+test transport, not the product primitive.
+
+The comparison and prototype evidence are recorded in
+[ADR-001](decisions/adr-001-control-centre-window-primitive.md).
 
 ## Rationale
 
-Focus, layer-shell behaviour, edge drag, outside click, and exclusive-zone interaction may differ between available primitives.
+The accepted baseline proved full-monitor layer placement despite existing
+exclusive zones, deterministic keyboard focus and Escape restoration, and
+single-window scrim dismissal. `PopupWindow` remains appropriate for anchored
+bar popovers but not for this independent major surface. `FloatingWindow` does
+not provide deterministic layer-edge ownership in production.
 
 ## Consequences
 
-- architecture specifies required behaviour, not a premature type;
-- Phase 3 must validate the chosen primitive;
+- architecture and feature contracts name `PanelWindow` explicitly;
+- PR-010 must still validate continuous direct reveal on the selected host;
 - changing the primitive should not affect feature page implementations.
 
 ---

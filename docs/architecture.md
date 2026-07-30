@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD025 -->
+
 # Franken Shell — Architecture
 
 > **Status:** Working architecture baseline  
@@ -966,9 +968,11 @@ It binds to feature controllers.
 
 ## 10.3 Control-centre host
 
-Candidate Quickshell primitive:
+Selected Quickshell primitive:
 
-- `PanelWindow`, `PopupWindow`, or another layer-shell window selected after prototype testing.
+- one full-monitor `PanelWindow` per eligible monitor;
+- overlay layer with `ExclusionMode.Ignore` and exclusive zone `0`;
+- one shared window for the owner-monitor scrim and right-attached drawer.
 
 Requirements:
 
@@ -981,14 +985,15 @@ Requirements:
 - closes predictably;
 - nests internal pages without new top-level windows.
 
-The exact Quickshell window type should be chosen experimentally based on:
+`SurfaceCoordinator` grants global ownership to at most one host. Keyboard
+opening requests layer-shell focus and deterministic initial item focus;
+pointer opening does not request keyboard focus during the current prototype.
+The final pointer-to-keyboard transition remains unresolved.
 
-- layer-shell behaviour;
-- focus;
-- animation;
-- exclusive-zone interaction;
-- outside-click handling;
-- mixed-monitor reliability.
+The offscreen component harness may wrap the same surface item in a
+`FloatingWindow` because the offscreen platform has no layer-shell backend.
+That wrapper is not an alternative production owner. See
+[ADR-001](decisions/adr-001-control-centre-window-primitive.md).
 
 ---
 

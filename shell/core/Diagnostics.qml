@@ -12,6 +12,7 @@ Scope {
     required property string configHelperResolution
     required property string configHelperState
     required property var configService
+    required property var controlCenterHostProvider
     required property var diagnosticRegistry
     required property string mode
     required property var monitorRegistry
@@ -24,6 +25,7 @@ Scope {
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
         const commands = root.commandRegistry.registrySummary();
+        const controlCenterHosts = root.controlCenterHostProvider.summary();
         const barHosts = root.barHostProvider.summary();
         const capabilities = root.capabilityRegistry.summary();
         const diagnostics = root.diagnosticRegistry.summary();
@@ -88,6 +90,12 @@ Scope {
             "barResolvedHostCount": barHosts.resolvedHostCount,
             "barVisibleHostCount": barHosts.visibleHostCount,
             "barHosts": barHosts.hosts,
+            "controlCenterHostCount": controlCenterHosts.hostCount,
+            "controlCenterResolvedHostCount": controlCenterHosts.resolvedHostCount,
+            "controlCenterOpenHostCount": controlCenterHosts.openHostCount,
+            "controlCenterVisibleScrimCount": controlCenterHosts.visibleScrimCount,
+            "controlCenterPrimitive": controlCenterHosts.primitive,
+            "controlCenterHosts": controlCenterHosts.hosts,
             "capabilityEvaluated": capabilities.evaluated,
             "capabilityRevision": capabilities.revision,
             "capabilityAvailableCount": capabilities.availableCount,

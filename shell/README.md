@@ -45,6 +45,7 @@ Run every command from this directory or invoke the script by absolute path:
 ./dev/franken-shell ipc-version
 ./dev/franken-shell ipc-diagnostics
 ./dev/franken-shell close-transients
+./dev/franken-shell toggle-control-center
 ./dev/franken-shell config-status
 ./dev/franken-shell verify-baseline
 ./dev/franken-shell check
@@ -170,14 +171,16 @@ disappearance closes its popover, and owner monitor removal closes affected
 transients while invalidating unsafe focus candidates.
 
 The `shell` IPC target has a version handshake and one strict JSON request
-envelope. API version 1 admits only `diagnostics`, `reloadConfig`, and
-`closeTransients`; unknown fields, payload expansion, malformed JSON,
+envelope. API version 1 admits only `diagnostics`, `reloadConfig`,
+`closeTransients`, and `toggleControlCenter`; unknown fields, payload
+expansion, malformed JSON,
 unsupported versions, and unknown operations return stable error codes. It
 does not expose general command execution, arbitrary paths, backend calls, or
-internal properties. `config-reload`, `ipc-diagnostics`, and
-`close-transients` use this contract. Soft QML reload reconstructs one root
-handler and coordinator; smoke tests call the target before and after reload
-to reject duplicate ownership.
+internal properties. `config-reload`, `ipc-diagnostics`, `close-transients`,
+and `toggle-control-center` use this contract. The last operation is the stable
+keyboard-origin path intended for a compositor-configured shortcut. Soft QML
+reload reconstructs one root handler and coordinator; smoke tests call the
+target before and after reload to reject duplicate ownership.
 
 `surface-test` covers open, replace, close, `Escape`, anchor disappearance,
 monitor removal, rapid requests, and focus handoff. `shell-ipc-test` covers
@@ -251,6 +254,29 @@ coalesced high-resolution scrolling, active-policy unavailable/busy states,
 keyboard focus across group changes, six configured special workspaces,
 successful and failed toggles, multiple visible IDs, empty configuration, and
 truthful unavailable/out-of-range states.
+
+## Control-centre host primitive
+
+One production `PanelWindow` is instantiated per resolved monitor. It anchors
+to the complete monitor on the overlay layer, ignores other surfaces'
+exclusive zones, reserves no zone of its own, and contains both the
+owner-monitor scrim and right-attached drawer. `SurfaceCoordinator` grants
+global ownership to at most one host and closes an ordinary bar popover before
+the drawer opens.
+
+Keyboard-origin opening acquires deterministic initial focus; real Wayland and
+fixture evidence verifies Escape closure and one restoration handoff. Pointer
+origin opening is immediately interactive but does not request keyboard focus
+in this prototype. Outside scrim clicks dismiss through the same coordinator.
+The content is intentionally a Close placeholder: edge dragging, navigation,
+and backend controls belong to later roadmap PRs.
+
+Offscreen tests wrap the shared surface item in a `FloatingWindow`, since that
+platform has no layer-shell backend. `control-center-host-test` covers
+primitive geometry, pointer/keyboard focus policy, scrim dismissal, Escape,
+popover replacement, and major arbitration. `./ci/run control-center` is the
+blocking component lane; smoke also verifies one host/scrim owner across soft
+reload.
 
 ## Configuration lifecycle
 
