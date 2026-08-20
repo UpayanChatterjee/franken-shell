@@ -1,0 +1,3 @@
+module FrankenShell.Services.Hyprland
+HyprlandAdapter 1.0 HyprlandAdapter.qml
+QuickshellHyprlandRuntime 1.0 QuickshellHyprlandRuntime.qml

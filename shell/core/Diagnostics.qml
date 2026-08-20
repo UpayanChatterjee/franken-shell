@@ -14,6 +14,7 @@ Scope {
     required property var configService
     required property var controlCenterHostProvider
     required property var diagnosticRegistry
+    property var hyprlandProvider: null
     required property string mode
     required property var monitorRegistry
     required property var shellState
@@ -29,6 +30,7 @@ Scope {
         const barHosts = root.barHostProvider.summary();
         const capabilities = root.capabilityRegistry.summary();
         const diagnostics = root.diagnosticRegistry.summary();
+        const hyprland = root.hyprlandProvider?.diagnosticsSummary?.() ?? {};
         const shell = root.shellState.summary();
         const surfaces = root.surfaceCoordinator.summary();
         const theme = root.themeManager.summary();
@@ -75,6 +77,18 @@ Scope {
             "monitorBackendAvailability": monitors.backendAvailability,
             "monitorLastRefresh": monitors.lastRefresh,
             "monitorLastMappingError": monitors.lastMappingError,
+            "hyprlandAvailable": hyprland.available === true,
+            "hyprlandConnectionState": String(hyprland.connectionState ?? "unavailable"),
+            "hyprlandStateStale": hyprland.stale === true,
+            "hyprlandWorkspaceCount": Number(hyprland.workspaceCount ?? 0),
+            "hyprlandFocusedWindowPresent": hyprland.focusedWindowPresent === true,
+            "hyprlandUsingLua": hyprland.usingLua === true,
+            "hyprlandTestedVersion": String(hyprland.testedVersion ?? ""),
+            "hyprlandMalformedEventCount": Number(hyprland.malformedEventCount ?? 0),
+            "hyprlandStaleSnapshotCount": Number(hyprland.staleSnapshotCount ?? 0),
+            "hyprlandLastEventName": String(hyprland.lastEventName ?? ""),
+            "hyprlandUnknownEventCount": Number(hyprland.unknownEventCount ?? 0),
+            "hyprlandLastError": String(hyprland.lastError ?? ""),
             "commandRegisteredCount": commands.registeredCommandCount,
             "commandAvailableCount": commands.availableCommandCount,
             "commandUnavailableCount": commands.unavailableCommandCount,
@@ -159,6 +173,12 @@ Scope {
         }
         function errors(): string {
             return JSON.stringify(root.diagnosticRegistry.errorsSummary());
+        }
+        function hyprlandStatus(): string {
+            return JSON.stringify(root.hyprlandProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable"
+            });
         }
         function monitorStatus(): string {
             return JSON.stringify(root.monitorRegistry.diagnosticsSummary());

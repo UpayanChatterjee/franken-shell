@@ -225,13 +225,47 @@ configuration may request overview, but the delegate does not encode that
 choice.
 
 Fixture shell modes inject deterministic workspace state. Normal production
-mode intentionally uses an unavailable adapter until the normalized Hyprland
-workspace service arrives in PR-012, so it does not fabricate active state or
-issue backend commands from views. The special-workspace button opens
+mode uses the normalized Hyprland adapter for numbered and special-workspace
+state and actions; views still receive only the workspace-controller contract
+and contain no compositor syntax. The special-workspace button opens
 `workspace.special-selector` through `SurfaceCoordinator`; its compact selector
 component is rendered by the shared popover host with the same focus and
 dismissal path as the other bar fixtures. Current single-letter fixture glyphs
 are placeholders, not a final icon-system decision.
+
+## Hyprland adapter
+
+`services/hyprland/QuickshellHyprlandRuntime.qml` is the single native runtime
+owner for monitor, workspace, toplevel, and dispatch state. It uses
+`Quickshell.Hyprland` for authoritative models and commands. A narrow local
+event-socket connection is retained only because the pinned Quickshell API does
+not expose event-stream connection health; it supplies interruption detection,
+reconnect, and raw event framing inside the adapter boundary. It does not poll
+with `hyprctl`.
+
+`HyprlandAdapter.qml` atomically normalizes active/urgent numbered workspaces,
+configured special workspaces, focused monitor/window facts, and fullscreen
+mode. Last-known data is marked stale on disconnect and cannot authorize
+actions. Reconnection performs a full model refresh, and out-of-order snapshots
+cannot replace newer state. Fullscreen mode `2` is true fullscreen; mode `1` is
+maximized and does not suppress the bar.
+
+Lua and legacy dispatcher strings are isolated in
+`HyprlandCommandBuilder.js`. Native dispatch is fire-and-forget in the pinned
+Quickshell API, so an accepted result means the request was submitted; the
+subsequent authoritative state refresh confirms its effect. The adapter fails
+closed while disconnected and validates workspace IDs, special-workspace names,
+and captured window addresses before dispatch.
+
+Hyprland 0.55.4 with Lua configuration is the exact tested project baseline,
+not a minimum supported version. Q-113 remains open for compatibility-range
+testing. `./dev/franken-shell hyprland-status` reports the tested version,
+Lua-mode detection, connection/stale state, normalized counts, and error
+counters without window titles, classes, addresses, or other client identity.
+`./dev/franken-shell hyprland-live-reconnect-test` is a bounded developer-machine
+acceptance harness: it uses a separate non-window shell instance, interrupts
+only that instance's event socket, verifies reconnection and authoritative
+refresh, and exits without restarting the compositor or the main shell.
 
 ## Fixture popover host
 

@@ -373,6 +373,35 @@ check_control_center_navigation() {
 		"$SHELL_DIR/tests/control_center_navigation/ControlCenterNavigationComponentTests.qml"
 }
 
+check_hyprland_adapter() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/hyprland/HyprlandCommandBuilder.js" \
+		"$SHELL_DIR/services/hyprland/HyprlandAdapter.qml" \
+		"$SHELL_DIR/services/hyprland/QuickshellHyprlandRuntime.qml" \
+		"$SHELL_DIR/tests/hyprland_adapter/FakeHyprlandMonitorRegistry.qml" \
+		"$SHELL_DIR/tests/hyprland_adapter/FakeHyprlandRuntime.qml" \
+		"$SHELL_DIR/tests/hyprland_adapter/HyprlandAdapterTests.qml" \
+		"$SHELL_DIR/tests/hyprland_adapter/HyprlandLiveReconnectTests.qml"
+}
+
+test_hyprland_adapter() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-hyprland-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=hyprland-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/hyprland-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_hyprland_live_reconnect() {
+	FRANKEN_SHELL_MODE=hyprland-live-reconnect-test \
+		qs --no-duplicate --path "$SHELL_DIR/hyprland-live-reconnect-tests.qml" --log-times
+}
+
 test_control_center_navigation() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-control-center-navigation-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -442,7 +471,7 @@ check_monitor_registry() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/core/MonitorNormalization.js" \
 		"$SHELL_DIR/core/MonitorRecord.qml" \
-		"$SHELL_DIR/core/HyprlandMonitorAdapter.qml" \
+		"$SHELL_DIR/services/hyprland/QuickshellHyprlandRuntime.qml" \
 		"$SHELL_DIR/core/MonitorRegistry.qml" \
 		"$SHELL_DIR/tests/monitor_registry/FakeMonitorBackend.qml" \
 		"$SHELL_DIR/tests/monitor_registry/MonitorRegistryTests.qml"
@@ -526,6 +555,14 @@ show_command_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics commandStatus
+}
+
+show_hyprland_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics hyprlandStatus
 }
 
 show_readiness() {
@@ -789,6 +826,13 @@ usage() {
 		"                    Statically check control-centre tab and page navigation" \
 		"  control-center-navigation-test" \
 		"                    Run deterministic tab, page-stack, focus, and Escape fixtures" \
+		"  hyprland-adapter-check" \
+		"                    Statically check the normalized Hyprland adapter contract" \
+		"  hyprland-adapter-test" \
+		"                    Run deterministic event, command, and reconnect fixtures" \
+		"  hyprland-status    Show sanitized Hyprland adapter and event-stream state" \
+		"  hyprland-live-reconnect-test" \
+		"                    Exercise the real local event socket reconnect path" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -956,6 +1000,18 @@ control-center-navigation-check)
 	;;
 control-center-navigation-test)
 	test_control_center_navigation
+	;;
+hyprland-adapter-check)
+	check_hyprland_adapter
+	;;
+hyprland-adapter-test)
+	test_hyprland_adapter
+	;;
+hyprland-status)
+	show_hyprland_diagnostics
+	;;
+hyprland-live-reconnect-test)
+	test_hyprland_live_reconnect
 	;;
 workspace-check)
 	check_workspaces

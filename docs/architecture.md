@@ -868,7 +868,9 @@ Do not mix three different Hyprland access methods across feature files.
 
 ## 9.3 Lua mode
 
-The supported compositor target is Hyprland 0.55+ using Lua configuration.
+The tested compositor baseline is Hyprland 0.55.4 using Lua configuration.
+This pin is not a minimum supported version. A support range remains unresolved
+under Q-113 until compatibility testing exists.
 
 The adapter should verify Lua mode where the Quickshell API exposes that state.
 
