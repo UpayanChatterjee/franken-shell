@@ -6,6 +6,7 @@ import Quickshell
 Scope {
     id: root
 
+    property var audioController: null
     required property var barConfig
     required property bool fixtureWindow
     readonly property int hostCount: hostVariants.instances.length
@@ -44,6 +45,7 @@ Scope {
             BarHost {
                 id: barHost
 
+                audioController: root.audioController
                 barConfig: root.barConfig
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor

@@ -384,6 +384,42 @@ check_hyprland_adapter() {
 		"$SHELL_DIR/tests/hyprland_adapter/HyprlandLiveReconnectTests.qml"
 }
 
+check_audio_adapter() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/audio/AudioOutputClassifier.js" \
+		"$SHELL_DIR/services/audio/AudioAdapter.qml" \
+		"$SHELL_DIR/services/audio/QuickshellPipewireRuntime.qml" \
+		"$SHELL_DIR/services/audio/UnavailableAudioRuntime.qml" \
+		"$SHELL_DIR/features/audio/AudioController.qml" \
+		"$SHELL_DIR/tests/audio_adapter/FakeAudioRuntime.qml" \
+		"$SHELL_DIR/tests/audio_adapter/AudioAdapterTests.qml"
+
+	runtime_count=$(rg -c 'AudioServices\.QuickshellPipewireRuntime[[:space:]]*\{' "$SHELL_DIR/shell.qml")
+	if [ "$runtime_count" -ne 1 ]; then
+		printf 'Expected exactly one root PipeWire runtime, found %s.\n' "$runtime_count" >&2
+		return 1
+	fi
+
+	backend_import_count=$(rg -l '^import Quickshell\.Services\.Pipewire' "$SHELL_DIR" -g '*.qml' | wc -l)
+	if [ "$backend_import_count" -ne 1 ]; then
+		printf 'Expected PipeWire backend access in exactly one runtime file, found %s files.\n' "$backend_import_count" >&2
+		return 1
+	fi
+}
+
+test_audio_adapter() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-audio-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=audio-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/audio-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 test_hyprland_adapter() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-hyprland-adapter-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -563,6 +599,14 @@ show_hyprland_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics hyprlandStatus
+}
+
+show_audio_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics audioStatus
 }
 
 show_readiness() {
@@ -833,6 +877,11 @@ usage() {
 		"  hyprland-status    Show sanitized Hyprland adapter and event-stream state" \
 		"  hyprland-live-reconnect-test" \
 		"                    Exercise the real local event socket reconnect path" \
+		"  audio-status      Show sanitized PipeWire adapter state" \
+		"  audio-adapter-check" \
+		"                    Statically check the normalized PipeWire adapter contract" \
+		"  audio-adapter-test" \
+		"                    Run deterministic device, stream, action, and reconnect fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -1012,6 +1061,15 @@ hyprland-status)
 	;;
 hyprland-live-reconnect-test)
 	test_hyprland_live_reconnect
+	;;
+audio-status)
+	show_audio_diagnostics
+	;;
+audio-adapter-check)
+	check_audio_adapter
+	;;
+audio-adapter-test)
+	test_audio_adapter
 	;;
 workspace-check)
 	check_workspaces

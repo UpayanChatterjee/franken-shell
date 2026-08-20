@@ -275,8 +275,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-009** | Drawer works | Select and implement the ControlCenterHost primitive with keyboard/pointer open-close, scrim, focus, and outside dismissal. | `feat/control-centre-host` | The selected primitive is documented, explicit opening and dismissal are reliable, and focus behavior is repeatable without timing sleeps. | **closed** |
 | **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **closed** |
 | **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **closed** |
-| **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **in-progress** |
-| **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **open** |
+| **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **closed** |
+| **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **in-progress** |
 | **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **open** |
 | **PR-015** | Real desktop state | Implement network throughput and low-frequency resource summary adapters with bounded polling. | `feat/throughput-resource-adapters` | Persistent metrics are stable, bounded, and non-blocking; hidden detail consumers reduce or stop elevated polling. | **open** |
 | **PR-016** | Real desktop state | Implement the Network adapter and control-centre model for connectivity, scans, saved networks, and connection tasks. | `feat/network-adapter` | Network state/actions are normalized, secrets remain private, progress/errors are explicit, and backend failure does not prevent opening the drawer. | **open** |
@@ -811,8 +811,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/hyprland-adapter`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** [#13](https://github.com/UpayanChatterjee/franken-shell/pull/13) / `d14ac717c788277a81349a67f0098f1c76f71cd7`
 
 #### Scope
 - Expose active workspace, workspace list, special workspaces, focused window/monitor, fullscreen, and urgent state.
@@ -863,7 +863,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/audio-adapter`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope

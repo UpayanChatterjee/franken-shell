@@ -35,10 +35,11 @@ user configuration, environment, notification content, or credentials.
   event normalization, reconnect behavior, numbered grouping,
   wrap boundaries, scroll coalescing, active-action policy injection, keyboard
   focus, special-workspace selection, and unavailable/failure containment;
-- `bar`: blocking bar component and fixture coverage for semantic layout,
-  stable long/localized values, keyboard and pointer popover paths, shared-host
-  replacement, focus restoration, edge-aware placement, and normalized
-  maximized/fullscreen visibility;
+- `bar`: blocking bar and authoritative audio-adapter coverage for semantic
+  layout, normalized devices/streams, absence and reconnect behavior, bounded
+  coalesced volume writes, mute routing, keyboard and pointer popover paths,
+  shared-host replacement, focus restoration, edge-aware placement, and
+  normalized maximized/fullscreen visibility;
 - `control-center`: blocking host-primitive and component fixtures for
   coordinator ownership, right attachment, zero exclusive zone, pointer and
   keyboard opening, scrim dismissal, Escape, focus handoff, and major-surface
@@ -59,8 +60,9 @@ Lua routing is active but currently has no project files to inspect. The first
 PR that adds Lua must also provide the pinned StyLua and Selene installations,
 configuration, and tests required by the roadmap's new-language rule.
 
-Unit task output is retained under `.ci-artifacts/unit/`; bar evidence is
-retained under `.ci-artifacts/bar/`, including component logs and screenshots.
+Unit task output is retained under `.ci-artifacts/unit/`; bar and audio evidence
+is retained under `.ci-artifacts/bar/`, including component logs and
+screenshots.
 Control-centre evidence is retained under `.ci-artifacts/control-center/`.
 Smoke evidence is retained under
 `.ci-artifacts/smoke/`, including readiness summaries, instance records,

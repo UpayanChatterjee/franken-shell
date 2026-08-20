@@ -5,6 +5,7 @@ import Quickshell.Io
 Scope {
     id: root
 
+    property var audioProvider: null
     required property var barHostProvider
     required property var capabilityRegistry
     required property var commandRegistry
@@ -30,6 +31,7 @@ Scope {
         const barHosts = root.barHostProvider.summary();
         const capabilities = root.capabilityRegistry.summary();
         const diagnostics = root.diagnosticRegistry.summary();
+        const audio = root.audioProvider?.diagnosticsSummary?.() ?? {};
         const hyprland = root.hyprlandProvider?.diagnosticsSummary?.() ?? {};
         const shell = root.shellState.summary();
         const surfaces = root.surfaceCoordinator.summary();
@@ -89,6 +91,20 @@ Scope {
             "hyprlandLastEventName": String(hyprland.lastEventName ?? ""),
             "hyprlandUnknownEventCount": Number(hyprland.unknownEventCount ?? 0),
             "hyprlandLastError": String(hyprland.lastError ?? ""),
+            "audioAvailable": audio.available === true,
+            "audioConnectionState": String(audio.connectionState ?? "unavailable"),
+            "audioStateStale": audio.stale === true,
+            "audioOutputDeviceCount": Number(audio.outputDeviceCount ?? 0),
+            "audioInputDeviceCount": Number(audio.inputDeviceCount ?? 0),
+            "audioPlaybackStreamCount": Number(audio.playbackStreamCount ?? 0),
+            "audioCaptureStreamCount": Number(audio.captureStreamCount ?? 0),
+            "audioActiveCaptureState": String(audio.activeCaptureState ?? "unknown"),
+            "audioDefaultOutputPresent": audio.defaultOutputPresent === true,
+            "audioDefaultInputPresent": audio.defaultInputPresent === true,
+            "audioOutputCategory": String(audio.outputCategory ?? "unknown"),
+            "audioMasterMuted": audio.masterMuted === true,
+            "audioMicrophoneMuted": audio.microphoneMuted === true,
+            "audioLastError": String(audio.lastError ?? ""),
             "commandRegisteredCount": commands.registeredCommandCount,
             "commandAvailableCount": commands.availableCommandCount,
             "commandUnavailableCount": commands.unavailableCommandCount,
@@ -153,6 +169,12 @@ Scope {
         onTriggered: Quickshell.reload(false)
     }
     IpcHandler {
+        function audioStatus(): string {
+            return JSON.stringify(root.audioProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable"
+            });
+        }
         function capabilities(): string {
             return JSON.stringify(root.capabilityRegistry.summary());
         }

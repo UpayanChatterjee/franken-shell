@@ -5,6 +5,7 @@ import "../features/controlcenter" as ControlCenter
 Scope {
     id: root
 
+    property var audioController: null
     property var contentModel: null
     required property var controlCenterConfig
     readonly property var effectiveContentModel: root.contentModel ?? placeholderModel
@@ -127,6 +128,8 @@ Scope {
     }
     ControlCenter.ControlCenterPlaceholderModel {
         id: placeholderModel
+
+        audioController: root.audioController
     }
     Loader {
         id: hostLoader

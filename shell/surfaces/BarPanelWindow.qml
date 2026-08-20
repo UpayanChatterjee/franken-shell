@@ -7,6 +7,7 @@ PanelWindow {
     // qmllint enable uncreatable-type
     id: root
 
+    property var audioController: null
     property var barConfig: null
     readonly property string edge: barSurface.edge
     readonly property alias fixtureModel: barSurface.fixtureModel
@@ -44,6 +45,12 @@ PanelWindow {
     function popoverSummary(): var {
         return barSurface.popoverSummary();
     }
+    function requestAudioMuteToggle(): bool {
+        return barSurface.requestAudioMuteToggle();
+    }
+    function requestAudioVolumeSteps(steps: int): bool {
+        return barSurface.requestAudioVolumeSteps(steps);
+    }
     function summary(): var {
         return barSurface.summary();
     }
@@ -67,6 +74,7 @@ PanelWindow {
         id: barSurface
 
         anchors.fill: parent
+        audioController: root.audioController
         barConfig: root.barConfig
         fixtureWindow: false
         monitor: root.monitor

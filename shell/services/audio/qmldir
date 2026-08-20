@@ -1,0 +1,4 @@
+module FrankenShell.Services.Audio
+AudioAdapter 1.0 AudioAdapter.qml
+QuickshellPipewireRuntime 1.0 QuickshellPipewireRuntime.qml
+UnavailableAudioRuntime 1.0 UnavailableAudioRuntime.qml
