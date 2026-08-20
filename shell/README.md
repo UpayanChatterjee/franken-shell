@@ -268,15 +268,28 @@ Keyboard-origin opening acquires deterministic initial focus; real Wayland and
 fixture evidence verifies Escape closure and one restoration handoff. Pointer
 origin opening is immediately interactive but does not request keyboard focus
 in this prototype. Outside scrim clicks dismiss through the same coordinator.
-The content is intentionally a Close placeholder: edge dragging, navigation,
-and backend controls belong to later roadmap PRs.
+The content remains an intentional Close placeholder; navigation and backend
+controls belong to later roadmap PRs.
+
+A separate invisible `PanelWindow` owns the configured right-edge activation
+strip on each eligible monitor. It forwards explicit-time pointer samples to a
+pure reveal controller, which discriminates horizontal intent, applies
+configured distance and velocity thresholds, and exposes normalized progress.
+The drawer transform and scrim alpha consume that progress directly. Release
+settles from the current position using shared motion tokens; reversal,
+cancellation, fullscreen suppression, and a narrow provisional background
+close-drag rail use the same state machine. Q-020 and Q-021 remain open:
+prototype activation width and thresholds are typed configuration, not final
+product values.
 
 Offscreen tests wrap the shared surface item in a `FloatingWindow`, since that
 platform has no layer-shell backend. `control-center-host-test` covers
 primitive geometry, pointer/keyboard focus policy, scrim dismissal, Escape,
-popover replacement, and major arbitration. `./ci/run control-center` is the
-blocking component lane; smoke also verifies one host/scrim owner across soft
-reload.
+popover replacement, major arbitration, and partial reveal integration.
+`control-center-drag-test` supplies deterministic timestamps for activation
+geometry, intent, distance, velocity, reversal, cancellation, fullscreen, and
+close-drag cases. `./ci/run control-center` is the blocking component lane;
+smoke also verifies one host/scrim owner across soft reload.
 
 ## Configuration lifecycle
 

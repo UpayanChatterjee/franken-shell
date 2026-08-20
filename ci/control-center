@@ -35,4 +35,22 @@ else
 	exit "$status"
 fi
 
-printf 'Control-centre primitive, ownership, scrim, focus, and dismissal fixtures passed.\n'
+if shell/dev/franken-shell control-center-drag-check \
+	>"$control_center_artifact_dir/drag-check.log" 2>&1; then
+	cat "$control_center_artifact_dir/drag-check.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/drag-check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell control-center-drag-test \
+	>"$control_center_artifact_dir/drag-test.log" 2>&1; then
+	cat "$control_center_artifact_dir/drag-test.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/drag-test.log" >&2
+	exit "$status"
+fi
+
+printf 'Control-centre primitive, ownership, direct reveal, intent, focus, and dismissal fixtures passed.\n'

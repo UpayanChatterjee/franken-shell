@@ -273,7 +273,7 @@ jobs:
           cache: npm
       - name: Install repository tools
         run: ./ci/bootstrap-tools
-      - name: Run control-centre host contracts
+      - name: Run control-centre host and drag contracts
         run: ./ci/run control-center
       - name: Collect failure diagnostics
         if: failure()

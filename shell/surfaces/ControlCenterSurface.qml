@@ -16,8 +16,9 @@ Item {
     readonly property bool open: root.hostEnabled && root.owned
     readonly property bool owned: root.surfaceCoordinator?.activeMajorId === "controlCenter" && root.surfaceCoordinator?.activeMajor?.ownerMonitorId === root.ownerMonitorId
     readonly property string ownerMonitorId: root.monitor?.runtimeId ?? ""
-    readonly property real revealProgress: root.open ? 1 : 0
-    readonly property bool scrimVisible: root.open && root.controlCenterConfig?.scrim?.enabled !== false
+    required property var revealController
+    readonly property real revealProgress: root.revealController?.revealProgress ?? 0
+    readonly property bool scrimVisible: root.open && root.revealProgress > 0 && root.controlCenterConfig?.scrim?.enabled !== false
     required property var surfaceCoordinator
     required property var theme
     readonly property bool windowVisible: root.open
@@ -48,6 +49,7 @@ Item {
             placeholder.focusInitial();
     }
     function handleEscape(): var {
+        settleAnimation.stop();
         return root.open ? root.surfaceCoordinator.closeMajor("escape") : root.result(false);
     }
     function rejection(errorCode: string): var {
@@ -82,6 +84,9 @@ Item {
             "keyboardActive": root.keyboardActive,
             "initialFocusActive": placeholder.initialFocusActive,
             "revealProgress": root.revealProgress,
+            "revealState": root.revealController.state,
+            "revealVelocity": root.revealController.velocity,
+            "gestureDrawerWidth": root.revealController.drawerWidth,
             "drawerWidth": root.drawerWidth,
             "scrimVisible": root.scrimVisible,
             "exclusionMode": "Ignore",
@@ -96,13 +101,45 @@ Item {
         event.accepted = true;
     }
     onOwnedChanged: {
-        if (root.owned && !root.hostEnabled)
+        if (root.owned && !root.hostEnabled) {
             root.surfaceCoordinator.closeMajor("hostUnavailable");
+        } else if (root.owned && root.revealController.state === "closed") {
+            root.revealController.showOpen();
+        } else if (!root.owned) {
+            settleAnimation.stop();
+            root.revealController.resetClosed();
+        }
     }
 
+    Connections {
+        function onSettleRequested(targetProgress) {
+            settleAnimation.stop();
+            settleAnimation.from = root.revealProgress;
+            settleAnimation.to = targetProgress;
+            settleAnimation.start();
+        }
+
+        target: root.revealController
+    }
+    NumberAnimation {
+        id: settleAnimation
+
+        duration: root.theme?.motion?.durationFast ?? 120
+        easing.type: root.theme?.motion?.easingDecelerate ?? Easing.OutCubic
+        property: "revealProgress"
+        target: root.revealController
+
+        onStopped: {
+            if (root.revealController.settling)
+                root.revealController.completeSettle();
+        }
+    }
     Rectangle {
         anchors.fill: parent
-        color: root.theme.colors.surfaceScrim
+        color: {
+            const base = root.theme.colors.surfaceScrim;
+            return Qt.rgba(base.r, base.g, base.b, base.a * root.revealProgress);
+        }
         visible: root.scrimVisible
 
         TapHandler {
@@ -119,6 +156,10 @@ Item {
         anchors.top: parent.top
         focus: root.keyboardActive
         width: root.drawerWidth
+
+        transform: Translate {
+            x: drawer.width * (1 - root.revealProgress)
+        }
 
         Rectangle {
             anchors.fill: parent
@@ -145,6 +186,42 @@ Item {
             theme: root.theme
 
             onCloseRequested: root.surfaceCoordinator.closeMajor("requested")
+        }
+        Item {
+            // Prototype-only noninteractive background rail; final close-drag
+            // initiation geometry remains an open product question.
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.top: parent.top
+            enabled: root.revealController.state === "open"
+            width: Math.max(12, root.theme?.spacing?.space3 ?? 12)
+            z: 1
+
+            DragHandler {
+                id: closeDrag
+
+                acceptedButtons: Qt.LeftButton
+                dragThreshold: 0
+                enabled: parent.enabled
+                target: null
+
+                onActiveChanged: {
+                    const nowMs = Date.now();
+                    if (active)
+                        root.revealController.beginCloseDrag(centroid.pressPosition.x, centroid.pressPosition.y, nowMs);
+                    else if (root.revealController.state === "pressedOpen" || root.revealController.state === "draggingClosed")
+                        root.revealController.release();
+                }
+                onCanceled: point => {
+                    void point;
+                    root.revealController.cancelPointerGesture("pointerCancelled");
+                }
+                onTranslationChanged: delta => {
+                    void delta;
+                    if (active)
+                        root.revealController.updateDrag(centroid.pressPosition.x + activeTranslation.x, centroid.pressPosition.y + activeTranslation.y, Date.now());
+                }
+            }
         }
     }
 }

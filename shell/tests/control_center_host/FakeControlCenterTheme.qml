@@ -19,6 +19,10 @@ QtObject {
         readonly property real focusRingWidth: 2
         readonly property real outlineWidth: 1
     }
+    readonly property QtObject motion: QtObject {
+        readonly property int durationFast: 0
+        readonly property int easingDecelerate: Easing.OutCubic
+    }
     readonly property QtObject opacity: QtObject {
         readonly property real controlCenter: 0.98
     }
