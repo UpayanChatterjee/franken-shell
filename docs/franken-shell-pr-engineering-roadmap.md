@@ -274,8 +274,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-008** | Shell appears | Add the anchor-aware PopoverHost, fixture bar items, layout-stability coverage, and normalized fullscreen hide behavior. | `feat/bar-popovers-fixtures` | Milestone A is met: the fixture shell starts, shows a stable bar, changes workspace groups, opens popovers, and distinguishes maximized from fullscreen. | **closed** |
 | **PR-009** | Drawer works | Select and implement the ControlCenterHost primitive with keyboard/pointer open-close, scrim, focus, and outside dismissal. | `feat/control-centre-host` | The selected primitive is documented, explicit opening and dismissal are reliable, and focus behavior is repeatable without timing sleeps. | **closed** |
 | **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **closed** |
-| **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **in-progress** |
-| **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **open** |
+| **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **closed** |
+| **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **in-progress** |
 | **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **open** |
 | **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **open** |
 | **PR-015** | Real desktop state | Implement network throughput and low-frequency resource summary adapters with bounded polling. | `feat/throughput-resource-adapters` | Persistent metrics are stable, bounded, and non-blocking; hidden detail consumers reduce or stop elevated polling. | **open** |
@@ -771,8 +771,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Drawer works
 - **Branch:** `feat/control-centre-navigation`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** [#12](https://github.com/UpayanChatterjee/franken-shell/pull/12) / `26e2d58ac7bad7d5864bbd14e1574a3b0f400383`
 
 #### Scope
 - Create header, quick-control row, volume/brightness placeholders, Notifications and Mixer tabs, and nested Network/Bluetooth placeholders.
@@ -811,7 +811,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/hyprland-adapter`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
@@ -829,6 +829,19 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - Fixture contract tests for all events and commands.
 - Malformed event, disconnect, reconnect, stale state, and command failure tests.
 - Developer-machine acceptance: direct compositor shortcuts update UI, special workspace state is truthful, and reconnect works.
+
+Implementation evidence recorded on 2026-08-20:
+
+- the deterministic adapter contract covers supported event families, Lua and
+  legacy commands, malformed input, dispatch failure, disconnect/reconnect,
+  stale-state retention, and out-of-order snapshot rejection;
+- on a Hyprland 0.56.0 development session, a direct Lua workspace transition
+  changed the normalized bar state from workspace 1 to 2, and the configured
+  `music` special workspace was reported visible only while shown; both were
+  restored after the check;
+- the bounded live reconnect harness disconnected the real event socket,
+  reconnected, and completed a full native-model refresh without restarting the
+  running shell.
 
 #### CI evolution
 

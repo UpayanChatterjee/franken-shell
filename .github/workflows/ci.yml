@@ -194,7 +194,7 @@ jobs:
           cache: npm
       - name: Install repository tools
         run: ./ci/bootstrap-tools
-      - name: Run workspace controller and component fixtures
+      - name: Run Hyprland adapter and workspace controller fixtures
         run: ./ci/run workspace
       - name: Collect failure diagnostics
         if: failure()

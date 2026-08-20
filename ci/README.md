@@ -31,7 +31,8 @@ user configuration, environment, notification content, or credentials.
   capability/diagnostic/readiness, semantic-theme, surface-coordinator,
   versioned-shell-IPC, monitor-registry, command-registry, and helper-client
   fixture suites;
-- `workspace`: blocking controller/component fixtures for numbered grouping,
+- `workspace`: blocking Hyprland adapter and controller/component fixtures for
+  event normalization, reconnect behavior, numbered grouping,
   wrap boundaries, scroll coalescing, active-action policy injection, keyboard
   focus, special-workspace selection, and unavailable/failure containment;
 - `bar`: blocking bar component and fixture coverage for semantic layout,

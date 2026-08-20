@@ -16,6 +16,22 @@ unset WAYLAND_DISPLAY
 unset HYPRLAND_INSTANCE_SIGNATURE
 export QT_QPA_PLATFORM=offscreen
 
+if shell/dev/franken-shell hyprland-adapter-check >"$workspace_artifact_dir/hyprland-check.log" 2>&1; then
+	cat "$workspace_artifact_dir/hyprland-check.log"
+else
+	status=$?
+	cat "$workspace_artifact_dir/hyprland-check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell hyprland-adapter-test >"$workspace_artifact_dir/hyprland-test.log" 2>&1; then
+	cat "$workspace_artifact_dir/hyprland-test.log"
+else
+	status=$?
+	cat "$workspace_artifact_dir/hyprland-test.log" >&2
+	exit "$status"
+fi
+
 if shell/dev/franken-shell workspace-check >"$workspace_artifact_dir/check.log" 2>&1; then
 	cat "$workspace_artifact_dir/check.log"
 else
@@ -32,4 +48,4 @@ else
 	exit "$status"
 fi
 
-printf 'Workspace controller and component fixtures passed.\n'
+printf 'Hyprland adapter and workspace controller/component fixtures passed.\n'

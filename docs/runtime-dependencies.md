@@ -42,6 +42,33 @@ The current running Caelestia shell continues to own notifications, tray
 watching, lock/session behaviour, and other exclusive session responsibilities
 while the Phase 0 development instance runs in non-owning mode.
 
+### Franken Shell Hyprland adapter
+
+The active Franken Shell implementation imports `Quickshell.Hyprland` behind
+`shell/services/hyprland/QuickshellHyprlandRuntime.qml`. Native models provide
+monitor, workspace, focused-toplevel, urgent, and fullscreen facts, and native
+dispatch handles compositor actions. Views and feature controllers do not
+import or parse Hyprland APIs.
+
+The runtime also opens `Hyprland.eventSocketPath` with `Quickshell.Io.Socket`
+solely to observe event-stream connection health and line framing, which the
+pinned Quickshell Hyprland singleton does not expose. A disconnect disables
+actions, marks retained normalized state stale, retries locally, and requests a
+full native-model refresh after reconnection. This path runs no external
+process and performs no recurring `hyprctl` polling.
+
+The exact tested development baseline remains Hyprland 0.55.4 in Lua mode with
+the versions listed in D-071. It is not a minimum supported version; Q-113 still
+owns compatibility-range testing. Quickshell's native dispatch API does not
+return compositor completion, so immediate validation covers only local
+availability and request construction; authoritative refreshed state confirms
+the eventual result.
+
+The minimum behavioral contract is the pinned Quickshell Hyprland surface used
+by the runtime: monitor/workspace/toplevel models, `usingLua`, native `dispatch`,
+refresh methods, and `eventSocketPath`. Absence of the event socket keeps the
+adapter unavailable rather than falling back to fabricated state or polling.
+
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
 `ConfigService` owns watching and atomic typed snapshot publication. Phase 1

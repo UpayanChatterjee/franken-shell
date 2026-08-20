@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import "core" as Core
 import "ipc" as Ipc
+import "services/hyprland" as HyprlandServices
 import "surfaces" as Surfaces
 import "services/workspaces" as WorkspaceServices
 import "theme" as Theme
@@ -61,7 +62,7 @@ ShellRoot {
         active: !root.usesFixtureMonitorBackend
 
         sourceComponent: Component {
-            Core.HyprlandMonitorAdapter {
+            HyprlandServices.QuickshellHyprlandRuntime {
             }
         }
     }
@@ -70,6 +71,14 @@ ShellRoot {
 
         backend: root.usesFixtureMonitorBackend ? fixtureMonitorBackend : monitorBackendLoader.status === Loader.Ready ? monitorBackendLoader.item : unavailableMonitorBackend
         configService: configService
+    }
+    HyprlandServices.HyprlandAdapter {
+        id: hyprlandAdapter
+
+        monitorRegistry: monitorRegistry
+        runtime: monitorBackendLoader.status === Loader.Ready ? monitorBackendLoader.item : unavailableWorkspaceAdapter
+        testedVersion: Core.ProjectInfo.hyprlandVersion
+        workspaceConfig: configService.active?.workspaces ?? null
     }
     Core.SurfaceCoordinator {
         id: surfaceCoordinator
@@ -100,7 +109,7 @@ ShellRoot {
         monitorRegistry: monitorRegistry
         surfaceCoordinator: surfaceCoordinator
         theme: themeManager.active
-        workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : unavailableWorkspaceAdapter
+        workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : hyprlandAdapter
         workspaceConfig: configService.active?.workspaces ?? null
     }
     Surfaces.ControlCenterHostSet {
@@ -146,6 +155,7 @@ ShellRoot {
         configService: configService
         controlCenterHostProvider: controlCenterHosts
         diagnosticRegistry: diagnosticRegistry
+        hyprlandProvider: hyprlandAdapter
         mode: root.mode
         monitorRegistry: monitorRegistry
         shellState: shellState

@@ -12,7 +12,6 @@ CommandRegistry 1.0 CommandRegistry.qml
 internal CoreReadinessCoordinator CoreReadinessCoordinator.qml
 DiagnosticRegistry 1.0 DiagnosticRegistry.qml
 Diagnostics 1.0 Diagnostics.qml
-HyprlandMonitorAdapter 1.0 HyprlandMonitorAdapter.qml
 internal UnavailableMonitorBackend UnavailableMonitorBackend.qml
 internal FixtureMonitorBackend FixtureMonitorBackend.qml
 MonitorRecord 1.0 MonitorRecord.qml
