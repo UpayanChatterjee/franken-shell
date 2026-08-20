@@ -4,6 +4,7 @@ import Quickshell
 FloatingWindow {
     id: root
 
+    property var audioController: null
     property var barConfig: null
     readonly property string edge: barSurface.edge
     readonly property int exclusiveZone: barSurface.exclusiveZone
@@ -42,6 +43,12 @@ FloatingWindow {
     function popoverSummary(): var {
         return barSurface.popoverSummary();
     }
+    function requestAudioMuteToggle(): bool {
+        return barSurface.requestAudioMuteToggle();
+    }
+    function requestAudioVolumeSteps(steps: int): bool {
+        return barSurface.requestAudioVolumeSteps(steps);
+    }
     function summary(): var {
         return barSurface.summary();
     }
@@ -58,6 +65,7 @@ FloatingWindow {
         id: barSurface
 
         anchors.fill: parent
+        audioController: root.audioController
         barConfig: root.barConfig
         fixtureWindow: true
         monitor: root.monitor

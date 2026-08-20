@@ -1,7 +1,9 @@
 import QtQuick
 import Quickshell
 import "core" as Core
+import "features/audio" as AudioFeatures
 import "ipc" as Ipc
+import "services/audio" as AudioServices
 import "services/hyprland" as HyprlandServices
 import "surfaces" as Surfaces
 import "services/workspaces" as WorkspaceServices
@@ -80,6 +82,31 @@ ShellRoot {
         testedVersion: Core.ProjectInfo.hyprlandVersion
         workspaceConfig: configService.active?.workspaces ?? null
     }
+    AudioServices.UnavailableAudioRuntime {
+        id: unavailableAudioRuntime
+    }
+    Loader {
+        id: audioRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            AudioServices.QuickshellPipewireRuntime {
+            }
+        }
+    }
+    AudioServices.AudioAdapter {
+        id: audioAdapter
+
+        runtime: audioRuntimeLoader.status === Loader.Ready ? audioRuntimeLoader.item : unavailableAudioRuntime
+    }
+    AudioFeatures.AudioController {
+        id: audioController
+
+        adapter: audioAdapter
+        maximumVolume: 1
+        volumeStep: 0.02
+    }
     Core.SurfaceCoordinator {
         id: surfaceCoordinator
 
@@ -104,6 +131,7 @@ ShellRoot {
     Surfaces.BarHostSet {
         id: barHosts
 
+        audioController: audioController
         barConfig: configService.active?.bar ?? null
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
@@ -115,6 +143,7 @@ ShellRoot {
     Surfaces.ControlCenterHostSet {
         id: controlCenterHosts
 
+        audioController: audioController
         controlCenterConfig: configService.active?.controlCenter ?? null
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
@@ -146,6 +175,7 @@ ShellRoot {
     Core.Diagnostics {
         id: diagnostics
 
+        audioProvider: audioAdapter
         barHostProvider: barHosts
         capabilityRegistry: capabilityRegistry
         commandRegistry: commandRegistry

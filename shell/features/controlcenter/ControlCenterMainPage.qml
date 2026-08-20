@@ -271,7 +271,7 @@ FocusScope {
                         font.pixelSize: root.theme.typography.fontSizeSection
                         font.weight: root.theme.typography.fontWeightMedium
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("No fixture notifications") : qsTr("Audio model not connected")
+                        text: root.activeTab === "notifications" ? qsTr("No fixture notifications") : root.contentModel.audioAvailable === true ? qsTr("%1 active audio stream(s)").arg(root.contentModel.audioPlaybackStreamCount ?? 0) : qsTr("Audio unavailable")
                         width: parent.width
                     }
                     Text {
@@ -279,7 +279,7 @@ FocusScope {
                         font.family: root.theme.typography.fontFamily
                         font.pixelSize: root.theme.typography.fontSizeBody
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("New items will appear here without a duplicate popup.") : qsTr("Mixer rows arrive with the shared audio adapter.")
+                        text: root.activeTab === "notifications" ? qsTr("New items will appear here without a duplicate popup.") : root.contentModel.audioAvailable === true ? qsTr("Default output: %1").arg(root.contentModel.audioDefaultOutputName || qsTr("Unknown output")) : qsTr("The drawer remains usable while PipeWire is absent or restarting.")
                         width: parent.width
                         wrapMode: Text.Wrap
                     }

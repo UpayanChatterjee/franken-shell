@@ -33,4 +33,20 @@ else
 	exit "$status"
 fi
 
-printf 'Bar component, layout, popover, focus, and fullscreen fixtures passed.\n'
+if shell/dev/franken-shell audio-adapter-check >"$bar_artifact_dir/audio-check.log" 2>&1; then
+	cat "$bar_artifact_dir/audio-check.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/audio-check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell audio-adapter-test >"$bar_artifact_dir/audio-test.log" 2>&1; then
+	cat "$bar_artifact_dir/audio-test.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/audio-test.log" >&2
+	exit "$status"
+fi
+
+printf 'Bar component, audio adapter, interaction, and fixture contracts passed.\n'

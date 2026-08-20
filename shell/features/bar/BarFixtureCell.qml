@@ -4,8 +4,12 @@ FocusScope {
     id: root
 
     readonly property string anchorId: "bar." + root.datum.id + "." + root.safeToken(root.monitorId)
+    property var audioController: null
     required property var datum
+    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.datum.accessibleName
+    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.datum.label
     required property real extent
+    readonly property bool isAudio: root.datum.id === "audio"
     required property string monitorId
     readonly property bool popoverOpen: root.datum.popoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.datum.popoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
     required property var surfaceCoordinator
@@ -27,12 +31,52 @@ FocusScope {
             "takesFocus": origin === "keyboard"
         });
     }
+    function audioAccessibleName(): string {
+        if (root.audioController?.available !== true)
+            return qsTr("Audio unavailable");
+        const outputName = String(root.audioController.defaultOutput?.description ?? root.audioController.defaultOutput?.name ?? qsTr("Unknown output"));
+        const state = root.audioController.masterMuted ? qsTr("muted") : qsTr("%1 percent").arg(Math.round(root.audioController.masterVolume * 100));
+        return qsTr("Audio, %1, %2").arg(outputName).arg(state);
+    }
+    function audioLabel(): string {
+        if (root.audioController?.available !== true)
+            return "–";
+        switch (root.audioController.outputCategory) {
+        case "muted":
+            return "M";
+        case "speaker":
+            return "SP";
+        case "wiredHeadphones":
+            return "HP";
+        case "bluetoothHeadphones":
+            return "BT";
+        case "headset":
+            return "HS";
+        case "hdmi":
+            return "HD";
+        case "usbDac":
+            return "US";
+        default:
+            return "?";
+        }
+    }
+    function queueAudioVolumeSteps(steps: int): bool {
+        if (!root.isAudio || root.audioController?.available !== true || steps === 0)
+            return false;
+        root.audioController.queueVolumeSteps(steps);
+        return true;
+    }
     function safeToken(value: string): string {
         const sanitized = value.replace(/[^A-Za-z0-9._:-]/g, "_");
         return sanitized.length > 0 ? sanitized : "unresolved";
     }
+    function toggleAudioMute(): bool {
+        if (!root.isAudio || root.audioController?.available !== true)
+            return false;
+        return root.audioController.toggleMasterMute()?.accepted === true;
+    }
 
-    Accessible.name: root.datum.accessibleName
+    Accessible.name: root.effectiveAccessibleName
     Accessible.role: root.datum.popoverId.length > 0 ? Accessible.Button : Accessible.StaticText
     activeFocusOnTab: root.datum.popoverId.length > 0
     clip: true
@@ -78,7 +122,7 @@ FocusScope {
             font.pixelSize: root.datum.emphasis === "metric" ? root.theme.typography.fontSizeMetricSmall : root.theme.typography.fontSizeLabel
             font.weight: root.popoverOpen ? root.theme.typography.fontWeightSemibold : root.theme.typography.fontWeightMedium
             horizontalAlignment: Text.AlignHCenter
-            text: root.datum.label
+            text: root.effectiveLabel
             verticalAlignment: Text.AlignVCenter
         }
         HoverHandler {
@@ -89,6 +133,20 @@ FocusScope {
             enabled: root.datum.popoverId.length > 0
 
             onTapped: root.activate("pointer")
+        }
+        TapHandler {
+            acceptedButtons: Qt.MiddleButton
+            enabled: root.isAudio && root.audioController?.available === true
+
+            onTapped: root.toggleAudioMute()
+        }
+        WheelHandler {
+            enabled: root.isAudio && root.audioController?.available === true
+
+            onWheel: event => {
+                root.queueAudioVolumeSteps(event.angleDelta.y > 0 ? 1 : -1);
+                event.accepted = true;
+            }
         }
     }
 }

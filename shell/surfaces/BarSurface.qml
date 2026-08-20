@@ -6,6 +6,7 @@ import "../features/workspaces" as Workspaces
 Item {
     id: root
 
+    property var audioController: null
     required property var barConfig
     readonly property string edge: geometry.edge
     readonly property int exclusiveZone: geometry.exclusiveZone
@@ -64,6 +65,16 @@ Item {
     }
     function popoverSummary(): var {
         return popoverHost.summary();
+    }
+    function requestAudioMuteToggle(): bool {
+        const anchorId = "bar.audio." + root.safeToken(root.ownerMonitorId);
+        const item = barLayout.anchorItem(anchorId);
+        return item !== null && item.toggleAudioMute();
+    }
+    function requestAudioVolumeSteps(steps: int): bool {
+        const anchorId = "bar.audio." + root.safeToken(root.ownerMonitorId);
+        const item = barLayout.anchorItem(anchorId);
+        return item !== null && item.queueAudioVolumeSteps(steps);
     }
     function safeToken(value: string): string {
         const sanitized = value.replace(/[^A-Za-z0-9._:-]/g, "_");
@@ -136,6 +147,7 @@ Item {
 
             anchors.fill: parent
             anchors.margins: root.theme.spacing.space1
+            audioController: root.audioController
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
             fixtureModel: fixtureState
             monitorId: root.ownerMonitorId

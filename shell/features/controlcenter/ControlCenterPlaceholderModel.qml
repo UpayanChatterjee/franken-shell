@@ -3,6 +3,10 @@ import QtQuick
 QtObject {
     id: root
 
+    readonly property bool audioAvailable: root.audioController === null ? true : root.audioController.available === true
+    property var audioController: null
+    readonly property string audioDefaultOutputName: root.audioController === null ? qsTr("Fixture speakers") : String(root.audioController?.defaultOutput?.description ?? root.audioController?.defaultOutput?.name ?? "")
+    readonly property int audioPlaybackStreamCount: root.audioController?.playbackStreams?.length ?? 0
     readonly property QtObject bluetooth: QtObject {
         readonly property bool active: true
         readonly property bool available: true
@@ -61,11 +65,11 @@ QtObject {
     }
     readonly property int quickControlCount: 5
     readonly property QtObject volume: QtObject {
-        readonly property bool available: true
-        readonly property bool enabled: true
-        readonly property string icon: "V"
+        readonly property bool available: root.audioAvailable
+        readonly property bool enabled: root.audioAvailable && root.audioController?.stale !== true
+        readonly property string icon: root.audioController?.outputCategory === "muted" ? "M" : "V"
         readonly property string label: qsTr("Volume")
-        readonly property real value: 0.42
+        readonly property real value: root.audioController?.masterVolume ?? 0.42
     }
     readonly property QtObject wifi: QtObject {
         readonly property bool active: false
@@ -95,6 +99,13 @@ QtObject {
         default:
             return null;
         }
+    }
+    function requestSliderStep(sliderId: string, step: int, source: string): bool {
+        void source;
+        if (sliderId !== "volume" || !root.audioAvailable || step === 0)
+            return false;
+        root.audioController.queueVolumeSteps(step);
+        return true;
     }
     function slider(sliderId: string): var {
         if (sliderId === "volume")

@@ -168,7 +168,9 @@ ShellRoot {
                 root.check(geometryRight.orientation === "vertical" && geometryRight.inwardDirection === "left", "right-edge abstraction opens inward without rotating delegates");
                 root.check(geometryTop.orientation === "horizontal" && geometryTop.inwardDirection === "down", "top-edge abstraction selects a horizontal composition");
                 root.check(geometryBottom.orientation === "horizontal" && geometryBottom.inwardDirection === "up", "bottom-edge abstraction selects a horizontal composition");
-                console.info("PASS bar-host: monitor ownership, stable fixture cells, normalized fullscreen, anchor-aware popovers, dismissal, focus, and edge abstraction");
+                root.check(barHost.requestAudioVolumeSteps(2) && fakeAudioController.pendingSteps === 2, "bar wheel requests are routed through the shared audio controller");
+                root.check(barHost.requestAudioMuteToggle() && fakeAudioController.toggleCount === 1, "bar middle-click mute is routed through the shared audio controller");
+                console.info("PASS bar-host: monitor ownership, stable fixture cells, audio interactions, normalized fullscreen, anchor-aware popovers, dismissal, focus, and edge abstraction");
                 Qt.quit();
                 break;
             }
@@ -194,12 +196,39 @@ ShellRoot {
     FakeWorkspaceConfig {
         id: fakeWorkspaceConfig
     }
+    QtObject {
+        id: fakeAudioController
+
+        property bool available: true
+        property var defaultOutput: Object.freeze({
+            "id": "fixture-output",
+            "name": "Fixture output",
+            "description": "Fixture speakers"
+        })
+        property bool masterMuted: false
+        property real masterVolume: 0.42
+        property string outputCategory: "speaker"
+        property int pendingSteps: 0
+        property int toggleCount: 0
+
+        function queueVolumeSteps(steps: int) {
+            fakeAudioController.pendingSteps += steps;
+        }
+        function toggleMasterMute(): var {
+            fakeAudioController.toggleCount += 1;
+            return Object.freeze({
+                "accepted": true,
+                "errorCode": ""
+            });
+        }
+    }
     WorkspaceServices.FixtureWorkspaceAdapter {
         id: fixtureWorkspaceAdapter
     }
     Surfaces.BarHost {
         id: barHost
 
+        audioController: fakeAudioController
         barConfig: fakeBarConfig
         fixtureWindow: true
         monitor: fakeMonitor

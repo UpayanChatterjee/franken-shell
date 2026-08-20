@@ -6,6 +6,7 @@ Item {
     id: root
 
     readonly property real absoluteEndPosition: root.vertical ? absoluteEndZone.y : absoluteEndZone.x
+    property var audioController: null
     readonly property real cellExtent: root.theme.metrics.barItemExtent
     required property int contextCapacity
     readonly property real contextPosition: root.vertical ? contextZone.y : contextZone.x
@@ -78,6 +79,7 @@ Item {
             Layout.fillWidth: root.vertical
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
+            audioController: root.audioController
             cellExtent: root.cellExtent
             items: root.fixtureModel.contextItems
             monitorId: root.monitorId
@@ -94,6 +96,7 @@ Item {
             Layout.fillWidth: root.vertical
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
+            audioController: root.audioController
             cellExtent: root.cellExtent
             items: root.fixtureModel.endItems
             monitorId: root.monitorId

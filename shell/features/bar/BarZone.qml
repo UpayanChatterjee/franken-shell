@@ -5,6 +5,7 @@ import QtQuick
 Item {
     id: root
 
+    property var audioController: null
     required property real cellExtent
     readonly property real contentExtent: root.visibleItemCount > 0 ? root.visibleItemCount * root.cellExtent + (root.visibleItemCount - 1) * root.spacing : 0
     required property var items
@@ -53,6 +54,7 @@ Item {
                 delegate: BarFixtureCell {
                     required property var modelData
 
+                    audioController: root.audioController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
@@ -76,6 +78,7 @@ Item {
                 delegate: BarFixtureCell {
                     required property var modelData
 
+                    audioController: root.audioController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId

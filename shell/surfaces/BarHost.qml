@@ -4,6 +4,7 @@ import Quickshell
 Scope {
     id: root
 
+    property var audioController: null
     required property var barConfig
     readonly property string edge: root.window?.edge ?? "left"
     readonly property int exclusiveZone: root.window?.exclusiveZone ?? 0
@@ -75,6 +76,12 @@ Scope {
             "anchorResolved": false
         });
     }
+    function requestAudioMuteToggle(): bool {
+        return root.ready && root.window.requestAudioMuteToggle();
+    }
+    function requestAudioVolumeSteps(steps: int): bool {
+        return root.ready && root.window.requestAudioVolumeSteps(steps);
+    }
     function summary(): var {
         if (root.ready)
             return root.window.summary();
@@ -104,6 +111,12 @@ Scope {
 
         active: true
         source: Qt.resolvedUrl(root.fixtureWindow ? "BarFixtureWindow.qml" : "BarPanelWindow.qml")
+    }
+    Binding {
+        property: "audioController"
+        target: root.window
+        value: root.audioController
+        when: root.ready
     }
     Binding {
         property: "barConfig"
