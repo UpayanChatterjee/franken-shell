@@ -5,7 +5,9 @@ import "../features/controlcenter" as ControlCenter
 Scope {
     id: root
 
+    property var contentModel: null
     required property var controlCenterConfig
+    readonly property var effectiveContentModel: root.contentModel ?? placeholderModel
     required property bool fixtureWindow
     required property var monitor
     readonly property string ownerMonitorId: root.window?.ownerMonitorId ?? ""
@@ -28,6 +30,9 @@ Scope {
     function handleEscape(): var {
         return root.ready ? root.window.handleEscape() : root.result(false);
     }
+    function requestCloseDragPress(x: real, y: real, nowMs: real): bool {
+        return revealController.beginCloseDrag(x, y, nowMs);
+    }
     function requestDragCancel(reason: string): bool {
         return revealController.cancel(reason);
     }
@@ -43,6 +48,18 @@ Scope {
     function requestOpen(origin: string, originControlId: string): var {
         return root.ready ? root.window.requestOpen(origin, originControlId) : root.result(false);
     }
+    function requestPage(pageId: string, invokerFocusId: string, source: string): bool {
+        return root.ready ? root.window.openPage(pageId, invokerFocusId, source) : false;
+    }
+    function requestQuickControlAction(controlId: string, action: string, source: string): bool {
+        return root.ready ? root.window.requestQuickControlAction(controlId, action, source) : false;
+    }
+    function requestSelectTab(tabId: string, source: string): bool {
+        return root.ready ? root.window.selectTab(tabId, source) : false;
+    }
+    function requestSliderStep(sliderId: string, step: int, source: string): bool {
+        return root.ready ? root.window.requestSliderStep(sliderId, step, source) : false;
+    }
     function requestToggle(origin: string, originControlId: string): var {
         return root.ready ? root.window.requestToggle(origin, originControlId) : root.result(false);
     }
@@ -55,11 +72,15 @@ Scope {
     }
     function summary(): var {
         return root.ready ? root.window.summary() : Object.freeze({
+            "activePage": "main",
+            "activeTab": "notifications",
             "monitorId": "",
             "open": false,
             "visible": false,
             "keyboardActive": false,
+            "focusedControlId": "",
             "initialFocusActive": false,
+            "navigationStackDepth": 0,
             "revealProgress": 0,
             "revealState": "closed",
             "revealVelocity": 0,
@@ -104,6 +125,9 @@ Scope {
                 revealController.cancel("surfaceRejected");
         }
     }
+    ControlCenter.ControlCenterPlaceholderModel {
+        id: placeholderModel
+    }
     Loader {
         id: hostLoader
 
@@ -120,6 +144,12 @@ Scope {
         property: "controlCenterConfig"
         target: root.window
         value: root.controlCenterConfig
+        when: root.ready
+    }
+    Binding {
+        property: "contentModel"
+        target: root.window
+        value: root.effectiveContentModel
         when: root.ready
     }
     Binding {

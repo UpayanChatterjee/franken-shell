@@ -268,8 +268,14 @@ Keyboard-origin opening acquires deterministic initial focus; real Wayland and
 fixture evidence verifies Escape closure and one restoration handoff. Pointer
 origin opening is immediately interactive but does not request keyboard focus
 in this prototype. Outside scrim clicks dismiss through the same coordinator.
-The content remains an intentional Close placeholder; navigation and backend
-controls belong to later roadmap PRs.
+The injected prototype content owns a main page with five quick-control
+placeholders, volume and optional brightness sliders, Notifications and Volume
+Mixer tabs, and lazy Network/Bluetooth detail pages. Escape pops a detail page
+before closing the drawer and restores focus to its invoker. Any ownership loss
+resets to main/Notifications, deliberately dropping nested page, tab, and stale
+focus state. The placeholders expose unavailable, busy, failed, active, and
+inactive states without importing a backend or executing commands; real
+service workflows belong to later roadmap PRs.
 
 A separate invisible `PanelWindow` owns the configured right-edge activation
 strip on each eligible monitor. It forwards explicit-time pointer samples to a
@@ -288,8 +294,11 @@ primitive geometry, pointer/keyboard focus policy, scrim dismissal, Escape,
 popover replacement, major arbitration, and partial reveal integration.
 `control-center-drag-test` supplies deterministic timestamps for activation
 geometry, intent, distance, velocity, reversal, cancellation, fullscreen, and
-close-drag cases. `./ci/run control-center` is the blocking component lane;
-smoke also verifies one host/scrim owner across soft reload.
+close-drag cases. Navigation controller and component fixtures cover
+keyboard/pointer traversal, independent placeholder states, optional brightness
+reflow, detail-page focus restoration, and safe open/close reset behavior.
+`./ci/run control-center` is the blocking component lane; smoke also verifies
+one host/scrim owner across soft reload.
 
 ## Configuration lifecycle
 

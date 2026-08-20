@@ -273,8 +273,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-007** | Shell appears | Implement the fixture numbered-workspace pager and special-workspace selector as controller-driven components. | `feat/workspace-pager` | All documented fixture workspace states pass, commands route through injected controllers, and the pager remains stable under rapid input. | **closed** |
 | **PR-008** | Shell appears | Add the anchor-aware PopoverHost, fixture bar items, layout-stability coverage, and normalized fullscreen hide behavior. | `feat/bar-popovers-fixtures` | Milestone A is met: the fixture shell starts, shows a stable bar, changes workspace groups, opens popovers, and distinguishes maximized from fullscreen. | **closed** |
 | **PR-009** | Drawer works | Select and implement the ControlCenterHost primitive with keyboard/pointer open-close, scrim, focus, and outside dismissal. | `feat/control-centre-host` | The selected primitive is documented, explicit opening and dismissal are reliable, and focus behavior is repeatable without timing sleeps. | **closed** |
-| **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **in-progress** |
-| **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **open** |
+| **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **closed** |
+| **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **in-progress** |
 | **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **open** |
 | **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **open** |
 | **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **open** |
@@ -724,8 +724,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Drawer works
 - **Branch:** `feat/control-centre-drag`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** [#11](https://github.com/UpayanChatterjee/franken-shell/pull/11) / `5a41b5b18b00b6fd0eecbfd0375de6f21297b331`
 
 #### Scope
 - Implement the documented drag states as a testable controller.
@@ -771,7 +771,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Drawer works
 - **Branch:** `feat/control-centre-navigation`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
