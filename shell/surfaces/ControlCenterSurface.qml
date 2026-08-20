@@ -207,16 +207,14 @@ Item {
 
                 onActiveChanged: {
                     const nowMs = Date.now();
-                    const x = centroid.pressPosition.x + activeTranslation.x;
-                    const y = centroid.pressPosition.y + activeTranslation.y;
                     if (active)
                         root.revealController.beginCloseDrag(centroid.pressPosition.x, centroid.pressPosition.y, nowMs);
                     else if (root.revealController.state === "pressedOpen" || root.revealController.state === "draggingClosed")
-                        root.revealController.release(x, y, nowMs);
+                        root.revealController.release();
                 }
                 onCanceled: point => {
                     void point;
-                    root.revealController.cancel("pointerCancelled");
+                    root.revealController.cancelPointerGesture("pointerCancelled");
                 }
                 onTranslationChanged: delta => {
                     void delta;

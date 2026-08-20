@@ -90,6 +90,12 @@ QtObject {
 
         return true;
     }
+    function cancelPointerGesture(reason: string): bool {
+        if (root.state !== "pressedAtEdge" && root.state !== "pressedOpen" && !root.dragging)
+            return false;
+
+        return root.cancel(reason);
+    }
     function completeSettle(): bool {
         if (!root.settling)
             return false;
@@ -103,7 +109,7 @@ QtObject {
 
         return true;
     }
-    function release(x: real, y: real, nowMs: real): bool {
+    function release(): bool {
         if (root.state === "pressedAtEdge") {
             root.cancel("insufficientIntent");
             return false;
@@ -115,9 +121,6 @@ QtObject {
         }
         if (!root.dragging)
             return false;
-
-        if (x !== root._currentX || y !== root._currentY)
-            root.updateDrag(x, y, nowMs);
 
         const opening = root._edgeOpening;
         const distancePassed = opening ? root.revealProgress >= root.openThreshold : 1 - root.revealProgress >= root.openThreshold;

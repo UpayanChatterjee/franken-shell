@@ -96,7 +96,7 @@ ShellRoot {
                 root.check(host.requestDragUpdate(1119, 244, 240), "host forwards committed horizontal drag intent");
                 const dragged = host.summary();
                 root.check(dragged.open && dragged.scrimVisible && dragged.revealProgress === 0.4, "committed edge drag owns the major surface and directly reveals drawer and scrim");
-                root.check(host.requestDragRelease(1119, 244, 240), "distance threshold selects open settle");
+                root.check(host.requestDragRelease(), "distance threshold selects open settle from the last committed pointer sample");
                 root.step = 5;
                 settleTimer.restart();
                 break;

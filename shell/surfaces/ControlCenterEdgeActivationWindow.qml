@@ -53,12 +53,12 @@ PanelWindow {
                 if (root.revealController.beginEdgePress(press.x, press.y, root.width, root.monitor?.fullscreenActive === true, root.controlCenterConfig?.edgeDrag?.allowInFullscreen === true, nowMs))
                     root.revealController.updateDrag(root.pointerX(), root.pointerY(), nowMs);
             } else if (root.tracking) {
-                root.revealController.release(root.pointerX(), root.pointerY(), nowMs);
+                root.revealController.release();
             }
         }
         onCanceled: point => {
             void point;
-            root.revealController.cancel("pointerCancelled");
+            root.revealController.cancelPointerGesture("pointerCancelled");
         }
         onTranslationChanged: delta => {
             void delta;

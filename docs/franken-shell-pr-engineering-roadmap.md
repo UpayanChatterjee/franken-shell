@@ -743,6 +743,14 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - Deterministic fake clock/velocity tests.
 - Manual pointer test on the development machine with captured notes.
 
+Manual pointer evidence captured on 2026-08-20 using the internal `eDP-1`
+monitor at 1920×1080 and scale 1 under Hyprland 0.56.0: the 2-logical-pixel
+right-edge strip accepted the press, the drawer and scrim followed inward and
+reversed motion directly, and a drag beyond the configured threshold settled
+and remained open after release. The first live attempt exposed a release-time
+pointer-cancellation race; the controller now settles from its last committed
+sample and ignores handler cancellation after release has committed.
+
 #### CI evolution
 
 Add pure state-machine tests as blocking; keep real pointer compositor validation documented until hardware CI exists.

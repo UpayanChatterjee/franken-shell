@@ -31,8 +31,8 @@ Scope {
     function requestDragCancel(reason: string): bool {
         return revealController.cancel(reason);
     }
-    function requestDragRelease(x: real, y: real, nowMs: real): bool {
-        return revealController.release(x, y, nowMs);
+    function requestDragRelease(): bool {
+        return revealController.release();
     }
     function requestDragUpdate(x: real, y: real, nowMs: real): bool {
         return revealController.updateDrag(x, y, nowMs);
