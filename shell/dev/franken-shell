@@ -307,6 +307,8 @@ test_bar_host() {
 check_control_center_host() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/features/controlcenter/ControlCenterPlaceholder.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterRevealController.qml" \
+		"$SHELL_DIR/surfaces/ControlCenterEdgeActivationWindow.qml" \
 		"$SHELL_DIR/surfaces/ControlCenterHost.qml" \
 		"$SHELL_DIR/surfaces/ControlCenterHostSet.qml" \
 		"$SHELL_DIR/surfaces/ControlCenterFixtureWindow.qml" \
@@ -331,6 +333,25 @@ test_control_center_host() {
 		FRANKEN_SHELL_ARTIFACT_DIR="$artifact_dir" \
 		FRANKEN_SHELL_MODE=control-center-host-test \
 		qs --no-duplicate --path "$SHELL_DIR/control-center-host-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+check_control_center_drag() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/features/controlcenter/ControlCenterRevealController.qml" \
+		"$SHELL_DIR/tests/control_center_drag/ControlCenterRevealControllerTests.qml"
+}
+
+test_control_center_drag() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-control-center-drag-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=control-center-drag-test \
+		qs --no-duplicate --path "$SHELL_DIR/control-center-drag-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -724,6 +745,10 @@ usage() {
 		"                    Statically check the control-centre host and fixture" \
 		"  control-center-host-test" \
 		"                    Run control-centre primitive, scrim, focus, and dismissal fixtures" \
+		"  control-center-drag-check" \
+		"                    Statically check the control-centre direct-reveal controller" \
+		"  control-center-drag-test" \
+		"                    Run deterministic edge-drag intent and settle fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -879,6 +904,12 @@ control-center-host-check)
 	;;
 control-center-host-test)
 	test_control_center_host
+	;;
+control-center-drag-check)
+	check_control_center_drag
+	;;
+control-center-drag-test)
+	test_control_center_drag
 	;;
 workspace-check)
 	check_workspaces

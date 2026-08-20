@@ -40,6 +40,7 @@ ShellRoot {
                 root.check(host.ready && !host.visible, "closed host is instantiated once without a visible surface");
                 const closed = host.summary();
                 root.check(closed.primitive === "PanelWindow" && closed.rightAttached && closed.exclusionMode === "Ignore" && closed.exclusiveZone === 0, "selected primitive contract is right-attached, non-reserving, and ignores existing exclusive zones");
+                root.check(closed.gestureDrawerWidth === 400, "closed host keeps stable configured gesture geometry before its window is mapped");
                 let result = coordinator.openPopover("fixture.audio", "bar.audio.fixture-monitor-1", root.context("pointer", "bar.audio.fixture-monitor-1", false));
                 root.check(result.accepted && coordinator.activePopoverId === "fixture.audio", "fixture popover is active before major opening");
                 result = host.requestOpen("pointer", "fixture.controlCenterButton");
@@ -91,7 +92,23 @@ ShellRoot {
                 root.check(result.accepted && coordinator.activeMajorId === "settings" && !host.summary().open, "another major surface replaces and hides the control centre");
                 root.check(root.transferCount === 1, "major replacement transfers focus without restoring through the application");
                 coordinator.closeMajor("requested");
-                console.info("PASS control-center-host: primitive, ownership, scrim, pointer/keyboard focus, dismissal, toggle, and arbitration");
+                root.check(host.requestEdgePress(1279, 240, 1280, 0), "eligible monitor edge accepts a pointer press");
+                root.check(host.requestDragUpdate(1119, 244, 240), "host forwards committed horizontal drag intent");
+                const dragged = host.summary();
+                root.check(dragged.open && dragged.scrimVisible && dragged.revealProgress === 0.4, "committed edge drag owns the major surface and directly reveals drawer and scrim");
+                root.check(host.requestDragRelease(1119, 244, 240), "distance threshold selects open settle");
+                root.step = 5;
+                settleTimer.restart();
+                break;
+            }
+        case 5:
+            {
+                root.check(host.summary().open && host.summary().revealProgress === 1, "edge drag settles fully open");
+                host.dismissOutside();
+                fixtureMonitor.fullscreenActive = true;
+                root.check(!host.requestEdgePress(1279, 240, 1280, 500), "normalized true fullscreen suppresses pointer activation");
+                fixtureMonitor.fullscreenActive = false;
+                console.info("PASS control-center-host: primitive, ownership, scrim, focus, dismissal, toggle, arbitration, and direct edge reveal");
                 Qt.quit();
                 break;
             }

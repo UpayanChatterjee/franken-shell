@@ -5,9 +5,11 @@ FloatingWindow {
     id: root
 
     property var controlCenterConfig: null
+    readonly property real drawerWidth: controlCenterSurface.drawerWidth
     readonly property int exclusiveZone: 0
     property var monitor: null
     readonly property string ownerMonitorId: controlCenterSurface.ownerMonitorId
+    property var revealController: null
     property var screenInfo: null
     property var surfaceCoordinator: null
     property var theme: null
@@ -52,6 +54,7 @@ FloatingWindow {
         anchors.fill: parent
         controlCenterConfig: root.controlCenterConfig
         monitor: root.monitor
+        revealController: root.revealController
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
 
