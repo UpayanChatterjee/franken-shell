@@ -4,6 +4,7 @@ import Quickshell
 FloatingWindow {
     id: root
 
+    property var contentModel: null
     property var controlCenterConfig: null
     readonly property real drawerWidth: controlCenterSurface.drawerWidth
     readonly property int exclusiveZone: 0
@@ -25,11 +26,23 @@ FloatingWindow {
     function handleEscape(): var {
         return controlCenterSurface.handleEscape();
     }
+    function openPage(pageId: string, invokerFocusId: string, source: string): bool {
+        return controlCenterSurface.openPage(pageId, invokerFocusId, source);
+    }
     function requestOpen(origin: string, originControlId: string): var {
         return controlCenterSurface.requestOpen(origin, originControlId);
     }
+    function requestQuickControlAction(controlId: string, action: string, source: string): bool {
+        return controlCenterSurface.requestQuickControlAction(controlId, action, source);
+    }
+    function requestSliderStep(sliderId: string, step: int, source: string): bool {
+        return controlCenterSurface.requestSliderStep(sliderId, step, source);
+    }
     function requestToggle(origin: string, originControlId: string): var {
         return controlCenterSurface.requestToggle(origin, originControlId);
+    }
+    function selectTab(tabId: string, source: string): bool {
+        return controlCenterSurface.selectTab(tabId, source);
     }
     function summary(): var {
         return controlCenterSurface.summary();
@@ -52,6 +65,7 @@ FloatingWindow {
         id: controlCenterSurface
 
         anchors.fill: parent
+        contentModel: root.contentModel
         controlCenterConfig: root.controlCenterConfig
         monitor: root.monitor
         revealController: root.revealController

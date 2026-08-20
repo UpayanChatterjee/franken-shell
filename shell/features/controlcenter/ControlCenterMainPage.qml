@@ -1,0 +1,290 @@
+import QtQuick
+
+FocusScope {
+    id: root
+
+    required property string activeTab
+    required property var contentModel
+    readonly property string focusedControlId: header.focusedControlId.length > 0 ? header.focusedControlId : wifi.activeFocus ? wifi.focusId : bluetooth.activeFocus ? bluetooth.focusId : doNotDisturb.activeFocus ? doNotDisturb.focusId : nightLight.activeFocus ? nightLight.focusId : idleInhibitor.activeFocus ? idleInhibitor.focusId : volume.activeFocus ? volume.focusId : brightness.activeFocus ? brightness.focusId : notificationsTab.activeFocus ? notificationsTab.focusId : volumeMixerTab.activeFocus ? volumeMixerTab.focusId : ""
+    required property var theme
+    readonly property int visibleSliderCount: 1 + (brightness.visible ? 1 : 0)
+
+    signal headerActionRequested(string actionId, string source)
+    signal pageRequested(string pageId, string invokerFocusId, string source)
+    signal quickControlActionRequested(string controlId, string action, string source)
+    signal sliderActionRequested(string sliderId, int step, string source)
+    signal tabRequested(string tabId, string source)
+
+    function focusControl(focusId: string): bool {
+        switch (focusId) {
+        case "quick.wifi":
+            wifi.forceActiveFocus();
+            return true;
+        case "quick.bluetooth":
+            bluetooth.forceActiveFocus();
+            return true;
+        case "quick.doNotDisturb":
+            doNotDisturb.forceActiveFocus();
+            return true;
+        case "quick.nightLight":
+            nightLight.forceActiveFocus();
+            return true;
+        case "quick.idleInhibitor":
+            idleInhibitor.forceActiveFocus();
+            return true;
+        case "slider.volume":
+            volume.forceActiveFocus();
+            return true;
+        case "slider.brightness":
+            if (brightness.visible) {
+                brightness.forceActiveFocus();
+                return true;
+            }
+            return false;
+        case "tab.notifications":
+            notificationsTab.forceActiveFocus();
+            return true;
+        case "tab.volumeMixer":
+            volumeMixerTab.forceActiveFocus();
+            return true;
+        default:
+            return false;
+        }
+    }
+    function quickControlItem(controlId: string): var {
+        switch (controlId) {
+        case "wifi":
+            return wifi;
+        case "bluetooth":
+            return bluetooth;
+        case "doNotDisturb":
+            return doNotDisturb;
+        case "nightLight":
+            return nightLight;
+        case "idleInhibitor":
+            return idleInhibitor;
+        default:
+            return null;
+        }
+    }
+    function quickControlState(controlId: string): string {
+        return root.quickControlItem(controlId)?.stateName ?? "unknown";
+    }
+    function requestQuickControlAction(controlId: string, action: string, source: string): bool {
+        const item = root.quickControlItem(controlId);
+        return item !== null ? item.requestAction(action, source) : false;
+    }
+    function requestSliderStep(sliderId: string, step: int, source: string): bool {
+        if (sliderId === "volume")
+            return volume.requestStep(step, source);
+        if (sliderId === "brightness")
+            return brightness.requestStep(step, source);
+        return false;
+    }
+
+    Flickable {
+        id: viewport
+
+        anchors.fill: parent
+        contentHeight: content.height
+        contentWidth: width
+        interactive: contentHeight > height
+
+        Column {
+            id: content
+
+            spacing: root.theme.spacing.space3
+            width: viewport.width
+
+            ControlCenterHeader {
+                id: header
+
+                height: implicitHeight
+                theme: root.theme
+                width: parent.width
+
+                onActionRequested: (actionId, source) => root.headerActionRequested(actionId, source)
+            }
+            Column {
+                spacing: root.theme.spacing.space3
+                width: parent.width
+
+                Row {
+                    spacing: root.theme.spacing.space3
+                    width: parent.width
+
+                    ControlCenterQuickControl {
+                        id: wifi
+
+                        KeyNavigation.down: doNotDisturb
+                        KeyNavigation.left: bluetooth
+                        controlId: "wifi"
+                        controlModel: root.contentModel.quickControl(controlId)
+                        height: implicitHeight
+                        theme: root.theme
+                        width: (parent.width - parent.spacing) / 2
+
+                        onActionRequested: (action, source) => {
+                            root.quickControlActionRequested(controlId, action, source);
+                            if (action === "details")
+                                root.pageRequested("network", focusId, source);
+                        }
+                    }
+                    ControlCenterQuickControl {
+                        id: bluetooth
+
+                        KeyNavigation.down: nightLight
+                        KeyNavigation.left: wifi
+                        controlId: "bluetooth"
+                        controlModel: root.contentModel.quickControl(controlId)
+                        height: implicitHeight
+                        theme: root.theme
+                        width: (parent.width - parent.spacing) / 2
+
+                        onActionRequested: (action, source) => {
+                            root.quickControlActionRequested(controlId, action, source);
+                            if (action === "details")
+                                root.pageRequested("bluetooth", focusId, source);
+                        }
+                    }
+                }
+                Row {
+                    spacing: root.theme.spacing.space3
+                    width: parent.width
+
+                    ControlCenterQuickControl {
+                        id: doNotDisturb
+
+                        KeyNavigation.down: idleInhibitor
+                        KeyNavigation.right: nightLight
+                        KeyNavigation.up: wifi
+                        controlId: "doNotDisturb"
+                        controlModel: root.contentModel.quickControl(controlId)
+                        height: implicitHeight
+                        theme: root.theme
+                        width: (parent.width - parent.spacing) / 2
+
+                        onActionRequested: (action, source) => root.quickControlActionRequested(controlId, action, source)
+                    }
+                    ControlCenterQuickControl {
+                        id: nightLight
+
+                        KeyNavigation.down: idleInhibitor
+                        KeyNavigation.left: doNotDisturb
+                        KeyNavigation.up: bluetooth
+                        controlId: "nightLight"
+                        controlModel: root.contentModel.quickControl(controlId)
+                        height: implicitHeight
+                        theme: root.theme
+                        width: (parent.width - parent.spacing) / 2
+
+                        onActionRequested: (action, source) => root.quickControlActionRequested(controlId, action, source)
+                    }
+                }
+                ControlCenterQuickControl {
+                    id: idleInhibitor
+
+                    KeyNavigation.up: doNotDisturb
+                    controlId: "idleInhibitor"
+                    controlModel: root.contentModel.quickControl(controlId)
+                    height: implicitHeight
+                    theme: root.theme
+                    width: parent.width
+
+                    onActionRequested: (action, source) => root.quickControlActionRequested(controlId, action, source)
+                }
+            }
+            Column {
+                spacing: root.theme.spacing.space2
+                width: parent.width
+
+                ControlCenterSliderPlaceholder {
+                    id: volume
+
+                    height: implicitHeight
+                    sliderId: "volume"
+                    sliderModel: root.contentModel.slider(sliderId)
+                    theme: root.theme
+                    width: parent.width
+
+                    onAdjustmentRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                }
+                ControlCenterSliderPlaceholder {
+                    id: brightness
+
+                    height: visible ? implicitHeight : 0
+                    sliderId: "brightness"
+                    sliderModel: root.contentModel.slider(sliderId)
+                    theme: root.theme
+                    width: parent.width
+
+                    onAdjustmentRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                }
+            }
+            Row {
+                spacing: root.theme.spacing.space2
+                width: parent.width
+
+                ControlCenterTabButton {
+                    id: notificationsTab
+
+                    KeyNavigation.right: volumeMixerTab
+                    activeTab: root.activeTab
+                    height: implicitHeight
+                    label: qsTr("Notifications")
+                    tabId: "notifications"
+                    theme: root.theme
+                    width: (parent.width - parent.spacing) / 2
+
+                    onSelectedRequested: source => root.tabRequested(tabId, source)
+                }
+                ControlCenterTabButton {
+                    id: volumeMixerTab
+
+                    KeyNavigation.left: notificationsTab
+                    activeTab: root.activeTab
+                    height: implicitHeight
+                    label: qsTr("Volume Mixer")
+                    tabId: "volumeMixer"
+                    theme: root.theme
+                    width: (parent.width - parent.spacing) / 2
+
+                    onSelectedRequested: source => root.tabRequested(tabId, source)
+                }
+            }
+            Rectangle {
+                border.color: root.theme.colors.outlineSubtle
+                border.width: root.theme.metrics.outlineWidth
+                color: root.theme.colors.surfaceRaised
+                height: 112
+                radius: root.theme.radius.radiusLarge
+                width: parent.width
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: root.theme.spacing.space2
+                    width: parent.width - root.theme.spacing.space6 * 2
+
+                    Text {
+                        color: root.theme.colors.textPrimary
+                        font.family: root.theme.typography.fontFamily
+                        font.pixelSize: root.theme.typography.fontSizeSection
+                        font.weight: root.theme.typography.fontWeightMedium
+                        horizontalAlignment: Text.AlignHCenter
+                        text: root.activeTab === "notifications" ? qsTr("No fixture notifications") : qsTr("Audio model not connected")
+                        width: parent.width
+                    }
+                    Text {
+                        color: root.theme.colors.textSecondary
+                        font.family: root.theme.typography.fontFamily
+                        font.pixelSize: root.theme.typography.fontSizeBody
+                        horizontalAlignment: Text.AlignHCenter
+                        text: root.activeTab === "notifications" ? qsTr("New items will appear here without a duplicate popup.") : qsTr("Mixer rows arrive with the shared audio adapter.")
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+        }
+    }
+}

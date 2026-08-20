@@ -1,9 +1,14 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../features/controlcenter" as ControlCenter
 
 Item {
     id: root
 
+    readonly property var content: contentLoader.status === Loader.Ready ? contentLoader.item : null
+    required property var contentModel
+    readonly property bool contentReady: root.content !== null
     required property var controlCenterConfig
     readonly property real drawerWidth: {
         const configured = root.controlCenterConfig?.width ?? "auto";
@@ -24,6 +29,9 @@ Item {
     readonly property bool windowVisible: root.open
 
     signal fixtureCaptured(string path, bool saved)
+    signal headerActionRequested(string actionId, string source)
+    signal quickControlActionRequested(string controlId, string action, string source)
+    signal sliderActionRequested(string sliderId, int step, string source)
 
     function captureFixture(path: string) {
         root.grabToImage(result => {
@@ -45,12 +53,19 @@ Item {
         return root.surfaceCoordinator.closeMajor("outsideClick");
     }
     function focusInitial() {
-        if (root.keyboardActive)
-            placeholder.focusInitial();
+        if (root.keyboardActive && root.contentReady)
+            root.content.focusInitial();
     }
     function handleEscape(): var {
         settleAnimation.stop();
-        return root.open ? root.surfaceCoordinator.closeMajor("escape") : root.result(false);
+        if (!root.open || !root.contentReady)
+            return root.result(false);
+        const wasOpen = root.open;
+        const navigationResult = root.content.handleEscape();
+        return root.result(navigationResult.handled || wasOpen && !root.open);
+    }
+    function openPage(pageId: string, invokerFocusId: string, source: string): bool {
+        return root.open && root.contentReady && root.content.openPage(pageId, invokerFocusId, source);
     }
     function rejection(errorCode: string): var {
         return Object.freeze({
@@ -64,6 +79,12 @@ Item {
             return root.rejection("CONTROL_CENTER_HOST_DISABLED");
         return root.surfaceCoordinator.openMajor("controlCenter", root.context(origin, originControlId));
     }
+    function requestQuickControlAction(controlId: string, action: string, source: string): bool {
+        return root.open && root.contentReady && root.content.requestQuickControlAction(controlId, action, source);
+    }
+    function requestSliderStep(sliderId: string, step: int, source: string): bool {
+        return root.open && root.contentReady && root.content.requestSliderStep(sliderId, step, source);
+    }
     function requestToggle(origin: string, originControlId: string): var {
         if (!root.owned && !root.hostEnabled)
             return root.rejection("CONTROL_CENTER_HOST_DISABLED");
@@ -76,13 +97,26 @@ Item {
             "errorCode": ""
         });
     }
+    function selectTab(tabId: string, source: string): bool {
+        return root.open && root.contentReady && root.content.selectTab(tabId, source);
+    }
     function summary(): var {
+        const contentSummary = root.contentReady ? root.content.summary() : Object.freeze({
+            "activePage": "main",
+            "activeTab": "notifications",
+            "focusedControlId": "",
+            "stackDepth": 0
+        });
         return Object.freeze({
+            "activePage": contentSummary.activePage,
+            "activeTab": contentSummary.activeTab,
             "monitorId": root.ownerMonitorId,
             "open": root.open,
             "visible": root.windowVisible,
             "keyboardActive": root.keyboardActive,
-            "initialFocusActive": placeholder.initialFocusActive,
+            "focusedControlId": contentSummary.focusedControlId,
+            "initialFocusActive": contentSummary.focusedControlId === "quick.wifi",
+            "navigationStackDepth": contentSummary.stackDepth,
             "revealProgress": root.revealProgress,
             "revealState": root.revealController.state,
             "revealVelocity": root.revealController.velocity,
@@ -108,6 +142,8 @@ Item {
         } else if (!root.owned) {
             settleAnimation.stop();
             root.revealController.resetClosed();
+            if (root.contentReady)
+                root.content.resetSession();
         }
     }
 
@@ -178,14 +214,27 @@ Item {
                 }
             }
         }
-        ControlCenter.ControlCenterPlaceholder {
-            id: placeholder
+        Loader {
+            id: contentLoader
 
+            active: root.theme !== null && root.contentModel !== null
             anchors.fill: parent
-            focus: root.keyboardActive
-            theme: root.theme
+            anchors.margins: root.theme?.spacing?.space4 ?? 16
+            sourceComponent: contentComponent
+        }
+        Component {
+            id: contentComponent
 
-            onCloseRequested: root.surfaceCoordinator.closeMajor("requested")
+            ControlCenter.ControlCenterContent {
+                contentModel: root.contentModel
+                focus: root.keyboardActive
+                theme: root.theme
+
+                onCloseRequested: root.surfaceCoordinator.closeMajor("escape")
+                onHeaderActionRequested: (actionId, source) => root.headerActionRequested(actionId, source)
+                onQuickControlActionRequested: (controlId, action, source) => root.quickControlActionRequested(controlId, action, source)
+                onSliderActionRequested: (sliderId, step, source) => root.sliderActionRequested(sliderId, step, source)
+            }
         }
         Item {
             // Prototype-only noninteractive background rail; final close-drag
