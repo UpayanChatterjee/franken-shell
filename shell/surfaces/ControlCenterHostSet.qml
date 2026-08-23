@@ -12,6 +12,8 @@ Scope {
     required property bool fixtureWindow
     readonly property int hostCount: hostVariants.instances.length
     required property var monitorRegistry
+    property var networkController: null
+    readonly property int networkPageOpenCount: controller.count("network")
     readonly property int openHostCount: controller.count("open")
     readonly property int resolvedHostCount: controller.count("resolved")
     required property var surfaceCoordinator
@@ -66,6 +68,7 @@ Scope {
                 controlCenterConfig: root.controlCenterConfig
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor
+                networkController: root.networkController
                 screenInfo: instance.modelData
                 surfaceCoordinator: root.surfaceCoordinator
                 theme: root.theme
@@ -84,6 +87,8 @@ Scope {
                 else if (kind === "open" && summary.open)
                     total += 1;
                 else if (kind === "scrim" && summary.scrimVisible)
+                    total += 1;
+                else if (kind === "network" && summary.open && summary.activePage === "network")
                     total += 1;
             }
             return total;

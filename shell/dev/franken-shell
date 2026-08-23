@@ -450,6 +450,30 @@ check_telemetry_adapters() {
 		"$SHELL_DIR/tests/telemetry_adapters/TelemetryAdapterTests.qml"
 }
 
+check_network_adapter() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/network/NetworkAdapter.qml" \
+		"$SHELL_DIR/services/network/QuickshellNetworkRuntime.qml" \
+		"$SHELL_DIR/services/network/UnavailableNetworkRuntime.qml" \
+		"$SHELL_DIR/features/network/NetworkController.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterPlaceholderModel.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterDetailPage.qml" \
+		"$SHELL_DIR/tests/network_adapter/FakeNetworkRuntime.qml" \
+		"$SHELL_DIR/tests/network_adapter/NetworkAdapterTests.qml"
+
+	runtime_count=$(rg -c 'NetworkServices\.QuickshellNetworkRuntime[[:space:]]*\{' "$SHELL_DIR/shell.qml")
+	if [ "$runtime_count" -ne 1 ]; then
+		printf 'Expected exactly one root Network runtime, found %s.\n' "$runtime_count" >&2
+		return 1
+	fi
+
+	backend_import_count=$(rg -l '^import Quickshell\.Networking' "$SHELL_DIR" -g '*.qml' | wc -l)
+	if [ "$backend_import_count" -ne 1 ]; then
+		printf 'Expected Network backend access in exactly one runtime file, found %s files.\n' "$backend_import_count" >&2
+		return 1
+	fi
+}
+
 test_telemetry_adapters() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-telemetry-adapter-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -459,6 +483,19 @@ test_telemetry_adapters() {
 		XDG_RUNTIME_DIR="$runtime_dir" \
 		FRANKEN_SHELL_MODE=telemetry-adapter-test \
 		qs --no-duplicate --path "$SHELL_DIR/telemetry-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_network_adapter() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-network-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=network-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/network-adapter-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -679,6 +716,14 @@ show_telemetry_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics telemetryStatus
+}
+
+show_network_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics networkStatus
 }
 
 show_readiness() {
@@ -952,6 +997,7 @@ usage() {
 		"  audio-status      Show sanitized PipeWire adapter state" \
 		"  power-status      Show sanitized battery and brightness adapter state" \
 		"  telemetry-status  Show sanitized throughput and resource-summary state" \
+		"  network-status    Show sanitized Network adapter state" \
 		"  audio-adapter-check" \
 		"                    Statically check the normalized PipeWire adapter contract" \
 		"  audio-adapter-test" \
@@ -964,6 +1010,10 @@ usage() {
 		"                    Statically check throughput and resource-summary adapter contracts" \
 		"  telemetry-adapter-test" \
 		"                    Run deterministic counter, formatting, resource, and polling fixtures" \
+		"  network-adapter-check" \
+		"                    Statically check the normalized NetworkManager adapter contract" \
+		"  network-adapter-test" \
+		"                    Run deterministic scan, connection, secret, task, and reconnect fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -1153,6 +1203,9 @@ power-status)
 telemetry-status)
 	show_telemetry_diagnostics
 	;;
+network-status)
+	show_network_diagnostics
+	;;
 audio-adapter-check)
 	check_audio_adapter
 	;;
@@ -1170,6 +1223,12 @@ telemetry-adapter-check)
 	;;
 telemetry-adapter-test)
 	test_telemetry_adapters
+	;;
+network-adapter-check)
+	check_network_adapter
+	;;
+network-adapter-test)
+	test_network_adapter
 	;;
 workspace-check)
 	check_workspaces

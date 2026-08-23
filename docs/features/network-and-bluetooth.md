@@ -217,7 +217,20 @@ Unavailable capabilities are omitted or explained. Existing safe state may remai
 
 Dependencies include `SurfaceCoordinator`, control-centre page host, `CapabilityRegistry`, `Diagnostics`, `CommandRegistry`, toast publisher, `MonitorRegistry`, and selected NetworkManager/BlueZ adapters.
 
-The exact Quickshell/native/retained-service choices remain research items. Credentials go directly to the selected secret-agent/backend contract, are redacted from errors, and never enter config, history, fixtures containing real data, or command arguments visible to unrelated processes.
+Per D-077, the initial Network implementation uses the pinned
+`Quickshell.Networking` NetworkManager backend behind one Franken Shell adapter.
+Credentials go directly to its ordinary PSK connection API, are redacted from
+errors, and never enter config, history, diagnostics, fixtures containing real
+data, or command arguments visible to unrelated processes. Enterprise and
+hidden-network provisioning remain deferred pending a complete safe backend
+contract. Bluetooth's exact native/retained-service choice remains a research
+item.
+
+The pinned Network singleton selects its backend only during initialization. If
+NetworkManager is absent at that point, the detail page remains available in an
+explicit unavailable state and a shell reload is required after NetworkManager
+returns. Ordinary device, radio, connection, and model changes recover in
+process through the native observable models.
 
 # 12. Multi-Monitor and Performance
 
@@ -262,7 +275,7 @@ Prefer events to polling. Throughput uses lightweight bounded sampling. Wi-Fi sc
 # 16. Unresolved Questions
 
 - **Q-001, Q-002:** exact Quickshell capability and retained Caelestia service baseline.
-- **Q-050:** network backend choice and completeness.
+- **Q-050:** resolved by D-077 for the initial native NetworkManager adapter.
 - **Q-051:** NetworkManager secret-agent handling.
 - **Q-052:** captive-portal detection/action.
 - **Q-053:** configurable advanced-network application.

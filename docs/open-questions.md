@@ -1121,25 +1121,11 @@ The contextual indicator should reflect actual active capture where possible.
 
 ## Q-050 — Network backend choice
 
-**Priority:** High, Research  
-**Needed by:** Phase 4
-
-Should the shell use:
-
-- Quickshell NetworkManager module directly;
-- D-Bus NetworkManager adapter;
-- `nmcli` fallback;
-- retained Caelestia service?
-
-Need to verify current API completeness for:
-
-- scanning;
-- saved networks;
-- password prompts;
-- hidden networks;
-- connection task state;
-- captive portal;
-- Ethernet details.
+**Status:** Resolved by D-077
+**Resolution:** Use the pinned `Quickshell.Networking` NetworkManager backend
+behind a Franken Shell adapter. Do not add `nmcli`, retained-service, or custom
+D-Bus fallback paths for the bounded initial implementation. Enterprise and
+hidden-network provisioning remain outside that decision's initial scope.
 
 ---
 
@@ -1147,15 +1133,18 @@ Need to verify current API completeness for:
 
 **Priority:** High, Research
 
-How should password entry integrate with NetworkManager secrets?
+Ordinary WPA/WPA2/SAE PSK entry is resolved by D-077: submit directly through
+the pinned native `connectWithPsk()` API without retaining or logging the
+credential. This question remains open for enterprise and agent-mediated
+credential flows.
 
 Questions:
 
-- Can Quickshell participate as a secret agent?
+- Can Quickshell participate as a secret agent for enterprise flows?
 - Should a helper use NetworkManager D-Bus?
 - Can the shell safely hand credentials to an existing agent?
 - How are enterprise networks handled?
-- How is cancellation represented?
+- How is enterprise credential cancellation represented?
 
 Do not store credentials in shell config or logs.
 
@@ -1174,7 +1163,9 @@ Possible behaviour:
 - “Open login page” action;
 - automatic browser launch only after explicit click.
 
-Need a reliable detection source.
+The accepted initial detection source is the pinned native NetworkManager
+connectivity state (D-077). Reliable login-URL discovery, sandboxing, and the
+explicit browser action remain unresolved.
 
 ---
 

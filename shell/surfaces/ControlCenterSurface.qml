@@ -232,7 +232,11 @@ Item {
 
                 onCloseRequested: root.surfaceCoordinator.closeMajor("escape")
                 onHeaderActionRequested: (actionId, source) => root.headerActionRequested(actionId, source)
-                onQuickControlActionRequested: (controlId, action, source) => root.quickControlActionRequested(controlId, action, source)
+                onQuickControlActionRequested: (controlId, action, source) => {
+                    root.quickControlActionRequested(controlId, action, source);
+                    if (typeof root.contentModel?.requestQuickControlAction === "function")
+                        root.contentModel.requestQuickControlAction(controlId, action, source);
+                }
                 onSliderActionRequested: (sliderId, step, source) => {
                     root.sliderActionRequested(sliderId, step, source);
                     if (typeof root.contentModel?.requestSliderStep === "function")

@@ -53,6 +53,15 @@ QtObject {
         readonly property string label: qsTr("Keep awake")
         readonly property string secondaryText: qsTr("Off")
     }
+    property var networkController: null
+    readonly property QtObject networkPage: QtObject {
+        readonly property var activeConnection: root.networkController?.activeConnection ?? null
+        readonly property int ethernetDeviceCount: root.networkController?.ethernetDevices?.length ?? 0
+        readonly property int savedNetworkCount: root.networkController?.savedNetworks?.length ?? 0
+        readonly property string scanState: root.networkController?.scanState ?? "idle"
+        readonly property string status: root.networkController?.status ?? "unavailable"
+        readonly property int visibleNetworkCount: root.networkController?.visibleNetworks?.length ?? 0
+    }
     readonly property QtObject nightLight: QtObject {
         readonly property bool active: false
         readonly property bool available: true
@@ -74,16 +83,16 @@ QtObject {
         readonly property real value: root.audioController?.masterVolume ?? 0.42
     }
     readonly property QtObject wifi: QtObject {
-        readonly property bool active: false
-        readonly property bool available: false
-        readonly property bool busy: false
+        readonly property bool active: root.networkController?.wifiEnabled === true
+        readonly property bool available: root.networkController?.available === true
+        readonly property bool busy: root.networkController?.operationTasks?.some(task => task.state === "pending" && task.kind === "wifi") === true
         readonly property bool canOpenDetails: true
-        readonly property bool canToggle: true
-        readonly property bool enabled: false
-        readonly property string error: ""
+        readonly property bool canToggle: root.networkController?.available === true
+        readonly property bool enabled: root.networkController?.available === true
+        readonly property string error: root.networkController?.lastError ?? ""
         readonly property string icon: "W"
         readonly property string label: qsTr("Wi-Fi")
-        readonly property string secondaryText: qsTr("Unavailable")
+        readonly property string secondaryText: root.networkController?.quickSummary ?? qsTr("Unavailable")
     }
 
     function quickControl(controlId: string): var {
@@ -101,6 +110,16 @@ QtObject {
         default:
             return null;
         }
+    }
+    function requestQuickControlAction(controlId: string, action: string, source: string): bool {
+        void source;
+        if (controlId !== "wifi" || root.networkController === null)
+            return false;
+        if (action === "details")
+            return true;
+        if (action === "toggle")
+            return root.networkController.toggleWifi().accepted === true;
+        return false;
     }
     function requestSliderStep(sliderId: string, step: int, source: string): bool {
         void source;

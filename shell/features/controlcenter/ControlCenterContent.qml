@@ -102,6 +102,7 @@ FocusScope {
         id: detailPage
 
         ControlCenterDetailPage {
+            contentModel: root.contentModel
             pageId: root.activePage
             theme: root.theme
 

@@ -3,6 +3,7 @@ import QtQuick
 FocusScope {
     id: root
 
+    required property var contentModel
     readonly property string focusedControlId: backAction.activeFocus ? "detail.back" : ""
     required property string pageId
     required property var theme
@@ -11,6 +12,24 @@ FocusScope {
 
     function focusInitial() {
         backAction.forceActiveFocus();
+    }
+    function networkDetails(): string {
+        const model = root.contentModel?.networkPage;
+        if (model === null || model === undefined || model.status === "unavailable")
+            return qsTr("NetworkManager is unavailable. The drawer remains usable.");
+        return qsTr("%1 visible · %2 saved · %3 Ethernet").arg(model.visibleNetworkCount).arg(model.savedNetworkCount).arg(model.ethernetDeviceCount);
+    }
+    function networkHeadline(): string {
+        const model = root.contentModel?.networkPage;
+        if (model?.activeConnection !== null && model?.activeConnection !== undefined)
+            return qsTr("Connected to %1").arg(model.activeConnection.name);
+        if (model?.status === "scanning")
+            return qsTr("Scanning for networks…");
+        if (model?.status === "captive")
+            return qsTr("Network login required");
+        if (model?.status === "limited")
+            return qsTr("Limited connectivity");
+        return qsTr("Network status: %1").arg(model?.status ?? "unavailable");
     }
 
     Accessible.name: root.pageId === "network" ? qsTr("Network detail placeholder") : qsTr("Bluetooth detail placeholder")
@@ -98,7 +117,7 @@ FocusScope {
                 font.pixelSize: root.theme.typography.fontSizeSection
                 font.weight: root.theme.typography.fontWeightMedium
                 horizontalAlignment: Text.AlignHCenter
-                text: root.pageId === "network" ? qsTr("Network controls arrive with the adapter.") : qsTr("Bluetooth controls arrive with the adapter.")
+                text: root.pageId === "network" ? root.networkHeadline() : qsTr("Bluetooth controls arrive with the adapter.")
                 width: parent.width
                 wrapMode: Text.Wrap
             }
@@ -107,7 +126,7 @@ FocusScope {
                 font.family: root.theme.typography.fontFamily
                 font.pixelSize: root.theme.typography.fontSizeBody
                 horizontalAlignment: Text.AlignHCenter
-                text: qsTr("This page currently validates navigation, focus, and dismissal only.")
+                text: root.pageId === "network" ? root.networkDetails() : qsTr("This page currently validates navigation, focus, and dismissal only.")
                 width: parent.width
                 wrapMode: Text.Wrap
             }

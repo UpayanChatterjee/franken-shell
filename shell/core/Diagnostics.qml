@@ -20,6 +20,7 @@ Scope {
     property var hyprlandProvider: null
     required property string mode
     required property var monitorRegistry
+    property var networkProvider: null
     property var resourceProvider: null
     required property var shellState
     required property var surfaceCoordinator
@@ -30,6 +31,7 @@ Scope {
     function summaryObject(): var {
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
+        const network = root.networkProvider?.diagnosticsSummary?.() ?? {};
         const commands = root.commandRegistry.registrySummary();
         const controlCenterHosts = root.controlCenterHostProvider.summary();
         const barHosts = root.barHostProvider.summary();
@@ -87,6 +89,20 @@ Scope {
             "monitorBackendAvailability": monitors.backendAvailability,
             "monitorLastRefresh": monitors.lastRefresh,
             "monitorLastMappingError": monitors.lastMappingError,
+            "networkAvailable": network.available === true,
+            "networkConnectionState": String(network.connectionState ?? "unavailable"),
+            "networkStateStale": network.stale === true,
+            "networkStatus": String(network.status ?? "unavailable"),
+            "networkConnectivity": String(network.connectivity ?? "unknown"),
+            "networkWifiEnabled": network.wifiEnabled === true,
+            "networkWifiHardwareAvailable": network.wifiHardwareAvailable === true,
+            "networkScanState": String(network.scanState ?? "idle"),
+            "networkVisibleCount": Number(network.visibleNetworkCount ?? 0),
+            "networkSavedCount": Number(network.savedNetworkCount ?? 0),
+            "networkEthernetCount": Number(network.ethernetDeviceCount ?? 0),
+            "networkActiveConnectionPresent": network.activeConnectionPresent === true,
+            "networkPendingTaskCount": Number(network.pendingTaskCount ?? 0),
+            "networkLastError": String(network.lastError ?? ""),
             "hyprlandAvailable": hyprland.available === true,
             "hyprlandConnectionState": String(hyprland.connectionState ?? "unavailable"),
             "hyprlandStateStale": hyprland.stale === true,
@@ -246,6 +262,12 @@ Scope {
         }
         function monitorStatus(): string {
             return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
+        }
+        function networkStatus(): string {
+            return JSON.stringify(root.networkProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable"
+            });
         }
         function powerStatus(): string {
             return JSON.stringify({
