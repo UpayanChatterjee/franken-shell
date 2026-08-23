@@ -4,11 +4,13 @@ import QtQuick
 import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
+import "features/bluetooth" as BluetoothFeatures
 import "features/network" as NetworkFeatures
 import "features/power" as PowerFeatures
 import "features/telemetry" as TelemetryFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
+import "services/bluetooth" as BluetoothServices
 import "services/hyprland" as HyprlandServices
 import "services/network" as NetworkServices
 import "services/power" as PowerServices
@@ -118,6 +120,30 @@ ShellRoot {
         adapter: audioAdapter
         maximumVolume: 1
         volumeStep: 0.02
+    }
+    BluetoothServices.UnavailableBluetoothRuntime {
+        id: unavailableBluetoothRuntime
+    }
+    Loader {
+        id: bluetoothRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            BluetoothServices.QuickshellBluetoothRuntime {
+            }
+        }
+    }
+    BluetoothServices.BluetoothAdapter {
+        id: bluetoothAdapter
+
+        runtime: bluetoothRuntimeLoader.status === Loader.Ready ? bluetoothRuntimeLoader.item : unavailableBluetoothRuntime
+    }
+    BluetoothFeatures.BluetoothController {
+        id: bluetoothController
+
+        adapter: bluetoothAdapter
+        detailVisible: controlCenterHosts.bluetoothPageOpenCount > 0
     }
     NetworkServices.UnavailableNetworkRuntime {
         id: unavailableNetworkRuntime
@@ -273,6 +299,7 @@ ShellRoot {
         id: controlCenterHosts
 
         audioController: audioController
+        bluetoothController: root.usesFixtureMonitorBackend ? null : bluetoothController
         brightnessController: root.usesFixtureMonitorBackend ? null : brightnessController
         controlCenterConfig: configService.active?.controlCenter ?? null
         fixtureWindow: root.usesFixtureMonitorBackend
@@ -309,6 +336,7 @@ ShellRoot {
         audioProvider: audioAdapter
         barHostProvider: barHosts
         batteryProvider: batteryAdapter
+        bluetoothProvider: bluetoothAdapter
         brightnessProvider: brightnessAdapter
         capabilityRegistry: capabilityRegistry
         commandRegistry: shellCommandRegistry

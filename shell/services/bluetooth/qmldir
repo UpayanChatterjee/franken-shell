@@ -1,0 +1,4 @@
+module FrankenShell.Services.Bluetooth
+BluetoothAdapter 1.0 BluetoothAdapter.qml
+QuickshellBluetoothRuntime 1.0 QuickshellBluetoothRuntime.qml
+UnavailableBluetoothRuntime 1.0 UnavailableBluetoothRuntime.qml

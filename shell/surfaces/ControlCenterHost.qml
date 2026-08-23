@@ -6,6 +6,7 @@ Scope {
     id: root
 
     property var audioController: null
+    property var bluetoothController: null
     property var brightnessController: null
     property var contentModel: null
     required property var controlCenterConfig
@@ -132,6 +133,7 @@ Scope {
         id: placeholderModel
 
         audioController: root.audioController
+        bluetoothController: root.bluetoothController
         brightnessController: root.brightnessController
         networkController: root.networkController
     }

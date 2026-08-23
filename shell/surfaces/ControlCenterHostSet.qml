@@ -7,6 +7,8 @@ Scope {
     id: root
 
     property var audioController: null
+    property var bluetoothController: null
+    readonly property int bluetoothPageOpenCount: controller.count("bluetooth")
     property var brightnessController: null
     required property var controlCenterConfig
     required property bool fixtureWindow
@@ -64,6 +66,7 @@ Scope {
                 id: controlCenterHost
 
                 audioController: root.audioController
+                bluetoothController: root.bluetoothController
                 brightnessController: root.brightnessController
                 controlCenterConfig: root.controlCenterConfig
                 fixtureWindow: root.fixtureWindow
@@ -89,6 +92,8 @@ Scope {
                 else if (kind === "scrim" && summary.scrimVisible)
                     total += 1;
                 else if (kind === "network" && summary.open && summary.activePage === "network")
+                    total += 1;
+                else if (kind === "bluetooth" && summary.open && summary.activePage === "bluetooth")
                     total += 1;
             }
             return total;

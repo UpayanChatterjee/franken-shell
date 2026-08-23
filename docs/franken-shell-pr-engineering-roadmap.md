@@ -1005,8 +1005,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/network-adapter`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #17 / `f4b1e139b3d7d163b99a299765355aca9309124b`
 
 #### Scope
 - Resolve and document the approved backend path before implementation.
@@ -1080,6 +1080,32 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - No adapter, powered off, discovery failure, pairing confirm/reject/cancel, reconnect, device disappearance, and non-audio contextual state.
 - Reload cannot repeat a pairing confirmation or unsafe task.
+
+#### Implementation evidence
+
+- The exact pinned `Quickshell.Bluetooth` API provides BlueZ adapter/device
+  models, multiple adapters, power, discovery, pair/cancel, trust,
+  connect/disconnect/forget, and optional battery state behind one native
+  runtime and normalized Franken Shell adapter.
+- The pinned API does not expose a BlueZ `Agent1` registration or pairing-prompt
+  callback. The normalized contract and deterministic fixtures cover code and
+  confirmation accept/reject/cancel safely, while the native runtime explicitly
+  reports agent-mediated prompting unavailable and relies on the active system
+  agent for basic pairing. Q-054/Q-114 remain open for a complete in-shell
+  agent path.
+- Deterministic fixtures cover no adapter, late arrival, powered-off state,
+  bounded discovery, discovery denial, stable paired/connected/nearby models,
+  battery, pairing progress, protected prompt clearing/redaction, rejection,
+  cancellation, failure, forget/disappearance, service reconnect, and unsafe
+  reload reset.
+- Bluetooth audio devices remain classified only for ownership separation;
+  this slice performs no output selection and exposes no competing audio state.
+- The live development runtime reported one powered adapter, six paired
+  devices, idle discovery, no active connection/task, and no new Bluetooth
+  warnings without initiating a device-changing action.
+- `CI / Bluetooth` blocks backend/view ownership regressions, external command
+  use, audio-service duplication, and pairing-secret fields in diagnostics or
+  shared control-centre models.
 
 #### CI evolution
 

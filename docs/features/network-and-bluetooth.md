@@ -223,14 +223,26 @@ Credentials go directly to its ordinary PSK connection API, are redacted from
 errors, and never enter config, history, diagnostics, fixtures containing real
 data, or command arguments visible to unrelated processes. Enterprise and
 hidden-network provisioning remain deferred pending a complete safe backend
-contract. Bluetooth's exact native/retained-service choice remains a research
-item.
+contract. The initial Bluetooth adapter follows D-072's provisional native path
+and uses the pinned `Quickshell.Bluetooth` BlueZ models behind one Franken Shell
+runtime. That API covers adapters, power, discovery, devices, pair/cancel,
+connect/disconnect/forget, trust, and optional battery state. It does not expose
+a BlueZ `Agent1` registration or pairing-request callback. Basic native pairing
+therefore uses the active system agent; a complete in-shell PIN/passkey and
+confirmation path remains Q-054/Q-114. The normalized adapter still defines the
+protected request/task contract so a later approved agent backend cannot leak
+pairing input into diagnostics, configuration, logs, or shared page models.
 
 The pinned Network singleton selects its backend only during initialization. If
 NetworkManager is absent at that point, the detail page remains available in an
 explicit unavailable state and a shell reload is required after NetworkManager
 returns. Ordinary device, radio, connection, and model changes recover in
 process through the native observable models.
+
+The pinned Bluetooth singleton similarly initializes its BlueZ object manager
+once. Adapter/device changes observed by that object manager recover in process;
+initial BlueZ absence requires a shell reload after the service returns. No
+adapter remains a local unavailable state and does not block drawer startup.
 
 # 12. Multi-Monitor and Performance
 

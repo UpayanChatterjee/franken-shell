@@ -1,4 +1,5 @@
 ci/bar
+ci/bluetooth
 ci/bootstrap-tools
 ci/collect-diagnostics
 ci/control-center

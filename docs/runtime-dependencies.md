@@ -90,6 +90,29 @@ does not block drawer startup. Enterprise/hidden-network provisioning, custom
 routes, DNS administration, and captive-portal browser actions are not active
 runtime dependencies in this slice.
 
+### Franken Shell Bluetooth adapter
+
+The active implementation imports `Quickshell.Bluetooth` only in
+`shell/services/bluetooth/QuickshellBluetoothRuntime.qml`. Its pinned BlueZ
+client supplies adapter/device models, power, discovery, pair/cancel,
+connect/disconnect/forget, trust, transition state, and optional battery data.
+One root runtime normalizes these models through `BluetoothAdapter`; feature
+controllers and views do not invoke `bluetoothctl` or backend D-Bus methods.
+
+The pinned module has no `Agent1` registration or pairing-request callback.
+Basic pairing therefore uses the session's active system agent, while the
+Franken adapter's protected confirmation/code contract is fixture-tested but
+unavailable through the native runtime. No pairing code enters diagnostics,
+configuration, logs, task records, or shared control-centre models. The module
+also exposes no profile list or structured asynchronous method errors; generic
+failures are derived from terminal device state where possible.
+
+The pinned BlueZ object manager initializes once. Initial BlueZ absence requires
+shell reload after service recovery; ordinary adapter/device changes observed
+by the initialized manager recover in process. Bluetooth audio output selection
+remains owned exclusively by the PipeWire audio adapter and is not performed by
+this slice.
+
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
 `ConfigService` owns watching and atomic typed snapshot publication. Phase 1

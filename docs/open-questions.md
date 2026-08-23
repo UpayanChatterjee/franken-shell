@@ -1205,6 +1205,16 @@ Can the chosen Quickshell/BlueZ path handle:
 
 Need a fallback plan for missing operations.
 
+**Current pinned-source evidence (PR-017):** `Quickshell.Bluetooth` at
+`4df562dfb2475a9057f0f33a8db75808efad8670` exposes multiple adapters, power,
+discovery, device pair/cancel, trust, connect/disconnect/forget, state, and
+optional battery. It does not expose BlueZ `Agent1`, pairing confirmation/PIN
+callbacks, profiles, or structured asynchronous method errors. The initial
+adapter can normalize the supported state/actions and infer generic failure
+from terminal model transitions, but a complete in-shell agent and profile path
+remains unresolved under Q-114. Initial BlueZ absence also requires shell reload
+because the pinned singleton does not retry object-manager initialization.
+
 ---
 
 ## Q-055 — Bluetooth audio output switching
@@ -1219,6 +1229,11 @@ When a Bluetooth audio device connects:
 - should this be configurable per device?
 
 Current default proposal is no forced automatic selection.
+
+PR-017 follows that proposal without resolving it: the Bluetooth controller
+does not select an output or duplicate PipeWire state. Any later output action
+must delegate through the audio adapter after stable device identity mapping and
+policy are approved.
 
 ---
 

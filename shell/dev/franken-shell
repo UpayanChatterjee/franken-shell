@@ -474,6 +474,30 @@ check_network_adapter() {
 	fi
 }
 
+check_bluetooth_adapter() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/bluetooth/BluetoothAdapter.qml" \
+		"$SHELL_DIR/services/bluetooth/QuickshellBluetoothRuntime.qml" \
+		"$SHELL_DIR/services/bluetooth/UnavailableBluetoothRuntime.qml" \
+		"$SHELL_DIR/features/bluetooth/BluetoothController.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterPlaceholderModel.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterDetailPage.qml" \
+		"$SHELL_DIR/tests/bluetooth_adapter/FakeBluetoothRuntime.qml" \
+		"$SHELL_DIR/tests/bluetooth_adapter/BluetoothAdapterTests.qml"
+
+	runtime_count=$(rg -c 'BluetoothServices\.QuickshellBluetoothRuntime[[:space:]]*\{' "$SHELL_DIR/shell.qml")
+	if [ "$runtime_count" -ne 1 ]; then
+		printf 'Expected exactly one root Bluetooth runtime, found %s.\n' "$runtime_count" >&2
+		return 1
+	fi
+
+	backend_import_count=$(rg -l '^import Quickshell\.Bluetooth' "$SHELL_DIR" -g '*.qml' | wc -l)
+	if [ "$backend_import_count" -ne 1 ]; then
+		printf 'Expected Bluetooth backend access in exactly one runtime file, found %s files.\n' "$backend_import_count" >&2
+		return 1
+	fi
+}
+
 test_telemetry_adapters() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-telemetry-adapter-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -496,6 +520,19 @@ test_network_adapter() {
 		XDG_RUNTIME_DIR="$runtime_dir" \
 		FRANKEN_SHELL_MODE=network-adapter-test \
 		qs --no-duplicate --path "$SHELL_DIR/network-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_bluetooth_adapter() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-bluetooth-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=bluetooth-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/bluetooth-adapter-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -724,6 +761,14 @@ show_network_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics networkStatus
+}
+
+show_bluetooth_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics bluetoothStatus
 }
 
 show_readiness() {
@@ -998,6 +1043,7 @@ usage() {
 		"  power-status      Show sanitized battery and brightness adapter state" \
 		"  telemetry-status  Show sanitized throughput and resource-summary state" \
 		"  network-status    Show sanitized Network adapter state" \
+		"  bluetooth-status  Show sanitized Bluetooth adapter state" \
 		"  audio-adapter-check" \
 		"                    Statically check the normalized PipeWire adapter contract" \
 		"  audio-adapter-test" \
@@ -1014,6 +1060,10 @@ usage() {
 		"                    Statically check the normalized NetworkManager adapter contract" \
 		"  network-adapter-test" \
 		"                    Run deterministic scan, connection, secret, task, and reconnect fixtures" \
+		"  bluetooth-adapter-check" \
+		"                    Statically check the normalized BlueZ adapter contract" \
+		"  bluetooth-adapter-test" \
+		"                    Run deterministic discovery, pairing, device, and reconnect fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -1206,6 +1256,9 @@ telemetry-status)
 network-status)
 	show_network_diagnostics
 	;;
+bluetooth-status)
+	show_bluetooth_diagnostics
+	;;
 audio-adapter-check)
 	check_audio_adapter
 	;;
@@ -1229,6 +1282,12 @@ network-adapter-check)
 	;;
 network-adapter-test)
 	test_network_adapter
+	;;
+bluetooth-adapter-check)
+	check_bluetooth_adapter
+	;;
+bluetooth-adapter-test)
+	test_bluetooth_adapter
 	;;
 workspace-check)
 	check_workspaces

@@ -8,6 +8,7 @@ Scope {
     property var audioProvider: null
     required property var barHostProvider
     property var batteryProvider: null
+    property var bluetoothProvider: null
     property var brightnessProvider: null
     required property var capabilityRegistry
     required property var commandRegistry
@@ -29,6 +30,7 @@ Scope {
     property var throughputProvider: null
 
     function summaryObject(): var {
+        const bluetooth = root.bluetoothProvider?.diagnosticsSummary?.() ?? {};
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
         const network = root.networkProvider?.diagnosticsSummary?.() ?? {};
@@ -89,6 +91,22 @@ Scope {
             "monitorBackendAvailability": monitors.backendAvailability,
             "monitorLastRefresh": monitors.lastRefresh,
             "monitorLastMappingError": monitors.lastMappingError,
+            "bluetoothAvailable": bluetooth.available === true,
+            "bluetoothConnectionState": String(bluetooth.connectionState ?? "unavailable"),
+            "bluetoothStateStale": bluetooth.stale === true,
+            "bluetoothStatus": String(bluetooth.status ?? "unavailable"),
+            "bluetoothPowered": bluetooth.powered === true,
+            "bluetoothDiscoveryState": String(bluetooth.discoveryState ?? "idle"),
+            "bluetoothAdapterCount": Number(bluetooth.adapterCount ?? 0),
+            "bluetoothDeviceCount": Number(bluetooth.deviceCount ?? 0),
+            "bluetoothPairedDeviceCount": Number(bluetooth.pairedDeviceCount ?? 0),
+            "bluetoothConnectedDeviceCount": Number(bluetooth.connectedDeviceCount ?? 0),
+            "bluetoothAvailableDeviceCount": Number(bluetooth.availableDeviceCount ?? 0),
+            "bluetoothNonAudioConnectedDeviceCount": Number(bluetooth.nonAudioConnectedDeviceCount ?? 0),
+            "bluetoothPairingRequestActive": bluetooth.pairingRequestActive === true,
+            "bluetoothPairingRequestKind": String(bluetooth.pairingRequestKind ?? "none"),
+            "bluetoothPendingTaskCount": Number(bluetooth.pendingTaskCount ?? 0),
+            "bluetoothLastError": String(bluetooth.lastError ?? ""),
             "networkAvailable": network.available === true,
             "networkConnectionState": String(network.connectionState ?? "unavailable"),
             "networkStateStale": network.stale === true,
@@ -229,6 +247,12 @@ Scope {
     IpcHandler {
         function audioStatus(): string {
             return JSON.stringify(root.audioProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable"
+            });
+        }
+        function bluetoothStatus(): string {
+            return JSON.stringify(root.bluetoothProvider?.diagnosticsSummary?.() ?? {
                 "available": false,
                 "connectionState": "unavailable"
             });
