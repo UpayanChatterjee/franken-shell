@@ -9,6 +9,7 @@ ci/lint
 ci/power
 ci/run
 ci/smoke
+ci/telemetry
 ci/unit
 ci/workspace
 shell/dev/franken-shell

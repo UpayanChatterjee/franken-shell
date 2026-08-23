@@ -13,9 +13,11 @@ Item {
     readonly property real mainAxisExtent: root.reservedSlots > 0 ? root.reservedSlots * root.cellExtent + Math.max(0, root.reservedSlots - 1) * root.spacing : root.contentExtent
     required property string monitorId
     property int reservedSlots: 0
+    property var resourceController: null
     required property real spacing
     required property var surfaceCoordinator
     required property var theme
+    property var throughputController: null
     required property bool vertical
     readonly property int visibleItemCount: root.items.filter(item => root.itemVisible(item)).length
 
@@ -63,8 +65,10 @@ Item {
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
+                    resourceController: root.resourceController
                     surfaceCoordinator: root.surfaceCoordinator
                     theme: root.theme
+                    throughputController: root.throughputController
                     vertical: true
                 }
             }
@@ -88,8 +92,10 @@ Item {
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
+                    resourceController: root.resourceController
                     surfaceCoordinator: root.surfaceCoordinator
                     theme: root.theme
+                    throughputController: root.throughputController
                     vertical: false
                 }
             }

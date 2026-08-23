@@ -277,8 +277,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **closed** |
 | **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **closed** |
 | **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **closed** |
-| **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **in-progress** |
-| **PR-015** | Real desktop state | Implement network throughput and low-frequency resource summary adapters with bounded polling. | `feat/throughput-resource-adapters` | Persistent metrics are stable, bounded, and non-blocking; hidden detail consumers reduce or stop elevated polling. | **open** |
+| **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **closed** |
+| **PR-015** | Real desktop state | Implement network throughput and low-frequency resource summary adapters with bounded polling. | `feat/throughput-resource-adapters` | Persistent metrics are stable, bounded, and non-blocking; hidden detail consumers reduce or stop elevated polling. | **in-progress** |
 | **PR-016** | Real desktop state | Implement the Network adapter and control-centre model for connectivity, scans, saved networks, and connection tasks. | `feat/network-adapter` | Network state/actions are normalized, secrets remain private, progress/errors are explicit, and backend failure does not prevent opening the drawer. | **open** |
 | **PR-017** | Real desktop state | Implement the Bluetooth adapter and control-centre model including pairing task states and graceful absence. | `feat/bluetooth-adapter` | Bluetooth can be absent or restart safely, pairing state is explicit, and device/audio ownership boundaries remain clean. | **open** |
 | **PR-018** | Real desktop state | Implement the tray adapter, collapsed affordance, drawer model, menus, activation, secondary activation, and scroll. | `feat/tray-adapter` | Tray interactions work through one adapter, empty/large states are correct, and development mode avoids duplicate global ownership. | **open** |
@@ -902,8 +902,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/power-brightness-adapters`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** [PR #15](https://github.com/UpayanChatterjee/franken-shell/pull/15) / `721b76dad29c6d9ade3c4fad46610c2d49c3b753`
 
 #### Scope
 - Expose battery availability, percentage, charging, power source, credible estimates, and thresholds.
@@ -957,7 +957,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/throughput-resource-adapters`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
@@ -975,9 +975,19 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - Counter wrap/reset, interface change, Wi-Fi+Ethernet aggregation, zero traffic, very large values, missing proc/sysfs data, and poll-rate changes.
 - Layout tests for 0K through large units.
 
+#### Implementation evidence
+- One root telemetry runtime asynchronously batches bounded `/proc/net/dev`, `/proc/meminfo`, `/proc/stat`, and trusted root-filesystem summary reads, then supplies every bar instance.
+- Pure sampler/formatter fixtures cover interface aggregation/order/change, zero traffic, ordinary reset, 32-bit wrap, whole-number compact units through petabytes per second, CPU/RAM/storage parsing, missing data, stale retention, recovery, and fixed cell extent.
+- Resource detail visibility is controller-owned and changes the shared runtime tier; closing the detail consumer restores the configured persistent interval.
+- `CI / Telemetry` blocks contract/ownership regressions and uploads a report-only polling evidence artifact.
+- Native acceptance on the development machine aggregated two interfaces, exposed live RAM/CPU/root-storage summaries, recovered all providers after an in-process reload, and produced no new warnings; the storage command ran once after startup and then on its bounded 30-second tier rather than every throughput tick.
+
 #### CI evolution
 
-Add deterministic sampler/formatter tests and a report-only polling/performance check.
+The blocking `CI / Telemetry` lane runs deterministic sampler/formatter,
+adapter, bar-consumption, and ownership contracts. It also uploads a
+report-only polling/performance artifact that records the shared-runtime count
+and configured sampling tiers.
 
 #### Merge cutoff
 

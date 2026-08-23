@@ -15,9 +15,11 @@ FloatingWindow {
     property var monitor: null
     readonly property string orientation: barSurface.orientation
     readonly property string ownerMonitorId: barSurface.ownerMonitorId
+    property var resourceController: null
     property var screenInfo: null
     property var surfaceCoordinator: null
     property var theme: null
+    property var throughputController: null
     property var workspaceBackend: null
     property var workspaceConfig: null
 
@@ -71,9 +73,11 @@ FloatingWindow {
         batteryController: root.batteryController
         fixtureWindow: true
         monitor: root.monitor
+        resourceController: root.resourceController
         screenInfo: root.screenInfo
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
+        throughputController: root.throughputController
         workspaceBackend: root.workspaceBackend
         workspaceConfig: root.workspaceConfig
 

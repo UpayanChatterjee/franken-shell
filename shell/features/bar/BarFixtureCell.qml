@@ -7,17 +7,21 @@ FocusScope {
     property var audioController: null
     property var batteryController: null
     required property var datum
-    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.datum.accessibleName
+    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedTooltip : root.isResources && root.resourceController !== null ? root.resourceController.memoryDescription : root.datum.accessibleName
     readonly property string effectiveEmphasis: root.isBattery && root.batteryController !== null ? root.batteryController.severity : root.datum.emphasis
-    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.isBattery && root.batteryController !== null ? root.batteryController.label : root.datum.label
+    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.isBattery && root.batteryController !== null ? root.batteryController.label : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedDownload : root.isResources && root.resourceController !== null ? root.resourceController.label : root.datum.label
     readonly property bool effectiveVisible: root.isBattery && root.batteryController !== null ? root.batteryController.visible : root.datum.visible
     required property real extent
     readonly property bool isAudio: root.datum.id === "audio"
     readonly property bool isBattery: root.datum.id === "battery"
+    readonly property bool isNetworkSpeed: root.datum.id === "networkSpeed"
+    readonly property bool isResources: root.datum.id === "resources"
     required property string monitorId
     readonly property bool popoverOpen: root.datum.popoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.datum.popoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
+    property var resourceController: null
     required property var surfaceCoordinator
     required property var theme
+    property var throughputController: null
     required property bool vertical
 
     function activate(origin: string): var {

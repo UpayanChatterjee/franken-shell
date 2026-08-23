@@ -1,0 +1,63 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+telemetry_artifact_dir="$ARTIFACT_DIR/telemetry"
+mkdir -p "$telemetry_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Io|\bProcess\s*\{' \
+	shell/services/telemetry/ThroughputAdapter.qml \
+	shell/services/telemetry/ResourceSummaryAdapter.qml \
+	shell/features/telemetry \
+	shell/features/bar/BarFixtureCell.qml \
+	>"$telemetry_artifact_dir/process-boundary.log" 2>&1; then
+	cat "$telemetry_artifact_dir/process-boundary.log" >&2
+	printf 'Telemetry adapters, controllers, and views must not own filesystem or process polling.\n' >&2
+	exit 1
+fi
+
+runtime_count=$(rg -c 'TelemetryServices\.ProcTelemetryRuntime[[:space:]]*\{' shell/shell.qml)
+if [ "$runtime_count" -ne 1 ]; then
+	printf 'Expected exactly one root telemetry runtime, found %s.\n' "$runtime_count" >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell telemetry-adapter-check >"$telemetry_artifact_dir/check.log" 2>&1; then
+	cat "$telemetry_artifact_dir/check.log"
+else
+	status=$?
+	cat "$telemetry_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell telemetry-adapter-test >"$telemetry_artifact_dir/test.log" 2>&1; then
+	cat "$telemetry_artifact_dir/test.log"
+else
+	status=$?
+	cat "$telemetry_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+{
+	printf 'Polling/performance evidence (report only)\n'
+	printf 'sharedRuntimeCount=%s\n' "$runtime_count"
+	rg -n 'summaryIntervalMs|detailIntervalMs|storageIntervalMs|detailVisible|pollIntervalMs' \
+		shell/services/telemetry/ProcTelemetryRuntime.qml \
+		shell/services/telemetry/ThroughputAdapter.qml \
+		shell/services/telemetry/ResourceSummaryAdapter.qml \
+		shell/features/telemetry
+} >"$telemetry_artifact_dir/polling-report.log"
+cat "$telemetry_artifact_dir/polling-report.log"
+
+printf 'Throughput, resource-summary, ownership, and report-only polling checks passed.\n'

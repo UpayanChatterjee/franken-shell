@@ -1,0 +1,5 @@
+module FrankenShell.Services.Telemetry
+ThroughputAdapter 1.0 ThroughputAdapter.qml
+ResourceSummaryAdapter 1.0 ResourceSummaryAdapter.qml
+ProcTelemetryRuntime 1.0 ProcTelemetryRuntime.qml
+UnavailableTelemetryRuntime 1.0 UnavailableTelemetryRuntime.qml

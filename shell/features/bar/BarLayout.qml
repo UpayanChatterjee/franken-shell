@@ -17,10 +17,12 @@ Item {
     readonly property real mainAxisLength: root.vertical ? root.height : root.width
     readonly property real minimumMainAxisExtent: startZone.mainAxisExtent + contextZone.mainAxisExtent + endZone.mainAxisExtent + absoluteEndZone.mainAxisExtent + 4 * root.zoneSpacing
     required property string monitorId
+    property var resourceController: null
     required property var specialWorkspaceController
     readonly property real startPosition: root.vertical ? startZone.y : startZone.x
     required property var surfaceCoordinator
     required property var theme
+    property var throughputController: null
     required property bool vertical
     required property var workspaceController
     readonly property real zoneSpacing: root.theme.spacing.space2
@@ -86,9 +88,11 @@ Item {
             items: root.fixtureModel.contextItems
             monitorId: root.monitorId
             reservedSlots: root.contextCapacity
+            resourceController: root.resourceController
             spacing: root.theme.spacing.space1
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
+            throughputController: root.throughputController
             vertical: root.vertical
         }
         BarZone {
@@ -103,9 +107,11 @@ Item {
             cellExtent: root.cellExtent
             items: root.fixtureModel.endItems
             monitorId: root.monitorId
+            resourceController: root.resourceController
             spacing: root.theme.spacing.space1
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
+            throughputController: root.throughputController
             vertical: root.vertical
         }
         BarZone {
@@ -118,9 +124,11 @@ Item {
             cellExtent: root.cellExtent
             items: root.fixtureModel.absoluteEndItems
             monitorId: root.monitorId
+            resourceController: root.resourceController
             spacing: root.theme.spacing.space1
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
+            throughputController: root.throughputController
             vertical: root.vertical
         }
     }

@@ -435,6 +435,34 @@ test_power_adapters() {
 	return "$result"
 }
 
+check_telemetry_adapters() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/telemetry/ThroughputMath.js" \
+		"$SHELL_DIR/services/telemetry/ResourceMath.js" \
+		"$SHELL_DIR/services/telemetry/ResourceCommandDefinitions.js" \
+		"$SHELL_DIR/services/telemetry/ThroughputAdapter.qml" \
+		"$SHELL_DIR/services/telemetry/ResourceSummaryAdapter.qml" \
+		"$SHELL_DIR/services/telemetry/ProcTelemetryRuntime.qml" \
+		"$SHELL_DIR/services/telemetry/UnavailableTelemetryRuntime.qml" \
+		"$SHELL_DIR/features/telemetry/ThroughputController.qml" \
+		"$SHELL_DIR/features/telemetry/ResourceSummaryController.qml" \
+		"$SHELL_DIR/tests/telemetry_adapters/FakeTelemetryRuntime.qml" \
+		"$SHELL_DIR/tests/telemetry_adapters/TelemetryAdapterTests.qml"
+}
+
+test_telemetry_adapters() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-telemetry-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=telemetry-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/telemetry-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
 test_audio_adapter() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-audio-adapter-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -643,6 +671,14 @@ show_power_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics powerStatus
+}
+
+show_telemetry_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics telemetryStatus
 }
 
 show_readiness() {
@@ -915,6 +951,7 @@ usage() {
 		"                    Exercise the real local event socket reconnect path" \
 		"  audio-status      Show sanitized PipeWire adapter state" \
 		"  power-status      Show sanitized battery and brightness adapter state" \
+		"  telemetry-status  Show sanitized throughput and resource-summary state" \
 		"  audio-adapter-check" \
 		"                    Statically check the normalized PipeWire adapter contract" \
 		"  audio-adapter-test" \
@@ -923,6 +960,10 @@ usage() {
 		"                    Statically check battery and brightness adapter contracts" \
 		"  power-adapter-test" \
 		"                    Run deterministic battery, brightness, async-action, and omission fixtures" \
+		"  telemetry-adapter-check" \
+		"                    Statically check throughput and resource-summary adapter contracts" \
+		"  telemetry-adapter-test" \
+		"                    Run deterministic counter, formatting, resource, and polling fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -1109,6 +1150,9 @@ audio-status)
 power-status)
 	show_power_diagnostics
 	;;
+telemetry-status)
+	show_telemetry_diagnostics
+	;;
 audio-adapter-check)
 	check_audio_adapter
 	;;
@@ -1120,6 +1164,12 @@ power-adapter-check)
 	;;
 power-adapter-test)
 	test_power_adapters
+	;;
+telemetry-adapter-check)
+	check_telemetry_adapters
+	;;
+telemetry-adapter-test)
+	test_telemetry_adapters
 	;;
 workspace-check)
 	check_workspaces

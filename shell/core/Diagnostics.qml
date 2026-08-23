@@ -20,10 +20,12 @@ Scope {
     property var hyprlandProvider: null
     required property string mode
     required property var monitorRegistry
+    property var resourceProvider: null
     required property var shellState
     required property var surfaceCoordinator
     required property bool surfaceVisible
     required property var themeManager
+    property var throughputProvider: null
 
     function summaryObject(): var {
         const config = root.configService.configurationSummary();
@@ -37,9 +39,11 @@ Scope {
         const battery = root.batteryProvider?.diagnosticsSummary?.() ?? {};
         const brightness = root.brightnessProvider?.diagnosticsSummary?.() ?? {};
         const hyprland = root.hyprlandProvider?.diagnosticsSummary?.() ?? {};
+        const resource = root.resourceProvider?.diagnosticsSummary?.() ?? {};
         const shell = root.shellState.summary();
         const surfaces = root.surfaceCoordinator.summary();
         const theme = root.themeManager.summary();
+        const throughput = root.throughputProvider?.diagnosticsSummary?.() ?? {};
         return Object.freeze({
             "project": ProjectInfo.projectName,
             "projectVersion": ProjectInfo.projectVersion,
@@ -125,6 +129,24 @@ Scope {
             "brightnessDefaultTargetPresent": brightness.defaultTargetPresent === true,
             "brightnessOperationState": String(brightness.operationState ?? "idle"),
             "brightnessLastError": String(brightness.lastError ?? ""),
+            "throughputAvailable": throughput.available === true,
+            "throughputConnectionState": String(throughput.connectionState ?? "unavailable"),
+            "throughputStateStale": throughput.stale === true,
+            "throughputActiveInterfaceCount": Number(throughput.activeInterfaceCount ?? 0),
+            "throughputRawDownloadRate": Number(throughput.rawDownloadRate ?? 0),
+            "throughputRawUploadRate": Number(throughput.rawUploadRate ?? 0),
+            "throughputSmoothedDownloadRate": Number(throughput.smoothedDownloadRate ?? 0),
+            "throughputSmoothedUploadRate": Number(throughput.smoothedUploadRate ?? 0),
+            "throughputLastError": String(throughput.lastError ?? ""),
+            "resourceAvailable": resource.available === true,
+            "resourceConnectionState": String(resource.connectionState ?? "unavailable"),
+            "resourceStateStale": resource.stale === true,
+            "resourceMemoryPercent": Number(resource.memoryPercent ?? -1),
+            "resourceCpuPercent": Number(resource.cpuPercent ?? -1),
+            "resourceStorageAvailable": resource.storageAvailable === true,
+            "resourcePollIntervalMs": Number(resource.pollIntervalMs ?? 0),
+            "resourceDetailActive": resource.detailActive === true,
+            "resourceLastError": String(resource.lastError ?? ""),
             "commandRegisteredCount": commands.registeredCommandCount,
             "commandAvailableCount": commands.availableCommandCount,
             "commandUnavailableCount": commands.unavailableCommandCount,
@@ -254,6 +276,18 @@ Scope {
         }
         function summary(): string {
             return JSON.stringify(root.summaryObject());
+        }
+        function telemetryStatus(): string {
+            return JSON.stringify({
+                "throughput": root.throughputProvider?.diagnosticsSummary?.() ?? {
+                    "available": false,
+                    "connectionState": "unavailable"
+                },
+                "resources": root.resourceProvider?.diagnosticsSummary?.() ?? {
+                    "available": false,
+                    "connectionState": "unavailable"
+                }
+            });
         }
         function themeStatus(): string {
             return JSON.stringify(root.themeManager.summary());
