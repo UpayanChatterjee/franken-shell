@@ -1,0 +1,3 @@
+module FrankenShell.Features.Telemetry
+ThroughputController 1.0 ThroughputController.qml
+ResourceSummaryController 1.0 ResourceSummaryController.qml

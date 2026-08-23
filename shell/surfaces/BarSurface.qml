@@ -21,10 +21,12 @@ Item {
     required property var monitor
     readonly property string orientation: geometry.orientation
     readonly property string ownerMonitorId: root.monitor?.runtimeId ?? ""
+    property var resourceController: null
     required property var screenInfo
     required property var surfaceCoordinator
     required property var theme
     readonly property real thickness: geometry.thickness
+    property var throughputController: null
     readonly property bool vertical: geometry.vertical
     readonly property bool windowVisible: root.hostEnabled && !root.fullscreenSuppressed
     required property var workspaceBackend
@@ -153,9 +155,11 @@ Item {
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
             fixtureModel: fixtureState
             monitorId: root.ownerMonitorId
+            resourceController: root.resourceController
             specialWorkspaceController: specialWorkspaceController
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
+            throughputController: root.throughputController
             vertical: geometry.vertical
             workspaceController: workspaceController
         }

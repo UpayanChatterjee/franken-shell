@@ -5,11 +5,14 @@ import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
 import "features/power" as PowerFeatures
+import "features/telemetry" as TelemetryFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
 import "services/hyprland" as HyprlandServices
 import "services/power" as PowerServices
 import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
+import "services/telemetry" as TelemetryServices
+import "services/telemetry/ResourceCommandDefinitions.js" as ResourceCommands
 import "surfaces" as Surfaces
 import "services/workspaces" as WorkspaceServices
 import "theme" as Theme
@@ -17,7 +20,9 @@ import "theme" as Theme
 ShellRoot {
     id: root
 
+    readonly property var activeBarConfig: configService.active?.bar ?? null
     readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
+    readonly property var networkSpeedConfig: root.activeBarConfig?.networkSpeed ?? null
     property bool surfaceInitialized: false
     readonly property bool usesFixtureMonitorBackend: root.mode === "mock" || root.mode === "readiness-healthy-test" || root.mode === "readiness-required-failure-test"
 
@@ -120,7 +125,7 @@ ShellRoot {
     Core.CommandRegistry {
         id: shellCommandRegistry
 
-        builtinDefinitions: BrightnessCommands.definitions()
+        builtinDefinitions: BrightnessCommands.definitions().concat(ResourceCommands.definitions())
         configService: configService
     }
     Core.CapabilityRegistry {
@@ -182,6 +187,47 @@ ShellRoot {
         adapter: brightnessAdapter
         consumerActive: controlCenterHosts.openHostCount > 0
     }
+    TelemetryServices.UnavailableTelemetryRuntime {
+        id: unavailableTelemetryRuntime
+    }
+    Loader {
+        id: telemetryRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            TelemetryServices.ProcTelemetryRuntime {
+                commandRegistry: shellCommandRegistry
+                detailIntervalMs: Math.max(250, Math.floor((root.networkSpeedConfig?.updateIntervalMs ?? 1000) / 2))
+                summaryIntervalMs: Math.max(500, root.networkSpeedConfig?.updateIntervalMs ?? 1000)
+            }
+        }
+    }
+    TelemetryServices.ThroughputAdapter {
+        id: throughputAdapter
+
+        runtime: telemetryRuntimeLoader.status === Loader.Ready ? telemetryRuntimeLoader.item : unavailableTelemetryRuntime
+        smoothingWindow: Math.max(1, root.networkSpeedConfig?.smoothingWindow ?? 3)
+    }
+    TelemetryServices.ResourceSummaryAdapter {
+        id: resourceSummaryAdapter
+
+        runtime: telemetryRuntimeLoader.status === Loader.Ready ? telemetryRuntimeLoader.item : unavailableTelemetryRuntime
+    }
+    TelemetryFeatures.ThroughputController {
+        id: throughputController
+
+        adapter: throughputAdapter
+        base: root.networkSpeedConfig?.base ?? 1000
+        unit: root.networkSpeedConfig?.unit ?? "bytes"
+        zeroFormat: root.networkSpeedConfig?.zeroFormat ?? "0K"
+    }
+    TelemetryFeatures.ResourceSummaryController {
+        id: resourceSummaryController
+
+        adapter: resourceSummaryAdapter
+        detailVisible: surfaceCoordinator.activePopoverId === "fixture.resources"
+    }
     Surfaces.BarHostSet {
         id: barHosts
 
@@ -190,8 +236,10 @@ ShellRoot {
         batteryController: root.usesFixtureMonitorBackend ? null : batteryController
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
+        resourceController: root.usesFixtureMonitorBackend ? null : resourceSummaryController
         surfaceCoordinator: surfaceCoordinator
         theme: themeManager.active
+        throughputController: root.usesFixtureMonitorBackend ? null : throughputController
         workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : hyprlandAdapter
         workspaceConfig: configService.active?.workspaces ?? null
     }
@@ -246,10 +294,12 @@ ShellRoot {
         hyprlandProvider: hyprlandAdapter
         mode: root.mode
         monitorRegistry: monitorRegistry
+        resourceProvider: resourceSummaryAdapter
         shellState: shellState
         surfaceCoordinator: surfaceCoordinator
         surfaceVisible: diagnosticSurface.visible
         themeManager: themeManager
+        throughputProvider: throughputAdapter
     }
     Ipc.ShellIpc {
         configService: configService

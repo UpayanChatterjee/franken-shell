@@ -16,16 +16,16 @@ run_task() {
 }
 
 case "$task" in
-hygiene | format | lint | unit | workspace | power | bar | control-center | smoke)
+hygiene | format | lint | unit | workspace | power | telemetry | bar | control-center | smoke)
 	run_task "$task"
 	;;
 all)
-	for name in hygiene format lint unit workspace power bar control-center smoke; do
+	for name in hygiene format lint unit workspace power telemetry bar control-center smoke; do
 		run_task "$name"
 	done
 	;;
 *)
-	printf 'Usage: %s {hygiene|format|lint|unit|workspace|power|bar|control-center|smoke|all}\n' "$0" >&2
+	printf 'Usage: %s {hygiene|format|lint|unit|workspace|power|telemetry|bar|control-center|smoke|all}\n' "$0" >&2
 	exit 2
 	;;
 esac
