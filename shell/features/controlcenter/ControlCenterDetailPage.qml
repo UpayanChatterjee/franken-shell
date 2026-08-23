@@ -10,6 +10,22 @@ FocusScope {
 
     signal backRequested(string source)
 
+    function bluetoothDetails(): string {
+        const model = root.contentModel?.bluetoothPage;
+        if (model === null || model === undefined || model.status === "unavailable")
+            return qsTr("No Bluetooth adapter is available. The drawer remains usable.");
+        return qsTr("%1 connected · %2 paired · %3 nearby").arg(model.connectedDeviceCount).arg(model.pairedDeviceCount).arg(model.availableDeviceCount);
+    }
+    function bluetoothHeadline(): string {
+        const model = root.contentModel?.bluetoothPage;
+        if (model?.pairingPromptActive === true)
+            return qsTr("Pairing needs attention");
+        if (model?.status === "pairing")
+            return qsTr("Pairing device…");
+        if (model?.discoveryState === "discovering")
+            return qsTr("Discovering devices…");
+        return qsTr("Bluetooth status: %1").arg(model?.status ?? "unavailable");
+    }
     function focusInitial() {
         backAction.forceActiveFocus();
     }
@@ -117,7 +133,7 @@ FocusScope {
                 font.pixelSize: root.theme.typography.fontSizeSection
                 font.weight: root.theme.typography.fontWeightMedium
                 horizontalAlignment: Text.AlignHCenter
-                text: root.pageId === "network" ? root.networkHeadline() : qsTr("Bluetooth controls arrive with the adapter.")
+                text: root.pageId === "network" ? root.networkHeadline() : root.bluetoothHeadline()
                 width: parent.width
                 wrapMode: Text.Wrap
             }
@@ -126,7 +142,7 @@ FocusScope {
                 font.family: root.theme.typography.fontFamily
                 font.pixelSize: root.theme.typography.fontSizeBody
                 horizontalAlignment: Text.AlignHCenter
-                text: root.pageId === "network" ? root.networkDetails() : qsTr("This page currently validates navigation, focus, and dismissal only.")
+                text: root.pageId === "network" ? root.networkDetails() : root.bluetoothDetails()
                 width: parent.width
                 wrapMode: Text.Wrap
             }

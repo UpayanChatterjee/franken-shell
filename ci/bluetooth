@@ -1,0 +1,54 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+bluetooth_artifact_dir="$ARTIFACT_DIR/bluetooth"
+mkdir -p "$bluetooth_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Bluetooth|Quickshell\.Io|\bProcess[[:space:]]*\{|\bbluetoothctl\b' \
+	shell/services/bluetooth/BluetoothAdapter.qml \
+	shell/features/bluetooth \
+	shell/features/controlcenter \
+	>"$bluetooth_artifact_dir/ownership-boundary.log" 2>&1; then
+	cat "$bluetooth_artifact_dir/ownership-boundary.log" >&2
+	printf 'Bluetooth adapters, controllers, and views must not own backend imports or external commands.\n' >&2
+	exit 1
+fi
+
+if rg -n -i 'pairing(code|pin|passkey)|displayCode' \
+	shell/core/Diagnostics.qml \
+	shell/features/controlcenter/ControlCenterPlaceholderModel.qml \
+	>"$bluetooth_artifact_dir/secret-surface.log" 2>&1; then
+	cat "$bluetooth_artifact_dir/secret-surface.log" >&2
+	printf 'Diagnostics and shared control-centre models must remain pairing-secret-free.\n' >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell bluetooth-adapter-check >"$bluetooth_artifact_dir/check.log" 2>&1; then
+	cat "$bluetooth_artifact_dir/check.log"
+else
+	status=$?
+	cat "$bluetooth_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell bluetooth-adapter-test >"$bluetooth_artifact_dir/test.log" 2>&1; then
+	cat "$bluetooth_artifact_dir/test.log"
+else
+	status=$?
+	cat "$bluetooth_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Bluetooth normalization, task, ownership, audio-boundary, and secret-redaction contracts passed.\n'

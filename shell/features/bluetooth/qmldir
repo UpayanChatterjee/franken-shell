@@ -1,0 +1,2 @@
+module FrankenShell.Features.Bluetooth
+BluetoothController 1.0 BluetoothController.qml

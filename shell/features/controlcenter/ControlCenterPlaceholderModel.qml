@@ -8,16 +8,26 @@ QtObject {
     readonly property string audioDefaultOutputName: root.audioController === null ? qsTr("Fixture speakers") : String(root.audioController?.defaultOutput?.description ?? root.audioController?.defaultOutput?.name ?? "")
     readonly property int audioPlaybackStreamCount: root.audioController?.playbackStreams?.length ?? 0
     readonly property QtObject bluetooth: QtObject {
-        readonly property bool active: true
-        readonly property bool available: true
-        readonly property bool busy: true
+        readonly property bool active: root.bluetoothController === null ? true : root.bluetoothController.powered === true
+        readonly property bool available: root.bluetoothController === null ? true : root.bluetoothController.available === true
+        readonly property bool busy: root.bluetoothController === null ? true : root.bluetoothController.operationTasks?.some(task => task.state === "pending" || task.state === "awaitingInput") === true
         readonly property bool canOpenDetails: true
-        readonly property bool canToggle: true
-        readonly property bool enabled: false
-        readonly property string error: ""
+        readonly property bool canToggle: root.bluetoothController === null ? true : root.bluetoothController.available === true
+        readonly property bool enabled: root.bluetoothController === null ? false : root.bluetoothController.available === true
+        readonly property string error: root.bluetoothController?.lastError ?? ""
         readonly property string icon: "B"
         readonly property string label: qsTr("Bluetooth")
-        readonly property string secondaryText: qsTr("Updating…")
+        readonly property string secondaryText: root.bluetoothController?.quickSummary ?? qsTr("Updating…")
+    }
+    property var bluetoothController: null
+    readonly property QtObject bluetoothPage: QtObject {
+        readonly property int availableDeviceCount: root.bluetoothController?.availableDevices?.length ?? 0
+        readonly property int connectedDeviceCount: root.bluetoothController?.connectedDevices?.length ?? 0
+        readonly property string discoveryState: root.bluetoothController?.discoveryState ?? "idle"
+        readonly property int pairedDeviceCount: root.bluetoothController?.pairedDevices?.length ?? 0
+        readonly property bool pairingPromptActive: root.bluetoothController?.pairingRequest?.active === true
+        readonly property bool powered: root.bluetoothController?.powered === true
+        readonly property string status: root.bluetoothController?.status ?? "unavailable"
     }
     readonly property QtObject brightness: QtObject {
         readonly property bool available: root.brightnessAvailable
@@ -113,12 +123,18 @@ QtObject {
     }
     function requestQuickControlAction(controlId: string, action: string, source: string): bool {
         void source;
-        if (controlId !== "wifi" || root.networkController === null)
-            return false;
-        if (action === "details")
-            return true;
-        if (action === "toggle")
-            return root.networkController.toggleWifi().accepted === true;
+        if (controlId === "wifi" && root.networkController !== null) {
+            if (action === "details")
+                return true;
+            if (action === "toggle")
+                return root.networkController.toggleWifi().accepted === true;
+        }
+        if (controlId === "bluetooth" && root.bluetoothController !== null) {
+            if (action === "details")
+                return true;
+            if (action === "toggle")
+                return root.bluetoothController.togglePowered().accepted === true;
+        }
         return false;
     }
     function requestSliderStep(sliderId: string, step: int, source: string): bool {
