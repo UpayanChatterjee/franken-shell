@@ -6,6 +6,7 @@ QtObject {
     readonly property QtObject colors: QtObject {
         readonly property color accentContainer: "#263d60"
         readonly property color accentOnContainer: "#f0f5ff"
+        readonly property color accentPrimary: "#8ab4f8"
         readonly property color critical: "#ffb4ab"
         readonly property color outlineFocus: "#a8c7fa"
         readonly property color outlineSubtle: "#3b404b"
@@ -16,6 +17,7 @@ QtObject {
         readonly property color textDisabled: "#8a909a"
         readonly property color textPrimary: "#f7f8fa"
         readonly property color textSecondary: "#c2c7d0"
+        readonly property color warning: "#ffd166"
     }
     property real fontScale: 1
     readonly property QtObject metrics: QtObject {

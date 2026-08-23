@@ -7,6 +7,7 @@ Scope {
     id: root
 
     property var audioController: null
+    property var brightnessController: null
     required property var controlCenterConfig
     required property bool fixtureWindow
     readonly property int hostCount: hostVariants.instances.length
@@ -61,6 +62,7 @@ Scope {
                 id: controlCenterHost
 
                 audioController: root.audioController
+                brightnessController: root.brightnessController
                 controlCenterConfig: root.controlCenterConfig
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor

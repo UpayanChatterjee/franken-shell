@@ -7,6 +7,7 @@ Item {
 
     readonly property real absoluteEndPosition: root.vertical ? absoluteEndZone.y : absoluteEndZone.x
     property var audioController: null
+    property var batteryController: null
     readonly property real cellExtent: root.theme.metrics.barItemExtent
     required property int contextCapacity
     readonly property real contextPosition: root.vertical ? contextZone.y : contextZone.x
@@ -80,6 +81,7 @@ Item {
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             audioController: root.audioController
+            batteryController: root.batteryController
             cellExtent: root.cellExtent
             items: root.fixtureModel.contextItems
             monitorId: root.monitorId
@@ -97,6 +99,7 @@ Item {
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             audioController: root.audioController
+            batteryController: root.batteryController
             cellExtent: root.cellExtent
             items: root.fixtureModel.endItems
             monitorId: root.monitorId

@@ -9,6 +9,7 @@ PanelWindow {
 
     property var audioController: null
     property var barConfig: null
+    property var batteryController: null
     readonly property string edge: barSurface.edge
     readonly property alias fixtureModel: barSurface.fixtureModel
     readonly property string inwardDirection: barSurface.inwardDirection
@@ -76,6 +77,7 @@ PanelWindow {
         anchors.fill: parent
         audioController: root.audioController
         barConfig: root.barConfig
+        batteryController: root.batteryController
         fixtureWindow: false
         monitor: root.monitor
         screenInfo: root.screenInfo

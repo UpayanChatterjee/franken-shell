@@ -276,8 +276,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-010** | Drawer works | Implement the edge-drag intent/state machine and direct manipulation of control-centre reveal progress. | `feat/control-centre-drag` | The drawer follows the pointer, settles predictably, rejects vertical intent, and passes the critical stop condition before feature work continues. | **closed** |
 | **PR-011** | Drawer works | Add the control-centre page stack, tabs, placeholder quick controls/sliders, keyboard navigation, and Escape unwinding. | `feat/control-centre-navigation` | Milestone B is met: the drawer opens by explicit action and edge drag, navigates predictably, unwinds correctly, and contains no backend coupling. | **closed** |
 | **PR-012** | Real desktop state | Implement the normalized Hyprland adapter and connect live workspace/fullscreen state through existing controllers. | `feat/hyprland-adapter` | Live workspace and fullscreen behavior can replace fixtures, reconnects without shell restart, and all views remain backend-agnostic. | **closed** |
-| **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **in-progress** |
-| **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **open** |
+| **PR-013** | Real desktop state | Implement the audio adapter for default devices, volume/mute, streams, and normalized output classification. | `feat/audio-adapter` | Audio state/actions are authoritative and reconnecting; bar interactions work; absence degrades without breaking the shell. | **closed** |
+| **PR-014** | Real desktop state | Implement battery and brightness adapters with capability-aware omission and asynchronous actions. | `feat/power-brightness-adapters` | Laptop and desktop/no-capability fixtures behave correctly, actions never block the UI thread, and unsupported controls disappear cleanly. | **in-progress** |
 | **PR-015** | Real desktop state | Implement network throughput and low-frequency resource summary adapters with bounded polling. | `feat/throughput-resource-adapters` | Persistent metrics are stable, bounded, and non-blocking; hidden detail consumers reduce or stop elevated polling. | **open** |
 | **PR-016** | Real desktop state | Implement the Network adapter and control-centre model for connectivity, scans, saved networks, and connection tasks. | `feat/network-adapter` | Network state/actions are normalized, secrets remain private, progress/errors are explicit, and backend failure does not prevent opening the drawer. | **open** |
 | **PR-017** | Real desktop state | Implement the Bluetooth adapter and control-centre model including pairing task states and graceful absence. | `feat/bluetooth-adapter` | Bluetooth can be absent or restart safely, pairing state is explicit, and device/audio ownership boundaries remain clean. | **open** |
@@ -863,8 +863,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/audio-adapter`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** [#14](https://github.com/UpayanChatterjee/franken-shell/pull/14) / `98ce09b687867e566b50c06f0bfb271b486b0c70`
 
 #### Scope
 - Expose default input/output, volume, mute, devices, application streams, and availability.
@@ -902,7 +902,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/power-brightness-adapters`
-- **Status:** **open**
+- **Status:** **in-progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope
@@ -920,9 +920,26 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 - No battery, charging/discharging, invalid estimate, low/critical, no brightness device, multiple target fixture, write failure, and delayed update.
 - Hidden surfaces do not poll unnecessarily.
 
+Implementation evidence recorded on 2026-08-23:
+
+- deterministic contracts cover battery absence, late service availability,
+  charging/discharging/full state, unreliable estimates, warning/critical
+  thresholds, stale reconnect state, brightness absence, deterministic target
+  selection, bounded writes, asynchronous failure/completion, delayed state
+  confirmation, target disappearance, and detailed-consumer polling ownership;
+- on the development laptop, native UPower reported the installed battery at
+  100 percent, full, and on line power, while the trusted `brightnessctl`
+  registry boundary discovered one controllable backlight without a UI-owned
+  device path;
+- an in-process shell reload restored both providers, retained one shared model
+  for each feature, and produced no new runtime warnings.
+
 #### CI evolution
 
-Add power/brightness contract tests and timing guards against synchronous process calls.
+The blocking `CI / Power` lane runs the adapter/view contracts and rejects
+external-process ownership in power adapters, controllers, and views. Trusted
+brightness commands remain asynchronous inside `CommandRegistry`, with bounded
+captured output and strict runtime-argument validation.
 
 #### Merge cutoff
 

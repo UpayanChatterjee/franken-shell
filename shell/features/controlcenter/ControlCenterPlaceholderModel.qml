@@ -24,9 +24,10 @@ QtObject {
         readonly property bool enabled: true
         readonly property string icon: "☀"
         readonly property string label: qsTr("Brightness")
-        readonly property real value: 0.64
+        readonly property real value: root.brightnessController?.value ?? 0.64
     }
-    property bool brightnessAvailable: true
+    readonly property bool brightnessAvailable: root.brightnessController === null ? root.fixtureBrightnessAvailable : root.brightnessController.visible === true
+    property var brightnessController: null
     readonly property QtObject doNotDisturb: QtObject {
         readonly property bool active: true
         readonly property bool available: true
@@ -39,6 +40,7 @@ QtObject {
         readonly property string label: qsTr("Do Not Disturb")
         readonly property string secondaryText: qsTr("On")
     }
+    property bool fixtureBrightnessAvailable: true
     readonly property QtObject idleInhibitor: QtObject {
         readonly property bool active: false
         readonly property bool available: true
@@ -102,10 +104,17 @@ QtObject {
     }
     function requestSliderStep(sliderId: string, step: int, source: string): bool {
         void source;
-        if (sliderId !== "volume" || !root.audioAvailable || step === 0)
+        if (step === 0)
             return false;
-        root.audioController.queueVolumeSteps(step);
-        return true;
+        if (sliderId === "volume" && root.audioAvailable) {
+            root.audioController.queueVolumeSteps(step);
+            return true;
+        }
+        if (sliderId === "brightness" && root.brightnessAvailable) {
+            root.brightnessController.adjustBySteps(step);
+            return true;
+        }
+        return false;
     }
     function slider(sliderId: string): var {
         if (sliderId === "volume")

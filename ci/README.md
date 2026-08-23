@@ -10,6 +10,7 @@ them from any directory inside the checkout.
 ./ci/run lint
 ./ci/run unit
 ./ci/run workspace
+./ci/run power
 ./ci/run bar
 ./ci/run control-center
 ./ci/run smoke
@@ -35,6 +36,9 @@ user configuration, environment, notification content, or credentials.
   event normalization, reconnect behavior, numbered grouping,
   wrap boundaries, scroll coalescing, active-action policy injection, keyboard
   focus, special-workspace selection, and unavailable/failure containment;
+- `power`: blocking battery and brightness adapter contracts for absence,
+  charging, thresholds, estimates, target selection, asynchronous writes,
+  delayed updates, reconnect, and strict process ownership;
 - `bar`: blocking bar and authoritative audio-adapter coverage for semantic
   layout, normalized devices/streams, absence and reconnect behavior, bounded
   coalesced volume writes, mute routing, keyboard and pointer popover paths,

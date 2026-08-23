@@ -1,10 +1,15 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
+import "features/power" as PowerFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
 import "services/hyprland" as HyprlandServices
+import "services/power" as PowerServices
+import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
 import "surfaces" as Surfaces
 import "services/workspaces" as WorkspaceServices
 import "theme" as Theme
@@ -113,8 +118,9 @@ ShellRoot {
         monitorRegistry: monitorRegistry
     }
     Core.CommandRegistry {
-        id: commandRegistry
+        id: shellCommandRegistry
 
+        builtinDefinitions: BrightnessCommands.definitions()
         configService: configService
     }
     Core.CapabilityRegistry {
@@ -128,11 +134,60 @@ ShellRoot {
 
         configService: configService
     }
+    PowerServices.UnavailableBatteryRuntime {
+        id: unavailableBatteryRuntime
+    }
+    Loader {
+        id: batteryRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            PowerServices.QuickshellUPowerRuntime {
+            }
+        }
+    }
+    PowerServices.BatteryAdapter {
+        id: batteryAdapter
+
+        runtime: batteryRuntimeLoader.status === Loader.Ready ? batteryRuntimeLoader.item : unavailableBatteryRuntime
+    }
+    PowerFeatures.BatteryController {
+        id: batteryController
+
+        adapter: batteryAdapter
+    }
+    PowerServices.UnavailableBrightnessRuntime {
+        id: unavailableBrightnessRuntime
+    }
+    Loader {
+        id: brightnessRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            PowerServices.CommandRegistryBrightnessRuntime {
+                commandRegistry: shellCommandRegistry
+            }
+        }
+    }
+    PowerServices.BrightnessAdapter {
+        id: brightnessAdapter
+
+        runtime: brightnessRuntimeLoader.status === Loader.Ready ? brightnessRuntimeLoader.item : unavailableBrightnessRuntime
+    }
+    PowerFeatures.BrightnessController {
+        id: brightnessController
+
+        adapter: brightnessAdapter
+        consumerActive: controlCenterHosts.openHostCount > 0
+    }
     Surfaces.BarHostSet {
         id: barHosts
 
         audioController: audioController
         barConfig: configService.active?.bar ?? null
+        batteryController: root.usesFixtureMonitorBackend ? null : batteryController
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
         surfaceCoordinator: surfaceCoordinator
@@ -144,6 +199,7 @@ ShellRoot {
         id: controlCenterHosts
 
         audioController: audioController
+        brightnessController: root.usesFixtureMonitorBackend ? null : brightnessController
         controlCenterConfig: configService.active?.controlCenter ?? null
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
@@ -154,7 +210,7 @@ ShellRoot {
         id: readinessCoordinator
 
         capabilityRegistry: capabilityRegistry
-        commandRegistry: commandRegistry
+        commandRegistry: shellCommandRegistry
         configService: configService
         diagnosticRegistry: diagnosticRegistry
         mode: root.mode
@@ -177,8 +233,10 @@ ShellRoot {
 
         audioProvider: audioAdapter
         barHostProvider: barHosts
+        batteryProvider: batteryAdapter
+        brightnessProvider: brightnessAdapter
         capabilityRegistry: capabilityRegistry
-        commandRegistry: commandRegistry
+        commandRegistry: shellCommandRegistry
         configHelperExecutable: configHelperClient.resolvedHelperExecutable
         configHelperResolution: configHelperClient.resolutionPolicy
         configHelperState: configHelperClient.state

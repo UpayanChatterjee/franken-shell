@@ -7,6 +7,8 @@ Scope {
 
     property var audioProvider: null
     required property var barHostProvider
+    property var batteryProvider: null
+    property var brightnessProvider: null
     required property var capabilityRegistry
     required property var commandRegistry
     required property string configHelperExecutable
@@ -32,6 +34,8 @@ Scope {
         const capabilities = root.capabilityRegistry.summary();
         const diagnostics = root.diagnosticRegistry.summary();
         const audio = root.audioProvider?.diagnosticsSummary?.() ?? {};
+        const battery = root.batteryProvider?.diagnosticsSummary?.() ?? {};
+        const brightness = root.brightnessProvider?.diagnosticsSummary?.() ?? {};
         const hyprland = root.hyprlandProvider?.diagnosticsSummary?.() ?? {};
         const shell = root.shellState.summary();
         const surfaces = root.surfaceCoordinator.summary();
@@ -105,6 +109,22 @@ Scope {
             "audioMasterMuted": audio.masterMuted === true,
             "audioMicrophoneMuted": audio.microphoneMuted === true,
             "audioLastError": String(audio.lastError ?? ""),
+            "batteryAvailable": battery.available === true,
+            "batteryServiceAvailability": String(battery.serviceAvailability ?? "unavailable"),
+            "batteryAvailability": String(battery.batteryAvailability ?? "unknown"),
+            "batteryStateStale": battery.stale === true,
+            "batteryPercentage": Number(battery.percentage ?? -1),
+            "batteryChargingState": String(battery.chargingState ?? "unknown"),
+            "batteryPowerSource": String(battery.powerSource ?? "unknown"),
+            "batteryTimeEstimateState": String(battery.timeEstimateState ?? "unavailable"),
+            "batteryLastError": String(battery.lastError ?? ""),
+            "brightnessAvailable": brightness.available === true,
+            "brightnessConnectionState": String(brightness.connectionState ?? "unavailable"),
+            "brightnessStateStale": brightness.stale === true,
+            "brightnessTargetCount": Number(brightness.targetCount ?? 0),
+            "brightnessDefaultTargetPresent": brightness.defaultTargetPresent === true,
+            "brightnessOperationState": String(brightness.operationState ?? "idle"),
+            "brightnessLastError": String(brightness.lastError ?? ""),
             "commandRegisteredCount": commands.registeredCommandCount,
             "commandAvailableCount": commands.availableCommandCount,
             "commandUnavailableCount": commands.unavailableCommandCount,
@@ -204,6 +224,18 @@ Scope {
         }
         function monitorStatus(): string {
             return JSON.stringify(root.monitorRegistry.diagnosticsSummary());
+        }
+        function powerStatus(): string {
+            return JSON.stringify({
+                "battery": root.batteryProvider?.diagnosticsSummary?.() ?? {
+                    "available": false,
+                    "serviceAvailability": "unavailable"
+                },
+                "brightness": root.brightnessProvider?.diagnosticsSummary?.() ?? {
+                    "available": false,
+                    "connectionState": "unavailable"
+                }
+            });
         }
         function readiness(): string {
             return JSON.stringify(root.shellState.summary());

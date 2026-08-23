@@ -6,6 +6,7 @@ Scope {
     id: root
 
     property var audioController: null
+    property var brightnessController: null
     property var contentModel: null
     required property var controlCenterConfig
     readonly property var effectiveContentModel: root.contentModel ?? placeholderModel
@@ -130,6 +131,7 @@ Scope {
         id: placeholderModel
 
         audioController: root.audioController
+        brightnessController: root.brightnessController
     }
     Loader {
         id: hostLoader

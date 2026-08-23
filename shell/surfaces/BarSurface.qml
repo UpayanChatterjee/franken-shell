@@ -8,6 +8,7 @@ Item {
 
     property var audioController: null
     required property var barConfig
+    property var batteryController: null
     readonly property string edge: geometry.edge
     readonly property int exclusiveZone: geometry.exclusiveZone
     property alias fixtureModel: fixtureState
@@ -148,6 +149,7 @@ Item {
             anchors.fill: parent
             anchors.margins: root.theme.spacing.space1
             audioController: root.audioController
+            batteryController: root.batteryController
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
             fixtureModel: fixtureState
             monitorId: root.ownerMonitorId

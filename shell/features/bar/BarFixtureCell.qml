@@ -5,11 +5,15 @@ FocusScope {
 
     readonly property string anchorId: "bar." + root.datum.id + "." + root.safeToken(root.monitorId)
     property var audioController: null
+    property var batteryController: null
     required property var datum
-    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.datum.accessibleName
-    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.datum.label
+    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.datum.accessibleName
+    readonly property string effectiveEmphasis: root.isBattery && root.batteryController !== null ? root.batteryController.severity : root.datum.emphasis
+    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.isBattery && root.batteryController !== null ? root.batteryController.label : root.datum.label
+    readonly property bool effectiveVisible: root.isBattery && root.batteryController !== null ? root.batteryController.visible : root.datum.visible
     required property real extent
     readonly property bool isAudio: root.datum.id === "audio"
+    readonly property bool isBattery: root.datum.id === "battery"
     required property string monitorId
     readonly property bool popoverOpen: root.datum.popoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.datum.popoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
     required property var surfaceCoordinator
@@ -60,6 +64,13 @@ FocusScope {
             return "?";
         }
     }
+    function batteryAccessibleName(): string {
+        if (root.batteryController?.adapter?.available !== true)
+            return qsTr("Battery state unavailable");
+        const percentage = Math.round(root.batteryController.adapter.percentage);
+        const status = root.batteryController.adapter.charging ? qsTr("charging") : root.batteryController.adapter.chargingState === "discharging" ? qsTr("discharging") : qsTr("battery");
+        return qsTr("Battery, %1 percent, %2").arg(percentage).arg(status);
+    }
     function queueAudioVolumeSteps(steps: int): bool {
         if (!root.isAudio || root.audioController?.available !== true || steps === 0)
             return false;
@@ -81,7 +92,7 @@ FocusScope {
     activeFocusOnTab: root.datum.popoverId.length > 0
     clip: true
     height: root.vertical ? root.extent : parent.height
-    visible: root.datum.visible
+    visible: root.effectiveVisible
     width: root.vertical ? parent.width : root.extent
 
     Keys.onEnterPressed: event => {
@@ -105,21 +116,21 @@ FocusScope {
         Rectangle {
             anchors.fill: parent
             anchors.margins: root.theme.spacing.space1
-            border.color: root.activeFocus ? root.theme.colors.outlineFocus : root.datum.emphasis === "privacy" ? root.theme.colors.privacy : "transparent"
-            border.width: root.activeFocus ? root.theme.metrics.focusRingWidth : root.datum.emphasis === "privacy" ? root.theme.metrics.outlineWidth : 0
+            border.color: root.activeFocus ? root.theme.colors.outlineFocus : root.effectiveEmphasis === "privacy" ? root.theme.colors.privacy : root.effectiveEmphasis === "critical" ? root.theme.colors.critical : "transparent"
+            border.width: root.activeFocus ? root.theme.metrics.focusRingWidth : root.effectiveEmphasis === "privacy" || root.effectiveEmphasis === "critical" ? root.theme.metrics.outlineWidth : 0
             color: "transparent"
             radius: parent.radius
         }
         Text {
             anchors.fill: parent
             anchors.margins: root.theme.spacing.space1
-            color: root.popoverOpen ? root.theme.colors.accentOnContainer : root.datum.emphasis === "privacy" ? root.theme.colors.privacy : root.theme.colors.textPrimary
+            color: root.popoverOpen ? root.theme.colors.accentOnContainer : root.effectiveEmphasis === "privacy" ? root.theme.colors.privacy : root.effectiveEmphasis === "critical" ? root.theme.colors.critical : root.effectiveEmphasis === "warning" ? root.theme.colors.warning : root.effectiveEmphasis === "charging" ? root.theme.colors.accentPrimary : root.theme.colors.textPrimary
             elide: Text.ElideRight
             font.family: root.theme.typography.fontFamily
             font.features: ({
                     "tnum": 1
                 })
-            font.pixelSize: root.datum.emphasis === "metric" ? root.theme.typography.fontSizeMetricSmall : root.theme.typography.fontSizeLabel
+            font.pixelSize: root.datum.emphasis === "metric" || root.isBattery ? root.theme.typography.fontSizeMetricSmall : root.theme.typography.fontSizeLabel
             font.weight: root.popoverOpen ? root.theme.typography.fontWeightSemibold : root.theme.typography.fontWeightMedium
             horizontalAlignment: Text.AlignHCenter
             text: root.effectiveLabel
