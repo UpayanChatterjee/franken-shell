@@ -4,11 +4,13 @@ import QtQuick
 import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
+import "features/network" as NetworkFeatures
 import "features/power" as PowerFeatures
 import "features/telemetry" as TelemetryFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
 import "services/hyprland" as HyprlandServices
+import "services/network" as NetworkServices
 import "services/power" as PowerServices
 import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
 import "services/telemetry" as TelemetryServices
@@ -116,6 +118,30 @@ ShellRoot {
         adapter: audioAdapter
         maximumVolume: 1
         volumeStep: 0.02
+    }
+    NetworkServices.UnavailableNetworkRuntime {
+        id: unavailableNetworkRuntime
+    }
+    Loader {
+        id: networkRuntimeLoader
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            NetworkServices.QuickshellNetworkRuntime {
+            }
+        }
+    }
+    NetworkServices.NetworkAdapter {
+        id: networkAdapter
+
+        runtime: networkRuntimeLoader.status === Loader.Ready ? networkRuntimeLoader.item : unavailableNetworkRuntime
+    }
+    NetworkFeatures.NetworkController {
+        id: networkController
+
+        adapter: networkAdapter
+        detailVisible: controlCenterHosts.networkPageOpenCount > 0
     }
     Core.SurfaceCoordinator {
         id: surfaceCoordinator
@@ -251,6 +277,7 @@ ShellRoot {
         controlCenterConfig: configService.active?.controlCenter ?? null
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
+        networkController: root.usesFixtureMonitorBackend ? null : networkController
         surfaceCoordinator: surfaceCoordinator
         theme: themeManager.active
     }
@@ -294,6 +321,7 @@ ShellRoot {
         hyprlandProvider: hyprlandAdapter
         mode: root.mode
         monitorRegistry: monitorRegistry
+        networkProvider: networkAdapter
         resourceProvider: resourceSummaryAdapter
         shellState: shellState
         surfaceCoordinator: surfaceCoordinator

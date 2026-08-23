@@ -1,0 +1,54 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+network_artifact_dir="$ARTIFACT_DIR/network"
+mkdir -p "$network_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Networking|Quickshell\.Io|\bProcess\s*\{|\bnmcli\b' \
+	shell/services/network/NetworkAdapter.qml \
+	shell/features/network \
+	shell/features/controlcenter \
+	>"$network_artifact_dir/ownership-boundary.log" 2>&1; then
+	cat "$network_artifact_dir/ownership-boundary.log" >&2
+	printf 'Network adapters, controllers, and views must not own backend imports or external commands.\n' >&2
+	exit 1
+fi
+
+if rg -n -i 'password|credential|secret|psk' \
+	shell/core/Diagnostics.qml \
+	shell/features/controlcenter/ControlCenterPlaceholderModel.qml \
+	>"$network_artifact_dir/secret-surface.log" 2>&1; then
+	cat "$network_artifact_dir/secret-surface.log" >&2
+	printf 'Diagnostics and shared control-centre models must remain secret-free.\n' >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell network-adapter-check >"$network_artifact_dir/check.log" 2>&1; then
+	cat "$network_artifact_dir/check.log"
+else
+	status=$?
+	cat "$network_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell network-adapter-test >"$network_artifact_dir/test.log" 2>&1; then
+	cat "$network_artifact_dir/test.log"
+else
+	status=$?
+	cat "$network_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Network normalization, task, ownership, and secret-redaction contracts passed.\n'

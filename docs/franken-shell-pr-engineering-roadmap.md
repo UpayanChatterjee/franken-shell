@@ -957,8 +957,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/throughput-resource-adapters`
-- **Status:** **in-progress**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #16 / `bf1118d37e761435033a60100bcdeb918a291e6e`
 
 #### Scope
 - Expose raw and smoothed upload/download rates with compact formatting.
@@ -1022,6 +1022,26 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - Backend absent/late, Wi-Fi disabled, scan failure, open/secured connection, cancellation, secret redaction, limited/captive states, and reconnect.
 - Task state must not survive reload in an unsafe form.
+
+#### Implementation evidence
+
+- D-077 selects the pinned `Quickshell.Networking` NetworkManager backend
+  behind one root runtime and normalized adapter; controllers, diagnostics, and
+  views contain no backend import or network command.
+- Exact primary-source inspection at pinned commit
+  `4df562dfb2475a9057f0f33a8db75808efad8670` confirms Wi-Fi scanning,
+  visible/saved network state, open and WPA/WPA2/SAE-PSK connection actions,
+  disconnect, forget, connectivity states, and Ethernet link details.
+- Deterministic fixtures cover backend absence/late start, disabled radio,
+  stable visible/saved models, scan denial, open and secured connection,
+  immediate credential clearing and redaction, cancellation, limited/captive
+  states, forget, backend loss/reconnect, and unsafe-task reload reset.
+- The live development runtime reported full connectivity, one visible Wi-Fi
+  network, one saved profile, one Ethernet device, and an active connection
+  without new Network warnings. The local runtime was newer than the contract
+  pin; the Pinned CI job remains the executable compatibility proof.
+- `CI / Network` blocks backend/view ownership regressions and scans shared
+  diagnostics and control-centre models for secret-bearing fields.
 
 #### CI evolution
 

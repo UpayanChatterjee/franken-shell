@@ -12,6 +12,7 @@ Scope {
     readonly property var effectiveContentModel: root.contentModel ?? placeholderModel
     required property bool fixtureWindow
     required property var monitor
+    property var networkController: null
     readonly property string ownerMonitorId: root.window?.ownerMonitorId ?? ""
     readonly property bool ready: hostLoader.status === Loader.Ready
     required property ShellScreen screenInfo
@@ -132,6 +133,7 @@ Scope {
 
         audioController: root.audioController
         brightnessController: root.brightnessController
+        networkController: root.networkController
     }
     Loader {
         id: hostLoader

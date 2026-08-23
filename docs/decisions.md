@@ -2009,6 +2009,63 @@ letting feature code consume unvalidated raw data.
 
 ---
 
+# D-077 — Native NetworkManager Adapter Boundary
+
+**Status:** Accepted
+
+## Decision
+
+Franken Shell uses the pinned `Quickshell.Networking` module directly behind a
+single normalized Network adapter. Its NetworkManager backend is authoritative
+for Wi-Fi radio and hardware state, connectivity, Wi-Fi and Ethernet devices,
+visible and saved networks, scanning, connection state, ordinary open and
+WPA/WPA2/SAE-PSK connection actions, disconnect, and forget.
+
+Feature controllers and views consume only Franken Shell's normalized models
+and task states. They do not invoke `nmcli` or backend-specific D-Bus methods.
+PSKs are handed directly to the native `WifiNetwork.connectWithPsk()` call and
+are never retained in controller, adapter, diagnostics, configuration, log, or
+external-process state.
+
+The initial adapter does not add a Franken Shell NetworkManager secret agent,
+an `nmcli` fallback, or a separate D-Bus helper. Enterprise certificates,
+hidden-network provisioning, custom routes, DNS administration, and captive
+portal browser launch remain deferred.
+
+## Rationale
+
+The exact pinned Quickshell source and generated QML metadata demonstrate native
+support for the bounded PR-016 contract: NetworkManager connectivity states,
+device and network models, rate-limited scanning, saved settings profiles,
+open/PSK connection actions, disconnect, forget, and Ethernet link details.
+Saved settings are exposed without returning protected secrets. The PSK path
+passes the credential in process to NetworkManager over D-Bus and avoids a
+credential-bearing command line.
+
+Adding another backend for capabilities already present would duplicate state
+ownership and enlarge the secret-handling surface.
+
+## Consequences
+
+- Q-050 is resolved for the current tested baseline;
+- ordinary PSK entry does not require Franken Shell to become a secret agent;
+- Q-051 remains open only for enterprise/agent-mediated credential flows;
+- Q-052 retains ownership of captive-portal action policy, while detection uses
+  the native NetworkManager connectivity state when available;
+- if NetworkManager is absent when the pinned Quickshell networking singleton
+  initializes, that process cannot attach the backend later; the drawer remains
+  usable in an unavailable state and shell reload is the recovery path;
+- backend replacement or fallback requires new evidence and an explicit
+  revision of this decision.
+
+## Revisit conditions
+
+Revisit if the supported Quickshell baseline loses a required API, gains a safe
+complete enterprise/hidden-network flow, or proves unable to recover ordinary
+NetworkManager device/service changes needed for daily use.
+
+---
+
 # Current Accepted Baseline Summary
 
 The implementation should currently assume:

@@ -1,0 +1,4 @@
+module FrankenShell.Services.Network
+NetworkAdapter 1.0 NetworkAdapter.qml
+QuickshellNetworkRuntime 1.0 QuickshellNetworkRuntime.qml
+UnavailableNetworkRuntime 1.0 UnavailableNetworkRuntime.qml
