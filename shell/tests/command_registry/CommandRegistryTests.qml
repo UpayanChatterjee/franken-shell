@@ -5,43 +5,35 @@ import Quickshell
 ShellRoot {
     id: root
 
-    property int step: 0
-    property var waitCondition: null
-    property var waitCallback: null
-    property double waitDeadline: 0
-    property var rapidRequestIds: []
-    property var runningRequestIds: []
-    property string preservedRequestId: ""
-    property int generationBeforeReplacement: 0
-    property var sanitizedRecords: []
-    property var terminalCounts: ({})
-    property var replacementReentrantRequest: null
-    readonly property string fixtureDirectory: Quickshell.shellDir + "/tests/command_registry/fixtures"
-    readonly property string successExecutable: root.fixtureDirectory + "/success"
-    readonly property string nonZeroExecutable: root.fixtureDirectory + "/nonzero"
-    readonly property string slowExecutable: root.fixtureDirectory + "/slow"
     readonly property string argumentsExecutable: root.fixtureDirectory + "/arguments"
     readonly property string failedStartExecutable: root.fixtureDirectory + "/failed-start"
-    readonly property string stderrZeroExecutable: root.fixtureDirectory + "/stderr-zero"
-    readonly property string verboseExecutable: root.fixtureDirectory + "/verbose"
+    readonly property string fixtureDirectory: Quickshell.shellDir + "/tests/command_registry/fixtures"
+    property int generationBeforeReplacement: 0
     readonly property string homeDirectory: String(Quickshell.env("HOME") ?? "")
     readonly property string homeExpandedSuccess: "$HOME" + root.successExecutable.slice(root.homeDirectory.length)
+    readonly property string nonZeroExecutable: root.fixtureDirectory + "/nonzero"
+    property string preservedRequestId: ""
+    property var rapidRequestIds: []
+    property var replacementReentrantRequest: null
+    property var runningRequestIds: []
+    property var sanitizedRecords: []
+    readonly property string slowExecutable: root.fixtureDirectory + "/slow"
+    readonly property string stderrZeroExecutable: root.fixtureDirectory + "/stderr-zero"
+    property int step: 0
+    readonly property string successExecutable: root.fixtureDirectory + "/success"
+    property var terminalCounts: ({})
+    readonly property string verboseExecutable: root.fixtureDirectory + "/verbose"
+    property var waitCallback: null
+    property var waitCondition: null
+    property double waitDeadline: 0
 
-    function fail(message: string) {
-        console.error("FAIL command-registry:", message);
-        Qt.exit(1);
-        throw new Error(message);
+    function baseDefinitions() {
+        return [root.definition("fixture.success", root.successExecutable), root.definition("fixture.missing", root.fixtureDirectory + "/does-not-exist"), root.definition("fixture.nonzero", root.nonZeroExecutable), root.definition("fixture.timeout", root.slowExecutable, ["1", "0"], 60), root.definition("fixture.cancel", root.slowExecutable, ["2", "0"], 3000), root.definition("fixture.arguments", root.argumentsExecutable, ["alpha beta", "literal|pipe"]), root.definition("fixture.failedStart", root.failedStartExecutable), root.definition("fixture.shellString", "/bin/sh -c", ["touch", "/tmp/not-created"]), root.definition("fixture.expanded", root.homeExpandedSuccess), root.definition("fixture.unsupportedVariable", "$PATH/not-allowed")];
     }
-
     function check(condition: bool, message: string) {
         if (!condition)
             root.fail(message);
     }
-
-    function pass(name: string) {
-        console.info("PASS command-registry:", name);
-    }
-
     function definition(id: string, executable: string, arguments = [], timeoutMs = 1000) {
         return {
             id: id,
@@ -52,55 +44,26 @@ ShellRoot {
             environment: {}
         };
     }
-
     function expectedXdg(variable: string, fallbackSuffix: string): string {
         const configured = String(Quickshell.env(variable) ?? "");
         return (configured.length > 0 ? configured : root.homeDirectory + fallbackSuffix) + "/probe";
     }
-
-    function replace(definitions, callback) {
-        fakeConfig.replaceDefinitions(definitions);
-        root.waitUntil(
-            () => registry.lastAvailabilityRefresh.length > 0,
-            callback,
-            3000
-        );
+    function fail(message: string) {
+        console.error("FAIL command-registry:", message);
+        Qt.exit(1);
+        throw new Error(message);
     }
-
-    function waitUntil(condition, callback, timeoutMs: int) {
-        root.waitCondition = condition;
-        root.waitCallback = callback;
-        root.waitDeadline = Date.now() + timeoutMs;
-        waitTimer.restart();
-    }
-
-    function waitForRequest(requestId: string, states, callback, timeoutMs = 4000) {
-        root.waitUntil(() => {
-            const request = registry.requestById(requestId);
-            return request !== null && states.indexOf(request.state) >= 0;
-        }, callback, timeoutMs);
-    }
-
     function next() {
         root.step += 1;
         actionTimer.restart();
     }
-
-    function baseDefinitions() {
-        return [
-            root.definition("fixture.success", root.successExecutable),
-            root.definition("fixture.missing", root.fixtureDirectory + "/does-not-exist"),
-            root.definition("fixture.nonzero", root.nonZeroExecutable),
-            root.definition("fixture.timeout", root.slowExecutable, ["1", "0"], 60),
-            root.definition("fixture.cancel", root.slowExecutable, ["2", "0"], 3000),
-            root.definition("fixture.arguments", root.argumentsExecutable, ["alpha beta", "literal|pipe"]),
-            root.definition("fixture.failedStart", root.failedStartExecutable),
-            root.definition("fixture.shellString", "/bin/sh -c", ["touch", "/tmp/not-created"]),
-            root.definition("fixture.expanded", root.homeExpandedSuccess),
-            root.definition("fixture.unsupportedVariable", "$PATH/not-allowed")
-        ];
+    function pass(name: string) {
+        console.info("PASS command-registry:", name);
     }
-
+    function replace(definitions, callback) {
+        fakeConfig.replaceDefinitions(definitions);
+        root.waitUntil(() => registry.lastAvailabilityRefresh.length > 0, callback, 3000);
+    }
     function runStep() {
         switch (root.step) {
         case 0:
@@ -126,63 +89,64 @@ ShellRoot {
                 root.next();
             });
             break;
-        case 1: {
-            const request = registry.execute("fixture.unknown");
-            root.check(request.state === "unavailable", "unknown state");
-            root.check(request.failureCategory === "unknownCommand", "unknown category");
-            root.pass("unknown command ID");
-            root.next();
-            break;
-        }
-        case 2: {
-            const request = registry.execute("fixture.missing");
-            root.check(request.state === "unavailable", "missing state");
-            root.check(request.failureCategory === "missingExecutable", "missing category");
-            root.pass("missing executable");
-            root.next();
-            break;
-        }
-        case 3: {
-            const request = registry.execute("fixture.success");
-            root.waitForRequest(request.requestId, ["completed"], () => {
-                const completed = registry.requestById(request.requestId);
-                root.check(completed.exitCode === 0, "zero exit code");
-                root.check(completed.exitStatus === "normalExit", "normal exit status");
-                root.pass("successful zero exit");
+        case 1:
+            {
+                const request = registry.execute("fixture.unknown");
+                root.check(request.state === "unavailable", "unknown state");
+                root.check(request.failureCategory === "unknownCommand", "unknown category");
+                root.pass("unknown command ID");
                 root.next();
-            });
-            break;
-        }
-        case 4: {
-            const request = registry.execute("fixture.nonzero");
-            root.waitForRequest(request.requestId, ["nonZeroExit"], () => {
-                const completed = registry.requestById(request.requestId);
-                root.check(completed.exitCode === 23, "nonzero code");
-                root.check(completed.failureCategory === "nonZeroExit", "nonzero category");
-                root.pass("nonzero exit");
+                break;
+            }
+        case 2:
+            {
+                const request = registry.execute("fixture.missing");
+                root.check(request.state === "unavailable", "missing state");
+                root.check(request.failureCategory === "missingExecutable", "missing category");
+                root.pass("missing executable");
                 root.next();
-            });
-            break;
-        }
-        case 5: {
-            const request = registry.execute("fixture.timeout");
-            root.waitForRequest(request.requestId, ["timedOut"], () => {
-                const completed = registry.requestById(request.requestId);
-                root.check(completed.timeoutState, "timeout flag");
-                root.check(completed.failureCategory === "timeout", "timeout category");
-                root.waitUntil(() => registry.activeRequestCount === 0, () => {
-                    root.pass("timeout");
+                break;
+            }
+        case 3:
+            {
+                const request = registry.execute("fixture.success");
+                root.waitForRequest(request.requestId, ["completed"], () => {
+                    const completed = registry.requestById(request.requestId);
+                    root.check(completed.exitCode === 0, "zero exit code");
+                    root.check(completed.exitStatus === "normalExit", "normal exit status");
+                    root.pass("successful zero exit");
                     root.next();
-                }, 3000);
-            });
-            break;
-        }
+                });
+                break;
+            }
+        case 4:
+            {
+                const request = registry.execute("fixture.nonzero");
+                root.waitForRequest(request.requestId, ["nonZeroExit"], () => {
+                    const completed = registry.requestById(request.requestId);
+                    root.check(completed.exitCode === 23, "nonzero code");
+                    root.check(completed.failureCategory === "nonZeroExit", "nonzero category");
+                    root.pass("nonzero exit");
+                    root.next();
+                });
+                break;
+            }
+        case 5:
+            {
+                const request = registry.execute("fixture.timeout");
+                root.waitForRequest(request.requestId, ["timedOut"], () => {
+                    const completed = registry.requestById(request.requestId);
+                    root.check(completed.timeoutState, "timeout flag");
+                    root.check(completed.failureCategory === "timeout", "timeout category");
+                    root.waitUntil(() => registry.activeRequestCount === 0, () => {
+                        root.pass("timeout");
+                        root.next();
+                    }, 3000);
+                });
+                break;
+            }
         case 6:
-            root.runningRequestIds = [
-                registry.execute("fixture.cancel").requestId,
-                registry.execute("fixture.cancel").requestId,
-                registry.execute("fixture.cancel").requestId
-            ];
+            root.runningRequestIds = [registry.execute("fixture.cancel").requestId, registry.execute("fixture.cancel").requestId, registry.execute("fixture.cancel").requestId];
             root.waitUntil(() => registry.activeRequestCount === 3, () => {
                 const queued = registry.execute("fixture.cancel");
                 root.check(registry.requestById(queued.requestId).state === "queued", "request queued");
@@ -199,19 +163,20 @@ ShellRoot {
                 }, 4000);
             }, 3000);
             break;
-        case 7: {
-            const request = registry.execute("fixture.cancel");
-            root.waitForRequest(request.requestId, ["running"], () => {
-                root.check(registry.cancel(request.requestId), "running cancellation accepted");
-                root.check(registry.requestById(request.requestId).state === "cancelled", "running cancelled");
-                root.waitUntil(() => registry.activeRequestCount === 0, () => {
-                    root.check(root.terminalCounts[request.requestId] === 1, "running cancellation emitted one terminal event");
-                    root.pass("cancellation while running");
-                    root.next();
-                }, 4000);
-            });
-            break;
-        }
+        case 7:
+            {
+                const request = registry.execute("fixture.cancel");
+                root.waitForRequest(request.requestId, ["running"], () => {
+                    root.check(registry.cancel(request.requestId), "running cancellation accepted");
+                    root.check(registry.requestById(request.requestId).state === "cancelled", "running cancelled");
+                    root.waitUntil(() => registry.activeRequestCount === 0, () => {
+                        root.check(root.terminalCounts[request.requestId] === 1, "running cancellation emitted one terminal event");
+                        root.pass("cancellation while running");
+                        root.next();
+                    }, 4000);
+                });
+                break;
+            }
         case 8:
             root.rapidRequestIds = [];
             for (let index = 0; index < 48; ++index)
@@ -231,18 +196,13 @@ ShellRoot {
             }, 5000);
             break;
         case 9:
-            root.replace([
-                root.definition("fixture.preserved", root.slowExecutable, ["0.25", "0"], 2000)
-            ], () => {
+            root.replace([root.definition("fixture.preserved", root.slowExecutable, ["0.25", "0"], 2000)], () => {
                 root.generationBeforeReplacement = registry.registryGeneration;
                 const request = registry.execute("fixture.preserved");
                 root.preservedRequestId = request.requestId;
                 root.waitForRequest(request.requestId, ["running"], () => {
-                    fakeConfig.replaceDefinitions([
-                        root.definition("fixture.preserved", root.nonZeroExecutable)
-                    ]);
-                    root.waitUntil(() => registry.lastAvailabilityRefresh.length > 0
-                        && registry.registryGeneration > root.generationBeforeReplacement, () => {
+                    fakeConfig.replaceDefinitions([root.definition("fixture.preserved", root.nonZeroExecutable)]);
+                    root.waitUntil(() => registry.lastAvailabilityRefresh.length > 0 && registry.registryGeneration > root.generationBeforeReplacement, () => {
                         root.waitForRequest(root.preservedRequestId, ["completed"], () => {
                             const preserved = registry.requestById(root.preservedRequestId);
                             root.check(preserved.exitCode === 0, "running request kept original definition");
@@ -268,16 +228,11 @@ ShellRoot {
             });
             break;
         case 11:
-            root.replace([
-                root.definition("fixture.refresh", root.fixtureDirectory + "/missing-refresh")
-            ], () => {
+            root.replace([root.definition("fixture.refresh", root.fixtureDirectory + "/missing-refresh")], () => {
                 root.check(!registry.commandAvailable("fixture.refresh"), "initial refresh unavailable");
                 const previousGeneration = registry.registryGeneration;
-                fakeConfig.replaceDefinitions([
-                    root.definition("fixture.refresh", root.successExecutable)
-                ]);
-                root.waitUntil(() => registry.lastAvailabilityRefresh.length > 0
-                    && registry.registryGeneration > previousGeneration, () => {
+                fakeConfig.replaceDefinitions([root.definition("fixture.refresh", root.successExecutable)]);
+                root.waitUntil(() => registry.lastAvailabilityRefresh.length > 0 && registry.registryGeneration > previousGeneration, () => {
                     root.check(registry.commandAvailable("fixture.refresh"), "replacement refresh available");
                     root.pass("availability cache refresh");
                     root.next();
@@ -285,9 +240,7 @@ ShellRoot {
             });
             break;
         case 12:
-            root.replace([
-                root.definition("fixture.failedStart", root.failedStartExecutable)
-            ], () => {
+            root.replace([root.definition("fixture.failedStart", root.failedStartExecutable)], () => {
                 root.check(registry.commandAvailable("fixture.failedStart"), "failed-start fixture passes file probe");
                 const request = registry.execute("fixture.failedStart");
                 root.waitForRequest(request.requestId, ["failedToStart"], () => {
@@ -298,9 +251,7 @@ ShellRoot {
             });
             break;
         case 13:
-            root.replace([
-                root.definition("fixture.shellString", "/bin/sh -c", ["touch", "/tmp/not-created"])
-            ], () => {
+            root.replace([root.definition("fixture.shellString", "/bin/sh -c", ["touch", "/tmp/not-created"])], () => {
                 root.check(!registry.commandAvailable("fixture.shellString"), "shell expression unavailable");
                 const request = registry.execute("fixture.shellString");
                 root.check(request.failureCategory === "invalidExecutableExpression", "shell expression rejected");
@@ -310,9 +261,7 @@ ShellRoot {
             });
             break;
         case 14:
-            root.replace([
-                root.definition("fixture.arguments", root.argumentsExecutable, ["alpha beta", "literal|pipe", "$HOME"])
-            ], () => {
+            root.replace([root.definition("fixture.arguments", root.argumentsExecutable, ["alpha beta", "literal|pipe", "$HOME"])], () => {
                 const request = registry.execute("fixture.arguments");
                 root.waitForRequest(request.requestId, ["completed"], () => {
                     root.check(registry.requestById(request.requestId).exitCode === 0, "arguments remained distinct");
@@ -323,9 +272,7 @@ ShellRoot {
             break;
         case 15:
             root.sanitizedRecords = [];
-            root.replace([
-                root.definition("fixture.private", root.successExecutable, ["--token", "fixture-secret"])
-            ], () => {
+            root.replace([root.definition("fixture.private", root.successExecutable, ["--token", "fixture-secret"])], () => {
                 const request = registry.execute("fixture.private");
                 root.waitForRequest(request.requestId, ["completed"], () => {
                     const diagnosticText = JSON.stringify(registry.registrySummary());
@@ -343,9 +290,7 @@ ShellRoot {
             });
             break;
         case 16:
-            root.replace([
-                root.definition("fixture.stderrZero", root.stderrZeroExecutable)
-            ], () => {
+            root.replace([root.definition("fixture.stderrZero", root.stderrZeroExecutable)], () => {
                 const request = registry.execute("fixture.stderrZero");
                 root.waitForRequest(request.requestId, ["completed"], () => {
                     const completed = registry.requestById(request.requestId);
@@ -357,9 +302,7 @@ ShellRoot {
             });
             break;
         case 17:
-            root.replace([
-                root.definition("fixture.verbose", root.verboseExecutable)
-            ], () => {
+            root.replace([root.definition("fixture.verbose", root.verboseExecutable)], () => {
                 const request = registry.execute("fixture.verbose");
                 root.waitForRequest(request.requestId, ["completed"], () => {
                     root.check(registry.requestById(request.requestId).exitCode === 0, "verbose output preserved result");
@@ -369,19 +312,15 @@ ShellRoot {
             });
             break;
         case 18:
-            root.replace([
-                Object.assign(root.definition("fixture.detached", root.successExecutable), {
+            root.replace([Object.assign(root.definition("fixture.detached", root.successExecutable), {
                     detached: true
-                }),
-                Object.assign(root.definition("fixture.environment", root.successExecutable), {
+                }), Object.assign(root.definition("fixture.environment", root.successExecutable), {
                     environment: {
                         FRANKEN_SECRET: "not-exposed"
                     }
-                }),
-                Object.assign(root.definition("fixture.workingDirectory", root.successExecutable), {
+                }), Object.assign(root.definition("fixture.workingDirectory", root.successExecutable), {
                     workingDirectory: "/tmp"
-                })
-            ], () => {
+                })], () => {
                 root.check(registry.execute("fixture.detached").failureCategory === "unsupportedDetachedExecution", "detached runtime defense");
                 root.check(registry.execute("fixture.environment").failureCategory === "unsupportedEnvironment", "environment runtime defense");
                 root.check(registry.execute("fixture.workingDirectory").failureCategory === "unsupportedWorkingDirectory", "working-directory runtime defense");
@@ -394,21 +333,14 @@ ShellRoot {
             });
             break;
         case 19:
-            root.replace([
-                root.definition("fixture.queuedReplacement", root.slowExecutable, ["2", "0"], 3000)
-            ], () => {
-                const activeIds = [
-                    registry.execute("fixture.queuedReplacement").requestId,
-                    registry.execute("fixture.queuedReplacement").requestId,
-                    registry.execute("fixture.queuedReplacement").requestId
-                ];
+            root.replace([root.definition("fixture.queuedReplacement", root.slowExecutable, ["2", "0"], 3000)], () => {
+                const activeIds = [registry.execute("fixture.queuedReplacement").requestId, registry.execute("fixture.queuedReplacement").requestId, registry.execute("fixture.queuedReplacement").requestId];
                 root.waitUntil(() => registry.activeRequestCount === 3, () => {
                     const queued = registry.execute("fixture.queuedReplacement");
                     root.check(registry.requestById(queued.requestId).state === "queued", "replacement fixture queued");
                     const previousGeneration = registry.registryGeneration;
                     fakeConfig.replaceDefinitions([]);
-                    root.waitUntil(() => registry.registryGeneration > previousGeneration
-                        && registry.lastAvailabilityRefresh.length > 0, () => {
+                    root.waitUntil(() => registry.registryGeneration > previousGeneration && registry.lastAvailabilityRefresh.length > 0, () => {
                         const invalidated = registry.requestById(queued.requestId);
                         root.check(invalidated.state === "unavailable", "old queued request invalidated");
                         root.check(invalidated.failureCategory === "configurationReplaced", "old queued replacement category");
@@ -419,8 +351,7 @@ ShellRoot {
                         root.check(root.replacementReentrantRequest.failureCategory === "unknownCommand", "replacement callback saw new registry index");
                         for (let index = 0; index < activeIds.length; ++index)
                             registry.cancel(activeIds[index]);
-                        root.waitUntil(() => registry.activeRequestCount === 0
-                            && registry.queuedRequestCount === 0, () => {
+                        root.waitUntil(() => registry.activeRequestCount === 0 && registry.queuedRequestCount === 0, () => {
                             root.pass("snapshot replacement cannot start stale queued definitions");
                             root.next();
                         }, 4000);
@@ -428,23 +359,64 @@ ShellRoot {
                 }, 3000);
             });
             break;
-        case 20: {
-            const requestIds = [];
-            for (let index = 0; index < 260; ++index)
-                requestIds.push(registry.execute("fixture.retained." + index).requestId);
-            root.check(registry.retainedRequestCount === 256, "retained request limit");
-            root.check(registry.requestById(requestIds[0]) === null, "oldest terminal request pruned");
-            root.check(registry.requestById(requestIds[requestIds.length - 1]) !== null, "newest terminal request retained");
-            root.check(new Set(requestIds).size === requestIds.length, "retained-limit IDs unique");
-            root.check(registry._incrementDecimal("999999999999999999999999") === "1000000000000000000000000", "decimal request sequence has no numeric precision rollover");
-            root.pass("deterministic retained history and process-lifetime request IDs");
-            root.next();
+        case 20:
+            {
+                const requestIds = [];
+                for (let index = 0; index < 260; ++index)
+                    requestIds.push(registry.execute("fixture.retained." + index).requestId);
+                root.check(registry.retainedRequestCount === 256, "retained request limit");
+                root.check(registry.requestById(requestIds[0]) === null, "oldest terminal request pruned");
+                root.check(registry.requestById(requestIds[requestIds.length - 1]) !== null, "newest terminal request retained");
+                root.check(new Set(requestIds).size === requestIds.length, "retained-limit IDs unique");
+                root.check(registry._incrementDecimal("999999999999999999999999") === "1000000000000000000000000", "decimal request sequence has no numeric precision rollover");
+                root.pass("deterministic retained history and process-lifetime request IDs");
+                root.next();
+                break;
+            }
+        case 21:
+            registry.builtinDefinitions = [
+                {
+                    id: "fixture.builtin",
+                    executable: "/usr/bin/printf",
+                    arguments: ["%s,%s,%s\n"],
+                    timeoutMs: 1000,
+                    runtimeArgumentPolicy: "brightnessSet",
+                    captureOutput: true,
+                    maximumOutputBytes: 20
+                }
+            ];
+            root.replace([root.definition("fixture.builtin", root.nonZeroExecutable), root.definition("fixture.configured", root.successExecutable)], () => {
+                root.check(registry.registeredCommandCount === 2, "built-in ID cannot be overridden by configuration");
+                const rejected = registry.executeWithArguments("fixture.builtin", ["panel-a;touch", "50"]);
+                root.check(rejected.state === "unavailable" && rejected.failureCategory === "invalidRuntimeArguments", "runtime argument injection rejected before execution");
+                const configured = registry.executeWithArguments("fixture.configured", ["unexpected"]);
+                root.check(configured.state === "unavailable" && configured.failureCategory === "runtimeArgumentsRejected", "configured commands cannot accept runtime arguments");
+                const request = registry.executeWithArguments("fixture.builtin", ["panel-a", "50"]);
+                root.waitForRequest(request.requestId, ["completed"], () => {
+                    const completed = registry.requestById(request.requestId);
+                    root.check(completed.stdout === "panel-a,set,50\n", "trusted built-in captures bounded stdout");
+                    root.check(JSON.stringify(root.sanitizedRecords).indexOf("panel-a,set,50") === -1, "captured output remains out of logs");
+                    root.pass("trusted built-in precedence, runtime-argument policy, bounded capture, and log privacy");
+                    root.next();
+                });
+            });
             break;
-        }
         default:
             console.info("PASS command-registry: all fixtures");
             Qt.quit();
         }
+    }
+    function waitForRequest(requestId: string, states, callback, timeoutMs = 4000) {
+        root.waitUntil(() => {
+            const request = registry.requestById(requestId);
+            return request !== null && states.indexOf(request.state) >= 0;
+        }, callback, timeoutMs);
+    }
+    function waitUntil(condition, callback, timeoutMs: int) {
+        root.waitCondition = condition;
+        root.waitCallback = callback;
+        root.waitDeadline = Date.now() + timeoutMs;
+        waitTimer.restart();
     }
 
     Component.onCompleted: actionTimer.restart()
@@ -452,36 +424,34 @@ ShellRoot {
     FakeCommandConfigService {
         id: fakeConfig
     }
-
     Core.CommandRegistry {
         id: registry
 
+        builtinDefinitions: []
         configService: fakeConfig
-        onSanitizedLog: record => root.sanitizedRecords.push(record)
+
         onRequestFinished: request => {
-            root.terminalCounts[request.requestId] =
-                (root.terminalCounts[request.requestId] ?? 0) + 1;
-            if (request.commandId === "fixture.queuedReplacement"
-                    && request.failureCategory === "configurationReplaced") {
-                root.replacementReentrantRequest =
-                    registry.execute("fixture.queuedReplacement");
+            root.terminalCounts[request.requestId] = (root.terminalCounts[request.requestId] ?? 0) + 1;
+            if (request.commandId === "fixture.queuedReplacement" && request.failureCategory === "configurationReplaced") {
+                root.replacementReentrantRequest = registry.execute("fixture.queuedReplacement");
             }
         }
+        onSanitizedLog: record => root.sanitizedRecords.push(record)
     }
-
     Timer {
         id: actionTimer
 
         interval: 0
         repeat: false
+
         onTriggered: root.runStep()
     }
-
     Timer {
         id: waitTimer
 
         interval: 10
         repeat: false
+
         onTriggered: {
             if (root.waitCondition !== null && root.waitCondition()) {
                 const callback = root.waitCallback;

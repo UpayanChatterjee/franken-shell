@@ -8,6 +8,7 @@ Scope {
 
     property var audioController: null
     required property var barConfig
+    property var batteryController: null
     required property bool fixtureWindow
     readonly property int hostCount: hostVariants.instances.length
     required property var monitorRegistry
@@ -47,6 +48,7 @@ Scope {
 
                 audioController: root.audioController
                 barConfig: root.barConfig
+                batteryController: root.batteryController
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor
                 screenInfo: instance.modelData

@@ -6,6 +6,7 @@ ci/format
 ci/hygiene
 ci/install-arch-deps
 ci/lint
+ci/power
 ci/run
 ci/smoke
 ci/unit

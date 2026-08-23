@@ -1,0 +1,7 @@
+module FrankenShell.Services.Power
+BatteryAdapter 1.0 BatteryAdapter.qml
+BrightnessAdapter 1.0 BrightnessAdapter.qml
+CommandRegistryBrightnessRuntime 1.0 CommandRegistryBrightnessRuntime.qml
+QuickshellUPowerRuntime 1.0 QuickshellUPowerRuntime.qml
+UnavailableBatteryRuntime 1.0 UnavailableBatteryRuntime.qml
+UnavailableBrightnessRuntime 1.0 UnavailableBrightnessRuntime.qml

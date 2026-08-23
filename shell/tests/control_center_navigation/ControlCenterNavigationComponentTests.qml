@@ -55,7 +55,7 @@ ShellRoot {
             root.check(content.requestSliderStep("volume", 1, "keyboard") && root.sliderActionCount === 1, "keyboard slider adjustment is forwarded without closing");
             root.check(!content.requestQuickControlAction("bluetooth", "toggle", "keyboard") && root.quickActionCount === 1, "busy control blocks duplicate keyboard activation");
             root.check(content.requestQuickControlAction("nightLight", "toggle", "keyboard") && root.quickActionCount === 2, "failed placeholder remains independently actionable");
-            placeholderModel.brightnessAvailable = false;
+            placeholderModel.fixtureBrightnessAvailable = false;
             root.check(content.summary().visibleSliderCount === 1, "unavailable brightness is omitted and the slider section reflows");
             root.check(content.openPage("bluetooth", "quick.bluetooth", "pointer"), "pointer navigation opens Bluetooth detail");
             content.focus = false;

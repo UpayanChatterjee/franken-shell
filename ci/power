@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+power_artifact_dir="$ARTIFACT_DIR/power"
+mkdir -p "$power_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Io|\bProcess\s*\{' \
+	shell/services/power/BatteryAdapter.qml \
+	shell/services/power/BrightnessAdapter.qml \
+	shell/features/power \
+	shell/features/bar/BarFixtureCell.qml \
+	shell/features/controlcenter/ControlCenterPlaceholderModel.qml \
+	>"$power_artifact_dir/process-boundary.log" 2>&1; then
+	cat "$power_artifact_dir/process-boundary.log" >&2
+	printf 'Power adapters, controllers, and views must not own external processes.\n' >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell power-adapter-check >"$power_artifact_dir/check.log" 2>&1; then
+	cat "$power_artifact_dir/check.log"
+else
+	status=$?
+	cat "$power_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell power-adapter-test >"$power_artifact_dir/test.log" 2>&1; then
+	cat "$power_artifact_dir/test.log"
+else
+	status=$?
+	cat "$power_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Battery and brightness contracts and process-ownership guards passed.\n'

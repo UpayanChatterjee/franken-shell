@@ -6,6 +6,7 @@ FloatingWindow {
 
     property var audioController: null
     property var barConfig: null
+    property var batteryController: null
     readonly property string edge: barSurface.edge
     readonly property int exclusiveZone: barSurface.exclusiveZone
     readonly property alias fixtureModel: barSurface.fixtureModel
@@ -67,6 +68,7 @@ FloatingWindow {
         anchors.fill: parent
         audioController: root.audioController
         barConfig: root.barConfig
+        batteryController: root.batteryController
         fixtureWindow: true
         monitor: root.monitor
         screenInfo: root.screenInfo

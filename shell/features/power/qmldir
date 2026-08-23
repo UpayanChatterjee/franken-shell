@@ -1,0 +1,3 @@
+module FrankenShell.Features.Power
+BatteryController 1.0 BatteryController.qml
+BrightnessController 1.0 BrightnessController.qml

@@ -6,6 +6,7 @@ Scope {
 
     property var audioController: null
     required property var barConfig
+    property var batteryController: null
     readonly property string edge: root.window?.edge ?? "left"
     readonly property int exclusiveZone: root.window?.exclusiveZone ?? 0
     readonly property var fixtureModel: root.window?.fixtureModel ?? null
@@ -122,6 +123,12 @@ Scope {
         property: "barConfig"
         target: root.window
         value: root.barConfig
+        when: root.ready
+    }
+    Binding {
+        property: "batteryController"
+        target: root.window
+        value: root.batteryController
         when: root.ready
     }
     Binding {

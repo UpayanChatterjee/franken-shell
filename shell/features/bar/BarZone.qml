@@ -6,6 +6,7 @@ Item {
     id: root
 
     property var audioController: null
+    property var batteryController: null
     required property real cellExtent
     readonly property real contentExtent: root.visibleItemCount > 0 ? root.visibleItemCount * root.cellExtent + (root.visibleItemCount - 1) * root.spacing : 0
     required property var items
@@ -16,7 +17,7 @@ Item {
     required property var surfaceCoordinator
     required property var theme
     required property bool vertical
-    readonly property int visibleItemCount: root.items.filter(item => item.visible).length
+    readonly property int visibleItemCount: root.items.filter(item => root.itemVisible(item)).length
 
     // qmllint disable missing-property
     function anchorItem(anchorId: string): var {
@@ -28,6 +29,9 @@ Item {
                 return item;
         }
         return null;
+    }
+    function itemVisible(item): bool {
+        return item.id === "battery" && root.batteryController !== null ? root.batteryController.visible : item.visible;
     }
 
     // qmllint enable missing-property
@@ -55,6 +59,7 @@ Item {
                     required property var modelData
 
                     audioController: root.audioController
+                    batteryController: root.batteryController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
@@ -79,6 +84,7 @@ Item {
                     required property var modelData
 
                     audioController: root.audioController
+                    batteryController: root.batteryController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
