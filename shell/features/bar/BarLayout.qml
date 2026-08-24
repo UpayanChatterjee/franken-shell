@@ -23,6 +23,7 @@ Item {
     required property var surfaceCoordinator
     required property var theme
     property var throughputController: null
+    property var trayController: null
     required property bool vertical
     required property var workspaceController
     readonly property real zoneSpacing: root.theme.spacing.space2
@@ -93,6 +94,7 @@ Item {
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             throughputController: root.throughputController
+            trayController: root.trayController
             vertical: root.vertical
         }
         BarZone {
@@ -112,6 +114,7 @@ Item {
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             throughputController: root.throughputController
+            trayController: root.trayController
             vertical: root.vertical
         }
         BarZone {
@@ -129,6 +132,7 @@ Item {
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             throughputController: root.throughputController
+            trayController: root.trayController
             vertical: root.vertical
         }
     }

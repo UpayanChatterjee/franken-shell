@@ -17,6 +17,7 @@ Scope {
     required property var surfaceCoordinator
     required property var theme
     property var throughputController: null
+    property var trayController: null
     readonly property int visibleHostCount: controller.count("visible")
     required property var workspaceBackend
     required property var workspaceConfig
@@ -58,6 +59,7 @@ Scope {
                 surfaceCoordinator: root.surfaceCoordinator
                 theme: root.theme
                 throughputController: root.throughputController
+                trayController: root.trayController
                 workspaceBackend: root.workspaceBackend
                 workspaceConfig: root.workspaceConfig
             }

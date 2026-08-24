@@ -1063,8 +1063,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/bluetooth-adapter`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #18 / `887d0c0766b5ace9988b49c07270192d6fdad476`
 
 #### Scope
 - Expose adapter availability/power, scanning, paired/connected/nearby devices, type, and battery where available.
@@ -1144,6 +1144,33 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - Empty, one item, attention item, large population, malformed icon/menu, item disappearance while open, activation, secondary activation, and scroll.
 - Reload does not duplicate watcher/ownership.
+
+#### Implementation evidence
+
+- The exact pinned `Quickshell.Services.SystemTray` API exposes item ID, title,
+  status, category, resolved icon, tooltip fields, `hasMenu`, `menu`, `onlyMenu`,
+  activation, secondary activation, scroll, and native menu display.
+- Referencing the singleton constructs a process-global host and watcher. The
+  watcher attempts to own `org.kde.StatusNotifierWatcher` when available and
+  retries after the current watcher disappears. The root runtime is therefore
+  guarded behind the isolated `tray-owner-test` mode; ordinary development,
+  fixtures, and smoke runs use an unavailable non-owning runtime.
+- The pinned API exposes neither watcher health nor item bus/object identity,
+  per-action support flags, or structured asynchronous D-Bus action failures.
+  The adapter provides session-stable duplicate-safe IDs, explicit lifecycle
+  state, and synchronous request errors without inventing unsupported health or
+  delivery guarantees.
+- Deterministic adapter fixtures cover empty, one, attention, large,
+  malformed/duplicate items, stable session ordering, activation, secondary
+  activation, scroll, menu-only activation, menu failure/closure, item
+  disappearance, reconnect, and reload safety.
+- Drawer component fixtures cover a bounded scrolling population, keyboard
+  reachability, focus replacement after removal, nested menu/drawer `Escape`,
+  and empty-state dismissal. The collapsed affordance remains one count-free
+  slot and hides when empty.
+- Native menus delegate through `QsMenuAnchor`/DBusMenu under Qt application
+  mode; application menu trees are never reconstructed in Franken Shell QML.
+  A real D-Bus menu smoke remains deferred to an isolated session runner.
 
 #### CI evolution
 

@@ -20,6 +20,7 @@ FloatingWindow {
     property var surfaceCoordinator: null
     property var theme: null
     property var throughputController: null
+    property var trayController: null
     property var workspaceBackend: null
     property var workspaceConfig: null
 
@@ -78,6 +79,7 @@ FloatingWindow {
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
         throughputController: root.throughputController
+        trayController: root.trayController
         workspaceBackend: root.workspaceBackend
         workspaceConfig: root.workspaceConfig
 

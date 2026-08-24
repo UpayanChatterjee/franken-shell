@@ -113,6 +113,30 @@ by the initialized manager recover in process. Bluetooth audio output selection
 remains owned exclusively by the PipeWire audio adapter and is not performed by
 this slice.
 
+### Franken Shell tray adapter
+
+The native implementation imports `Quickshell.Services.SystemTray` only in
+`shell/services/tray/QuickshellTrayRuntime.qml`. The exact pinned API supplies
+item identity text, title, status, category, resolved icon, tooltip, menu state,
+primary activation, secondary activation, scroll, and native DBusMenu handles.
+Franken Shell normalizes those records through one `TrayAdapter`; bar and drawer
+views never issue protocol calls or reconstruct application menu trees.
+
+Referencing the pinned singleton constructs a process-global StatusNotifier host
+and watcher. The watcher attempts to register `org.kde.StatusNotifierWatcher`
+when unowned and retries after the active owner disappears. The native runtime
+is consequently guarded behind the isolated `tray-owner-test` mode. Ordinary
+development, fixture, and smoke modes instantiate only
+`UnavailableTrayRuntime`, leaving the running Caelestia watcher/host topology
+untouched. Production ownership and crash handoff remain blocked on Q-115.
+
+Native platform menus require Quickshell Qt application mode and delegate via
+`QsMenuAnchor`; no menu model is copied into feature QML. The pinned tray API
+does not expose watcher health, item bus/object identity, per-action support
+flags, or structured asynchronous action failures. Duplicate/missing IDs are
+therefore session-stable only, and successful dispatch means the call was
+accepted locally rather than confirmed by the tray application.
+
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
 `ConfigService` owns watching and atomic typed snapshot publication. Phase 1

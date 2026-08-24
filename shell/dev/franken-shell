@@ -498,6 +498,41 @@ check_bluetooth_adapter() {
 	fi
 }
 
+check_tray_adapter() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/services/tray/TrayAdapter.qml" \
+		"$SHELL_DIR/services/tray/QuickshellTrayRuntime.qml" \
+		"$SHELL_DIR/services/tray/UnavailableTrayRuntime.qml" \
+		"$SHELL_DIR/features/tray/TrayController.qml" \
+		"$SHELL_DIR/features/tray/TrayItemDelegate.qml" \
+		"$SHELL_DIR/features/tray/TrayPopover.qml" \
+		"$SHELL_DIR/features/bar/BarFixtureCell.qml" \
+		"$SHELL_DIR/features/bar/BarZone.qml" \
+		"$SHELL_DIR/features/bar/BarLayout.qml" \
+		"$SHELL_DIR/features/bar/PopoverHost.qml" \
+		"$SHELL_DIR/tests/tray_adapter/FakeTrayRuntime.qml" \
+		"$SHELL_DIR/tests/tray_adapter/TrayAdapterTests.qml" \
+		"$SHELL_DIR/tests/tray_adapter/TrayDrawerTests.qml"
+
+	runtime_count=$(rg -c 'TrayServices\.QuickshellTrayRuntime[[:space:]]*\{' "$SHELL_DIR/shell.qml")
+	if [ "$runtime_count" -ne 1 ]; then
+		printf 'Expected exactly one guarded root tray runtime, found %s.\n' "$runtime_count" >&2
+		return 1
+	fi
+
+	if ! rg -q 'trayOwnershipEnabled: root\.mode === "tray-owner-test"' "$SHELL_DIR/shell.qml" ||
+		! rg -q 'active: root\.trayOwnershipEnabled' "$SHELL_DIR/shell.qml"; then
+		printf 'Native tray ownership must remain explicitly disabled in ordinary development modes.\n' >&2
+		return 1
+	fi
+
+	backend_import_count=$(rg -l '^import Quickshell\.Services\.SystemTray' "$SHELL_DIR" -g '*.qml' | wc -l)
+	if [ "$backend_import_count" -ne 1 ]; then
+		printf 'Expected SystemTray backend access in exactly one guarded runtime file, found %s files.\n' "$backend_import_count" >&2
+		return 1
+	fi
+}
+
 test_telemetry_adapters() {
 	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-telemetry-adapter-runtime.XXXXXX")
 	chmod 700 "$runtime_dir"
@@ -533,6 +568,25 @@ test_bluetooth_adapter() {
 		XDG_RUNTIME_DIR="$runtime_dir" \
 		FRANKEN_SHELL_MODE=bluetooth-adapter-test \
 		qs --no-duplicate --path "$SHELL_DIR/bluetooth-adapter-tests.qml" --log-times || result=$?
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_tray_adapter() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-tray-adapter-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=tray-adapter-test \
+		qs --no-duplicate --path "$SHELL_DIR/tray-adapter-tests.qml" --log-times || result=$?
+	if [ "$result" -eq 0 ]; then
+		QT_QPA_PLATFORM=offscreen \
+			XDG_RUNTIME_DIR="$runtime_dir" \
+			FRANKEN_SHELL_MODE=tray-drawer-test \
+			qs --no-duplicate --path "$SHELL_DIR/tray-drawer-tests.qml" --log-times || result=$?
+	fi
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -769,6 +823,14 @@ show_bluetooth_diagnostics() {
 		return 1
 	fi
 	qs ipc --path "$SHELL_DIR" call diagnostics bluetoothStatus
+}
+
+show_tray_diagnostics() {
+	if ! is_running; then
+		printf 'Franken Shell is not running from %s\n' "$SHELL_DIR" >&2
+		return 1
+	fi
+	qs ipc --path "$SHELL_DIR" call diagnostics trayStatus
 }
 
 show_readiness() {
@@ -1044,6 +1106,7 @@ usage() {
 		"  telemetry-status  Show sanitized throughput and resource-summary state" \
 		"  network-status    Show sanitized Network adapter state" \
 		"  bluetooth-status  Show sanitized Bluetooth adapter state" \
+		"  tray-status       Show sanitized tray adapter and ownership state" \
 		"  audio-adapter-check" \
 		"                    Statically check the normalized PipeWire adapter contract" \
 		"  audio-adapter-test" \
@@ -1064,6 +1127,10 @@ usage() {
 		"                    Statically check the normalized BlueZ adapter contract" \
 		"  bluetooth-adapter-test" \
 		"                    Run deterministic discovery, pairing, device, and reconnect fixtures" \
+		"  tray-adapter-check" \
+		"                    Statically check tray normalization, menus, and non-owning startup" \
+		"  tray-adapter-test" \
+		"                    Run deterministic tray item, action, menu, and reconnect fixtures" \
 		"  workspace-check" \
 		"                    Statically check workspace controllers and fixture views" \
 		"  workspace-test" \
@@ -1259,6 +1326,9 @@ network-status)
 bluetooth-status)
 	show_bluetooth_diagnostics
 	;;
+tray-status)
+	show_tray_diagnostics
+	;;
 audio-adapter-check)
 	check_audio_adapter
 	;;
@@ -1288,6 +1358,12 @@ bluetooth-adapter-check)
 	;;
 bluetooth-adapter-test)
 	test_bluetooth_adapter
+	;;
+tray-adapter-check)
+	check_tray_adapter
+	;;
+tray-adapter-test)
+	test_tray_adapter
 	;;
 workspace-check)
 	check_workspaces

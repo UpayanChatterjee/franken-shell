@@ -18,6 +18,7 @@ Item {
     required property var surfaceCoordinator
     required property var theme
     property var throughputController: null
+    property var trayController: null
     required property bool vertical
     readonly property int visibleItemCount: root.items.filter(item => root.itemVisible(item)).length
 
@@ -33,6 +34,8 @@ Item {
         return null;
     }
     function itemVisible(item): bool {
+        if (item.id === "tray" && root.trayController !== null)
+            return root.trayController.visible;
         return item.id === "battery" && root.batteryController !== null ? root.batteryController.visible : item.visible;
     }
 
@@ -69,6 +72,7 @@ Item {
                     surfaceCoordinator: root.surfaceCoordinator
                     theme: root.theme
                     throughputController: root.throughputController
+                    trayController: root.trayController
                     vertical: true
                 }
             }
@@ -96,6 +100,7 @@ Item {
                     surfaceCoordinator: root.surfaceCoordinator
                     theme: root.theme
                     throughputController: root.throughputController
+                    trayController: root.trayController
                     vertical: false
                 }
             }

@@ -12,6 +12,7 @@ ci/power
 ci/run
 ci/smoke
 ci/telemetry
+ci/tray
 ci/unit
 ci/workspace
 shell/dev/franken-shell

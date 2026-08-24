@@ -1,0 +1,4 @@
+module FrankenShell.Services.Tray
+QuickshellTrayRuntime 1.0 QuickshellTrayRuntime.qml
+TrayAdapter 1.0 TrayAdapter.qml
+UnavailableTrayRuntime 1.0 UnavailableTrayRuntime.qml

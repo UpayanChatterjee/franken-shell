@@ -244,6 +244,15 @@ permanently:
 
 Results may revise the provisional matrix only through an approved decision.
 
+**Current pinned-source evidence (PR-018):** referencing
+`Quickshell.Services.SystemTray` at
+`4df562dfb2475a9057f0f33a8db75808efad8670` constructs a StatusNotifier host
+and a watcher. The watcher attempts to register
+`org.kde.StatusNotifierWatcher` if unowned and retries after active-owner loss.
+The API exposes neither watcher health nor item bus/object identity, per-action
+support flags, or structured asynchronous action failures. This justifies the
+non-owning runtime guard but does not settle production ownership or recovery.
+
 ---
 
 ## Q-115 — Exclusive-service crash fallback and recovery
@@ -263,6 +272,10 @@ Research:
 - what ordering and readiness checks belong in the production unit.
 
 This does not block the non-owning Phase 0 bootstrap.
+
+PR-018 leaves this unresolved: the guarded tray runtime is reachable only in a
+named isolated ownership-test mode, while ordinary development and smoke runs
+use an unavailable runtime and never reference the SystemTray singleton.
 
 ---
 
@@ -1588,6 +1601,10 @@ Possible layouts:
 
 Need to support many items without excessive space.
 
+**PR-018 prototype evidence:** a bounded vertical list with seven visible rows
+keeps large fixture populations scrollable and keyboard reachable. This is a
+component-test form only and does not settle the final list/grid/hybrid choice.
+
 ---
 
 ## Q-074 — Stable tray ordering
@@ -1603,6 +1620,11 @@ Possible ordering:
 - recent activity.
 
 Current direction says stable ordering, but exact key is unresolved.
+
+**PR-018 implementation boundary:** the adapter preserves first-seen order for
+the current session, including across status/title/icon changes and backend
+reordering. Missing and duplicate application IDs receive session-only fallback
+IDs. No persistent or cross-session ordering key is claimed.
 
 ---
 
@@ -1636,6 +1658,11 @@ How should the collapsed affordance react to:
 - application error?
 
 Avoid allowing noisy apps to keep the bar permanently highlighted.
+
+**PR-018 implementation boundary:** `NeedsAttention` produces a count-free
+accessible aggregate state and restrained warning treatment. It adds no unread
+count, blinking, timed reveal, or persistence, so duration and escalation policy
+remain unresolved.
 
 ---
 

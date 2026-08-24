@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 pragma ComponentBehavior: Bound
 
 import QtQuick
@@ -8,6 +9,7 @@ import "features/bluetooth" as BluetoothFeatures
 import "features/network" as NetworkFeatures
 import "features/power" as PowerFeatures
 import "features/telemetry" as TelemetryFeatures
+import "features/tray" as TrayFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
 import "services/bluetooth" as BluetoothServices
@@ -16,6 +18,7 @@ import "services/network" as NetworkServices
 import "services/power" as PowerServices
 import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
 import "services/telemetry" as TelemetryServices
+import "services/tray" as TrayServices
 import "services/telemetry/ResourceCommandDefinitions.js" as ResourceCommands
 import "surfaces" as Surfaces
 import "services/workspaces" as WorkspaceServices
@@ -28,6 +31,7 @@ ShellRoot {
     readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
     readonly property var networkSpeedConfig: root.activeBarConfig?.networkSpeed ?? null
     property bool surfaceInitialized: false
+    readonly property bool trayOwnershipEnabled: root.mode === "tray-owner-test"
     readonly property bool usesFixtureMonitorBackend: root.mode === "mock" || root.mode === "readiness-healthy-test" || root.mode === "readiness-required-failure-test"
 
     settings.watchFiles: false
@@ -169,6 +173,31 @@ ShellRoot {
         adapter: networkAdapter
         detailVisible: controlCenterHosts.networkPageOpenCount > 0
     }
+    TrayServices.UnavailableTrayRuntime {
+        id: unavailableTrayRuntime
+    }
+    Loader {
+        id: trayRuntimeLoader
+
+        // Reserved for a controlled isolated session until Q-115 defines the
+        // production watcher/host handoff. Ordinary development stays non-owning.
+        active: root.trayOwnershipEnabled
+
+        sourceComponent: Component {
+            TrayServices.QuickshellTrayRuntime {
+            }
+        }
+    }
+    TrayServices.TrayAdapter {
+        id: trayAdapter
+
+        runtime: trayRuntimeLoader.status === Loader.Ready ? trayRuntimeLoader.item : unavailableTrayRuntime
+    }
+    TrayFeatures.TrayController {
+        id: trayController
+
+        adapter: trayAdapter
+    }
     Core.SurfaceCoordinator {
         id: surfaceCoordinator
 
@@ -292,6 +321,7 @@ ShellRoot {
         surfaceCoordinator: surfaceCoordinator
         theme: themeManager.active
         throughputController: root.usesFixtureMonitorBackend ? null : throughputController
+        trayController: root.usesFixtureMonitorBackend ? null : trayController
         workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : hyprlandAdapter
         workspaceConfig: configService.active?.workspaces ?? null
     }
@@ -356,6 +386,7 @@ ShellRoot {
         surfaceVisible: diagnosticSurface.visible
         themeManager: themeManager
         throughputProvider: throughputAdapter
+        trayProvider: trayAdapter
     }
     Ipc.ShellIpc {
         configService: configService
