@@ -6,6 +6,7 @@ FocusScope {
     readonly property string anchorId: "bar." + root.datum.id + "." + root.safeToken(root.monitorId)
     property var audioController: null
     property var batteryController: null
+    property var dateTimeController: null
     required property var datum
     readonly property string effectiveAccessibleName: root.isTray && root.trayController !== null ? root.trayController.accessibleName() : root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedTooltip : root.isResources && root.resourceController !== null ? root.resourceController.memoryDescription : root.datum.accessibleName
     readonly property string effectiveEmphasis: root.isTray && root.trayController?.hasAttention === true ? "warning" : root.isBattery && root.batteryController !== null ? root.batteryController.severity : root.datum.emphasis
@@ -15,9 +16,11 @@ FocusScope {
     required property real extent
     readonly property bool isAudio: root.datum.id === "audio"
     readonly property bool isBattery: root.datum.id === "battery"
+    readonly property bool isDateTime: root.datum.id === "dateTime"
     readonly property bool isNetworkSpeed: root.datum.id === "networkSpeed"
     readonly property bool isResources: root.datum.id === "resources"
     readonly property bool isTray: root.datum.id === "tray"
+    readonly property bool isVicinae: root.datum.id === "vicinae"
     required property string monitorId
     readonly property bool popoverOpen: root.effectivePopoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.effectivePopoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
     property var resourceController: null
@@ -26,13 +29,36 @@ FocusScope {
     property var throughputController: null
     property var trayController: null
     required property bool vertical
+    property var vicinaeAdapter: null
 
     function activate(origin: string): var {
+        if (root.isVicinae && root.effectiveVisible)
+            return root.vicinaeAdapter?.toggleRoot({
+                "origin": origin,
+                "explicitMonitorId": root.monitorId
+            }) ?? Object.freeze({
+                "accepted": false,
+                "errorCode": "VICINAE_ADAPTER_UNAVAILABLE"
+            });
         if (root.effectivePopoverId.length === 0 || !root.effectiveVisible)
             return Object.freeze({
                 "accepted": false,
                 "changed": false,
                 "errorCode": "FIXTURE_ACTION_UNAVAILABLE"
+            });
+        return root.surfaceCoordinator.togglePopover(root.effectivePopoverId, root.anchorId, {
+            "monitorId": root.monitorId,
+            "origin": origin,
+            "originControlId": root.anchorId,
+            "previousFocusToken": "",
+            "takesFocus": origin === "keyboard"
+        });
+    }
+    function activateSecondary(origin: string): var {
+        if (!root.isVicinae || root.effectivePopoverId.length === 0 || !root.effectiveVisible)
+            return Object.freeze({
+                "accepted": false,
+                "errorCode": "BAR_SECONDARY_ACTION_UNAVAILABLE"
             });
         return root.surfaceCoordinator.togglePopover(root.effectivePopoverId, root.anchorId, {
             "monitorId": root.monitorId,
@@ -72,10 +98,10 @@ FocusScope {
         }
     }
     function batteryAccessibleName(): string {
-        if (root.batteryController?.adapter?.available !== true)
+        if (root.batteryController?.available !== true)
             return qsTr("Battery state unavailable");
-        const percentage = Math.round(root.batteryController.adapter.percentage);
-        const status = root.batteryController.adapter.charging ? qsTr("charging") : root.batteryController.adapter.chargingState === "discharging" ? qsTr("discharging") : qsTr("battery");
+        const percentage = Math.round(root.batteryController.percentage);
+        const status = root.batteryController.stateDescription;
         return qsTr("Battery, %1 percent, %2").arg(percentage).arg(status);
     }
     function queueAudioVolumeSteps(steps: int): bool {
@@ -95,8 +121,8 @@ FocusScope {
     }
 
     Accessible.name: root.effectiveAccessibleName
-    Accessible.role: root.effectivePopoverId.length > 0 ? Accessible.Button : Accessible.StaticText
-    activeFocusOnTab: root.effectivePopoverId.length > 0 && root.effectiveVisible
+    Accessible.role: root.effectivePopoverId.length > 0 || root.isVicinae ? Accessible.Button : Accessible.StaticText
+    activeFocusOnTab: (root.effectivePopoverId.length > 0 || root.isVicinae) && root.effectiveVisible
     clip: true
     height: root.vertical ? root.extent : parent.height
     visible: root.effectiveVisible
@@ -142,6 +168,69 @@ FocusScope {
             horizontalAlignment: Text.AlignHCenter
             text: root.effectiveLabel
             verticalAlignment: Text.AlignVCenter
+            visible: !root.isDateTime && !root.isResources
+        }
+        Column {
+            anchors.centerIn: parent
+            spacing: 0
+            visible: root.isDateTime
+            width: parent.width - 2 * (root.theme?.spacing?.space1 ?? 0)
+
+            Text {
+                color: root.theme.colors.textPrimary
+                font.family: root.theme.typography.fontFamily
+                font.features: ({
+                        "tnum": 1
+                    })
+                font.pixelSize: root.theme.typography.fontSizeMetricSmall
+                horizontalAlignment: Text.AlignHCenter
+                text: root.dateTimeController?.timeText ?? root.effectiveLabel
+                width: parent.width
+            }
+            Text {
+                color: root.theme.colors.accentPrimary
+                elide: Text.ElideRight
+                font.family: root.theme.typography.fontFamily
+                font.pixelSize: Math.max(8, root.theme.typography.fontSizeLabel - 2)
+                horizontalAlignment: Text.AlignHCenter
+                text: root.dateTimeController?.dateText ?? ""
+                visible: text.length > 0
+                width: parent.width
+            }
+        }
+        Canvas {
+            id: resourceRing
+
+            anchors.centerIn: parent
+            height: Math.min(parent.width, parent.height) - 2 * (root.theme?.spacing?.space2 ?? 0)
+            visible: root.isResources
+            width: height
+
+            onPaint: {
+                const context = getContext("2d");
+                context.reset();
+                const center = width / 2;
+                const radius = Math.max(1, center - root.theme.metrics.outlineWidth);
+                context.lineWidth = Math.max(2, root.theme.metrics.outlineWidth * 2);
+                context.strokeStyle = root.theme.colors.outlineSubtle;
+                context.beginPath();
+                context.arc(center, center, radius, 0, Math.PI * 2);
+                context.stroke();
+                if (root.resourceController?.available !== true)
+                    return;
+                context.strokeStyle = root.theme.colors.accentPrimary;
+                context.beginPath();
+                context.arc(center, center, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, Math.min(1, root.resourceController.memoryPercent / 100)));
+                context.stroke();
+            }
+
+            Connections {
+                function onMemoryPercentChanged() {
+                    resourceRing.requestPaint();
+                }
+
+                target: root.resourceController
+            }
         }
         HoverHandler {
             id: pointer
@@ -151,6 +240,12 @@ FocusScope {
             enabled: root.effectivePopoverId.length > 0 && root.effectiveVisible
 
             onTapped: root.activate("pointer")
+        }
+        TapHandler {
+            acceptedButtons: Qt.RightButton
+            enabled: root.isVicinae && root.effectiveVisible
+
+            onTapped: root.activateSecondary("pointer")
         }
         TapHandler {
             acceptedButtons: Qt.MiddleButton

@@ -7,6 +7,9 @@ Scope {
     property var audioController: null
     required property var barConfig
     property var batteryController: null
+    property var calendarController: null
+    property var contextController: null
+    property var dateTimeController: null
     readonly property string edge: root.window?.edge ?? "left"
     readonly property int exclusiveZone: root.window?.exclusiveZone ?? 0
     readonly property var fixtureModel: root.window?.fixtureModel ?? null
@@ -24,6 +27,7 @@ Scope {
     required property var theme
     property var throughputController: null
     property var trayController: null
+    property var vicinaeAdapter: null
     readonly property bool visible: root.window?.visible ?? false
     readonly property real width: root.window?.width ?? 0
     readonly property var window: root.ready ? hostLoader.item : null
@@ -86,6 +90,12 @@ Scope {
     function requestAudioVolumeSteps(steps: int): bool {
         return root.ready && root.window.requestAudioVolumeSteps(steps);
     }
+    function requestKeyboardFocus(): var {
+        return root.ready ? root.window.requestKeyboardFocus() : Object.freeze({
+            "accepted": false,
+            "errorCode": "BAR_HOST_UNAVAILABLE"
+        });
+    }
     function summary(): var {
         if (root.ready)
             return root.window.summary();
@@ -114,7 +124,25 @@ Scope {
         id: hostLoader
 
         active: true
-        source: Qt.resolvedUrl(root.fixtureWindow ? "BarFixtureWindow.qml" : "BarPanelWindow.qml")
+
+        Component.onCompleted: hostLoader.setSource(Qt.resolvedUrl(root.fixtureWindow ? "BarFixtureWindow.qml" : "BarPanelWindow.qml"), {
+            "audioController": root.audioController,
+            "barConfig": root.barConfig,
+            "batteryController": root.batteryController,
+            "calendarController": root.calendarController,
+            "contextController": root.contextController,
+            "dateTimeController": root.dateTimeController,
+            "monitor": root.monitor,
+            "resourceController": root.resourceController,
+            "screenInfo": root.screenInfo,
+            "surfaceCoordinator": root.surfaceCoordinator,
+            "theme": root.theme,
+            "throughputController": root.throughputController,
+            "trayController": root.trayController,
+            "vicinaeAdapter": root.vicinaeAdapter,
+            "workspaceBackend": root.workspaceBackend,
+            "workspaceConfig": root.workspaceConfig
+        })
     }
     Binding {
         property: "audioController"
@@ -132,6 +160,24 @@ Scope {
         property: "batteryController"
         target: root.window
         value: root.batteryController
+        when: root.ready
+    }
+    Binding {
+        property: "calendarController"
+        target: root.window
+        value: root.calendarController
+        when: root.ready
+    }
+    Binding {
+        property: "contextController"
+        target: root.window
+        value: root.contextController
+        when: root.ready
+    }
+    Binding {
+        property: "dateTimeController"
+        target: root.window
+        value: root.dateTimeController
         when: root.ready
     }
     Binding {
@@ -174,6 +220,12 @@ Scope {
         property: "trayController"
         target: root.window
         value: root.trayController
+        when: root.ready
+    }
+    Binding {
+        property: "vicinaeAdapter"
+        target: root.window
+        value: root.vicinaeAdapter
         when: root.ready
     }
     Binding {

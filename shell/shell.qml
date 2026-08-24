@@ -6,6 +6,7 @@ import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
 import "features/bluetooth" as BluetoothFeatures
+import "features/bar" as BarFeatures
 import "features/feedback" as FeedbackFeatures
 import "features/network" as NetworkFeatures
 import "features/notifications" as NotificationFeatures
@@ -33,6 +34,8 @@ ShellRoot {
     id: root
 
     readonly property var activeBarConfig: configService.active?.bar ?? null
+    readonly property var activeIntegrationsConfig: configService.active?.integrations ?? null
+    readonly property var activeShellConfig: configService.active?.shell ?? null
     readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
     readonly property var networkSpeedConfig: root.activeBarConfig?.networkSpeed ?? null
     readonly property bool notificationOwnershipEnabled: root.mode === "notification-owner-test"
@@ -270,6 +273,23 @@ ShellRoot {
         builtinDefinitions: BrightnessCommands.definitions().concat(ResourceCommands.definitions()).concat(NotificationSoundCommands.definitions())
         configService: configService
     }
+    Loader {
+        id: dailyBarControllers
+
+        active: !root.usesFixtureMonitorBackend
+
+        sourceComponent: Component {
+            BarFeatures.DailyBarControllerSet {
+                activeBarConfig: root.activeBarConfig
+                activeIntegrationsConfig: root.activeIntegrationsConfig
+                activeShellConfig: root.activeShellConfig
+                commandRegistry: shellCommandRegistry
+                feedbackController: feedbackController
+                networkController: networkController
+                surfaceCoordinator: surfaceCoordinator
+            }
+        }
+    }
     NotificationServices.CommandRegistryNotificationSoundRuntime {
         id: notificationSoundRuntime
 
@@ -381,14 +401,21 @@ ShellRoot {
         id: resourceSummaryController
 
         adapter: resourceSummaryAdapter
-        detailVisible: surfaceCoordinator.activePopoverId === "fixture.resources"
+        commandRegistry: shellCommandRegistry
+        detailVisible: surfaceCoordinator.activePopoverId === "resources.summary"
+        feedbackController: feedbackController
     }
+    // Loader.item is intentionally dynamic at this lazy fixture boundary.
+    // qmllint disable missing-property
     Surfaces.BarHostSet {
         id: barHosts
 
         audioController: audioController
         barConfig: configService.active?.bar ?? null
         batteryController: root.usesFixtureMonitorBackend ? null : batteryController
+        calendarController: dailyBarControllers.item !== null ? dailyBarControllers.item["calendarController"] : null
+        contextController: dailyBarControllers.item !== null ? dailyBarControllers.item["contextController"] : null
+        dateTimeController: dailyBarControllers.item !== null ? dailyBarControllers.item["dateTimeController"] : null
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
         resourceController: root.usesFixtureMonitorBackend ? null : resourceSummaryController
@@ -396,9 +423,11 @@ ShellRoot {
         theme: themeManager.active
         throughputController: root.usesFixtureMonitorBackend ? null : throughputController
         trayController: root.usesFixtureMonitorBackend ? null : trayController
+        vicinaeAdapter: dailyBarControllers.item !== null ? dailyBarControllers.item["vicinaeAdapter"] : null
         workspaceBackend: root.usesFixtureMonitorBackend ? fixtureWorkspaceAdapter : hyprlandAdapter
         workspaceConfig: configService.active?.workspaces ?? null
     }
+    // qmllint enable missing-property
     Surfaces.ControlCenterHostSet {
         id: controlCenterHosts
 
@@ -478,6 +507,7 @@ ShellRoot {
         trayProvider: trayAdapter
     }
     Ipc.ShellIpc {
+        barHostProvider: barHosts
         configService: configService
         controlCenterHostProvider: controlCenterHosts
         diagnosticsProvider: diagnostics

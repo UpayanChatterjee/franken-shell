@@ -7,6 +7,7 @@ Scope {
     id: root
 
     readonly property int apiVersion: Core.ProjectInfo.ipcVersion
+    required property var barHostProvider
     required property var configService
     required property var controlCenterHostProvider
     required property var diagnosticsProvider
@@ -58,6 +59,16 @@ Scope {
                 });
                 break;
             }
+        case "focusBar":
+            {
+                const focusResult = root.barHostProvider.requestKeyboardFocus();
+                result = Object.freeze({
+                    "accepted": focusResult.accepted,
+                    "errorCode": focusResult.errorCode,
+                    "state": focusResult.accepted ? "focused" : "rejected"
+                });
+                break;
+            }
         default:
             return controller.errorResponse(request.requestId, "IPC_UNKNOWN_OPERATION");
         }
@@ -84,7 +95,7 @@ Scope {
     QtObject {
         id: controller
 
-        readonly property var operations: Object.freeze(["diagnostics", "reloadConfig", "closeTransients", "toggleControlCenter"])
+        readonly property var operations: Object.freeze(["diagnostics", "reloadConfig", "closeTransients", "toggleControlCenter", "focusBar"])
 
         function errorResponse(requestId: string, errorCode: string): var {
             return Object.freeze({

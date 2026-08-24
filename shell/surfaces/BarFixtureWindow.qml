@@ -7,6 +7,9 @@ FloatingWindow {
     property var audioController: null
     property var barConfig: null
     property var batteryController: null
+    property var calendarController: null
+    property var contextController: null
+    property var dateTimeController: null
     readonly property string edge: barSurface.edge
     readonly property int exclusiveZone: barSurface.exclusiveZone
     readonly property alias fixtureModel: barSurface.fixtureModel
@@ -21,6 +24,7 @@ FloatingWindow {
     property var theme: null
     property var throughputController: null
     property var trayController: null
+    property var vicinaeAdapter: null
     property var workspaceBackend: null
     property var workspaceConfig: null
 
@@ -53,6 +57,13 @@ FloatingWindow {
     function requestAudioVolumeSteps(steps: int): bool {
         return barSurface.requestAudioVolumeSteps(steps);
     }
+    function requestKeyboardFocus(): var {
+        const accepted = barSurface.focusInitial();
+        return Object.freeze({
+            "accepted": accepted,
+            "errorCode": accepted ? "" : "BAR_FOCUS_UNAVAILABLE"
+        });
+    }
     function summary(): var {
         return barSurface.summary();
     }
@@ -72,6 +83,9 @@ FloatingWindow {
         audioController: root.audioController
         barConfig: root.barConfig
         batteryController: root.batteryController
+        calendarController: root.calendarController
+        contextController: root.contextController
+        dateTimeController: root.dateTimeController
         fixtureWindow: true
         monitor: root.monitor
         resourceController: root.resourceController
@@ -80,6 +94,7 @@ FloatingWindow {
         theme: root.theme
         throughputController: root.throughputController
         trayController: root.trayController
+        vicinaeAdapter: root.vicinaeAdapter
         workspaceBackend: root.workspaceBackend
         workspaceConfig: root.workspaceConfig
 

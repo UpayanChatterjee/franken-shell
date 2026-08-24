@@ -11,6 +11,7 @@ Item {
     readonly property real cellExtent: root.theme.metrics.barItemExtent
     required property int contextCapacity
     readonly property real contextPosition: root.vertical ? contextZone.y : contextZone.x
+    property var dateTimeController: null
     readonly property real endPosition: root.vertical ? endZone.y : endZone.x
     required property var fixtureModel
     readonly property bool layoutOverflow: root.mainAxisLength + 0.5 < root.minimumMainAxisExtent
@@ -25,11 +26,15 @@ Item {
     property var throughputController: null
     property var trayController: null
     required property bool vertical
+    property var vicinaeAdapter: null
     required property var workspaceController
     readonly property real zoneSpacing: root.theme.spacing.space2
 
     function anchorItem(anchorId: string): var {
         return startZone.anchorItem(anchorId) ?? contextZone.anchorItem(anchorId) ?? endZone.anchorItem(anchorId) ?? absoluteEndZone.anchorItem(anchorId);
+    }
+    function focusInitial(): bool {
+        return startZone.focusInitial();
     }
     function snapshot(): var {
         return Object.freeze({
@@ -86,6 +91,7 @@ Item {
             audioController: root.audioController
             batteryController: root.batteryController
             cellExtent: root.cellExtent
+            dateTimeController: root.dateTimeController
             items: root.fixtureModel.contextItems
             monitorId: root.monitorId
             reservedSlots: root.contextCapacity
@@ -96,6 +102,7 @@ Item {
             throughputController: root.throughputController
             trayController: root.trayController
             vertical: root.vertical
+            vicinaeAdapter: root.vicinaeAdapter
         }
         BarZone {
             id: endZone
@@ -107,6 +114,7 @@ Item {
             audioController: root.audioController
             batteryController: root.batteryController
             cellExtent: root.cellExtent
+            dateTimeController: root.dateTimeController
             items: root.fixtureModel.endItems
             monitorId: root.monitorId
             resourceController: root.resourceController
@@ -116,6 +124,7 @@ Item {
             throughputController: root.throughputController
             trayController: root.trayController
             vertical: root.vertical
+            vicinaeAdapter: root.vicinaeAdapter
         }
         BarZone {
             id: absoluteEndZone
@@ -125,6 +134,7 @@ Item {
             Layout.preferredHeight: root.vertical ? implicitHeight : -1
             Layout.preferredWidth: root.vertical ? -1 : implicitWidth
             cellExtent: root.cellExtent
+            dateTimeController: root.dateTimeController
             items: root.fixtureModel.absoluteEndItems
             monitorId: root.monitorId
             resourceController: root.resourceController
@@ -134,6 +144,7 @@ Item {
             throughputController: root.throughputController
             trayController: root.trayController
             vertical: root.vertical
+            vicinaeAdapter: root.vicinaeAdapter
         }
     }
 }

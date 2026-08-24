@@ -1320,8 +1320,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Notification-complete prototype
 - **Branch:** `feat/toasts-osds`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #22 / `e8a51e5e9528ed519e4685f6c05125739eee65a4`
 
 #### Scope
 - Implement keyed replacement toasts for network, Bluetooth, Night Light, idle inhibitor, audio output, power, and generic success/failure.

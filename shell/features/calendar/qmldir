@@ -1,0 +1,3 @@
+module FrankenShell.Features.Calendar
+CalendarController 1.0 CalendarController.qml
+DateTimeController 1.0 DateTimeController.qml

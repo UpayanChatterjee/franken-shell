@@ -11,6 +11,10 @@ Scope {
     readonly property var activePopover: root.surfaceCoordinator?.activePopover ?? null
     readonly property Item anchorItem: root.owned ? root.anchorResolver(root.activePopover.anchorId) : null
     required property var anchorResolver
+    property var audioController: null
+    property var batteryController: null
+    property var calendarController: null
+    property var contextController: null
     required property string edge
     required property var fixtureModel
     required property bool fixtureWindow
@@ -19,11 +23,13 @@ Scope {
     readonly property bool open: root.owned && root.anchorItem !== null
     readonly property bool owned: root.activePopover !== null && root.activePopover.ownerMonitorId === root.monitorId
     required property var parentWindow
+    property var resourceController: null
     required property var screenInfo
     required property var specialWorkspaceController
     required property var surfaceCoordinator
     required property var theme
     property var trayController: null
+    property var vicinaeAdapter: null
     readonly property string visibleSurfaceId: root.open ? root.activePopover?.surfaceId ?? "" : ""
 
     function dismissEscape(): var {
@@ -137,7 +143,7 @@ Scope {
                 id: contentLoader
 
                 anchors.fill: parent
-                sourceComponent: root.activePopover?.surfaceId === "workspace.special-selector" ? specialWorkspaceContent : root.activePopover?.surfaceId === "tray.drawer" && root.trayController !== null ? trayContent : fixtureContent
+                sourceComponent: root.activePopover?.surfaceId === "workspace.special-selector" ? specialWorkspaceContent : root.activePopover?.surfaceId === "tray.drawer" && root.trayController !== null ? trayContent : root.fixtureWindow ? fixtureContent : root.activePopover?.surfaceId === "audio.compact" ? audioContent : root.activePopover?.surfaceId === "resources.summary" ? resourceContent : root.activePopover?.surfaceId === "power.summary" ? batteryContent : root.activePopover?.surfaceId === "calendar.local" ? calendarContent : root.activePopover?.surfaceId === "context.summary" ? contextContent : root.activePopover?.surfaceId === "vicinae.menu" ? vicinaeContent : unavailableContent
             }
             Shortcut {
                 enabled: root.open
@@ -177,10 +183,80 @@ Scope {
         }
     }
     Component {
+        id: audioContent
+
+        AudioCompactPopover {
+            controller: root.audioController
+            focus: root.keyboardOpened
+            keyboardOpened: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: resourceContent
+
+        ResourceSummaryPopover {
+            controller: root.resourceController
+            focus: root.keyboardOpened
+            keyboardOpened: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: batteryContent
+
+        BatterySummaryPopover {
+            controller: root.batteryController
+            focus: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: calendarContent
+
+        CalendarPopover {
+            controller: root.calendarController
+            focus: root.keyboardOpened
+            keyboardOpened: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: contextContent
+
+        ContextStatusPopover {
+            controller: root.contextController
+            focus: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: vicinaeContent
+
+        VicinaeMenuPopover {
+            adapter: root.vicinaeAdapter
+            focus: root.keyboardOpened
+            keyboardOpened: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
         id: fixtureContent
 
         FixturePopoverContent {
             datum: root.fixtureModel.popoverDatum(root.activePopover?.surfaceId ?? "")
+            focus: root.keyboardOpened
+            theme: root.theme
+        }
+    }
+    Component {
+        id: unavailableContent
+
+        FixturePopoverContent {
+            datum: Object.freeze({
+                "popoverTitle": qsTr("Unavailable"),
+                "accessibleName": qsTr("This bar surface is unavailable")
+            })
             focus: root.keyboardOpened
             theme: root.theme
         }

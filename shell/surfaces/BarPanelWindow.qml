@@ -10,9 +10,13 @@ PanelWindow {
     property var audioController: null
     property var barConfig: null
     property var batteryController: null
+    property var calendarController: null
+    property var contextController: null
+    property var dateTimeController: null
     readonly property string edge: barSurface.edge
     readonly property alias fixtureModel: barSurface.fixtureModel
     readonly property string inwardDirection: barSurface.inwardDirection
+    property bool keyboardActive: false
     readonly property bool layoutOverflow: barSurface.layoutOverflow
     property var monitor: null
     readonly property string orientation: barSurface.orientation
@@ -23,6 +27,7 @@ PanelWindow {
     property var theme: null
     property var throughputController: null
     property var trayController: null
+    property var vicinaeAdapter: null
     property var workspaceBackend: null
     property var workspaceConfig: null
 
@@ -55,10 +60,24 @@ PanelWindow {
     function requestAudioVolumeSteps(steps: int): bool {
         return barSurface.requestAudioVolumeSteps(steps);
     }
+    function requestKeyboardFocus(): var {
+        if (!visible)
+            return Object.freeze({
+                "accepted": false,
+                "errorCode": "BAR_UNAVAILABLE"
+            });
+        root.keyboardActive = true;
+        Qt.callLater(barSurface.focusInitial);
+        return Object.freeze({
+            "accepted": true,
+            "errorCode": ""
+        });
+    }
     function summary(): var {
         return barSurface.summary();
     }
 
+    WlrLayershell.keyboardFocus: root.keyboardActive ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     WlrLayershell.namespace: "franken-shell-bar"
     aboveWindows: true
     anchors.bottom: barSurface.vertical || barSurface.edge === "bottom"
@@ -67,7 +86,7 @@ PanelWindow {
     anchors.top: barSurface.vertical || barSurface.edge === "top"
     color: "transparent"
     exclusiveZone: barSurface.exclusiveZone
-    focusable: false
+    focusable: true
     implicitHeight: barSurface.vertical ? 1 : barSurface.thickness
     implicitWidth: barSurface.vertical ? barSurface.thickness : 1
     reloadableId: "bar-host-" + (root.screenInfo?.name ?? "unresolved")
@@ -81,6 +100,9 @@ PanelWindow {
         audioController: root.audioController
         barConfig: root.barConfig
         batteryController: root.batteryController
+        calendarController: root.calendarController
+        contextController: root.contextController
+        dateTimeController: root.dateTimeController
         fixtureWindow: false
         monitor: root.monitor
         resourceController: root.resourceController
@@ -89,9 +111,11 @@ PanelWindow {
         theme: root.theme
         throughputController: root.throughputController
         trayController: root.trayController
+        vicinaeAdapter: root.vicinaeAdapter
         workspaceBackend: root.workspaceBackend
         workspaceConfig: root.workspaceConfig
 
         onFixtureCaptured: (path, saved) => root.fixtureCaptured(path, saved)
+        onKeyboardFocusReleaseRequested: root.keyboardActive = false
     }
 }

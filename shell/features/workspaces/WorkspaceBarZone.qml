@@ -26,6 +26,19 @@ Item {
         }
         return null;
     }
+    function focusInitial(): bool {
+        const content = contentLoader.item;
+        if (content === null)
+            return false;
+        for (const child of content["children"]) {
+            if (typeof child.focusActive === "function") {
+                child.focusActive();
+                child.forceActiveFocus();
+                return true;
+            }
+        }
+        return false;
+    }
 
     // qmllint enable missing-property
 

@@ -372,18 +372,18 @@ The bar must not run its own independent fullscreen detection.
 
 ## 5.4 Item data matrix
 
-| Item | Required normalized data | Primary source/controller |
-|---|---|---|
-| Workspace pager | active numbered workspace, configured minimum/maximum, group size, overview availability | Hyprland/workspace controller, overview adapter |
-| Special workspace | configured definitions, visible special workspace, active icon, action availability | workspace controller |
-| Context status | prioritized indicator list, severity, icon, destination, overflow state | context-status controller composed from services |
-| Tray | item count, attention summary, availability | tray controller |
-| Download speed | raw and smoothed down/up rate, formatted values, sampling health | throughput controller |
-| Audio | default output category, volume, mute, output availability | audio controller |
-| Resource | memory percent, warning state, service health | resource controller |
-| Battery | availability, percentage, charging, warning/critical state, power-panel availability | battery/power controller |
-| Date/time | local date/time, locale, format configuration | clock/date-time controller |
-| Vicinae | installed/available, invocation state, adapter error | Vicinae adapter |
+| Item              | Required normalized data                                                                 | Primary source/controller                        |
+| ----------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Workspace pager   | active numbered workspace, configured minimum/maximum, group size, overview availability | Hyprland/workspace controller, overview adapter  |
+| Special workspace | configured definitions, visible special workspace, active icon, action availability      | workspace controller                             |
+| Context status    | prioritized indicator list, severity, icon, destination, overflow state                  | context-status controller composed from services |
+| Tray              | item count, attention summary, availability                                              | tray controller                                  |
+| Download speed    | raw and smoothed down/up rate, formatted values, sampling health                         | throughput controller                            |
+| Audio             | default output category, volume, mute, output availability                               | audio controller                                 |
+| Resource          | memory percent, warning state, service health                                            | resource controller                              |
+| Battery           | availability, percentage, charging, warning/critical state, power-panel availability     | battery/power controller                         |
+| Date/time         | local date/time, locale, format configuration                                            | clock/date-time controller                       |
+| Vicinae           | installed/available, invocation state, adapter error                                     | Vicinae adapter                                  |
 
 ## 5.5 Stable value formatting
 
@@ -420,11 +420,11 @@ Avoid scattering direct `left`, `right`, `top`, and `bottom` conditionals across
 ## 6.2 Edge mapping
 
 | Bar edge | Main-axis order | Popover direction | Primary directional keys |
-|---|---|---|---|
-| Left | top to bottom | right | Up / Down |
-| Right | top to bottom | left | Up / Down |
-| Top | left to right | down | Left / Right |
-| Bottom | left to right | up | Left / Right |
+| -------- | --------------- | ----------------- | ------------------------ |
+| Left     | top to bottom   | right             | Up / Down                |
+| Right    | top to bottom   | left              | Up / Down                |
+| Top      | left to right   | down              | Left / Right             |
+| Bottom   | left to right   | up                | Left / Right             |
 
 This mapping does not settle exact top/bottom date-time formatting or the final corner treatment.
 
@@ -1376,6 +1376,40 @@ Complete:
 - keyboard reveal and pointer reveal for autohide;
 - configurable delays;
 - one full day of daily-use validation.
+
+### PR-022 implemented boundary
+
+The daily-use composition uses the existing normalized workspace, tray,
+throughput, audio, resource, battery, and network controllers. One shell-owned
+clock updates on aligned minute boundaries and supplies both the resting
+date/time item and a local, provider-free month grid. The versioned `focusBar`
+IPC operation (and `shell/dev/franken-shell focus-bar`) enters the active
+monitor's bar at the active numbered workspace.
+
+Optional integrations fail independently:
+
+- workspace state retains its existing degraded/unavailable presentation;
+- the tray cell is omitted when tray ownership or items are unavailable; normal
+  production mode remains non-owning while Q-115 is unresolved;
+- ordinary connected network state is silent, while offline, captive, limited,
+  or explicit adapter-failure state uses the fixed-capacity context region;
+- unavailable audio and resource services keep their compact popovers truthful
+  and disable actions that cannot be completed;
+- a missing battery omits the cell, while an unavailable battery service and the
+  deferred auto-cpufreq integration are explained without exposing writes;
+- the clock and local calendar do not depend on a network calendar provider;
+- Vicinae primary and direct-entry actions exist only for explicitly configured,
+  availability-checked `CommandRegistry` IDs; missing commands produce local
+  failure feedback and never select a replacement launcher;
+- the external system-monitor action follows the same configured-only command
+  boundary.
+
+The compact audio surface intentionally contains master output, volume, and
+mute only. The contextual taxonomy remains limited to the accepted exceptional
+connectivity slice plus injected fixtures. Autohide is not implemented because
+Q-016 remains unresolved. Final calendar provider behavior, auto-cpufreq
+management, sensor detail, Vicinae protocol mapping, and tray ownership remain
+owned by their later roadmap PRs.
 
 ## 14.5 Phase 7 — Adopted integrations
 

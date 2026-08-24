@@ -44,11 +44,13 @@ user configuration, environment, notification content, or credentials.
   reset/wrap handling, compact formatting, missing data, recovery, one shared
   sampler, and consumer-driven poll tiers; also records report-only polling
   evidence;
-- `bar`: blocking bar and authoritative audio-adapter coverage for semantic
-  layout, normalized devices/streams, absence and reconnect behavior, bounded
+- `bar`: blocking composed daily-use bar and authoritative audio-adapter
+  coverage for semantic layout, contextual and configured-command boundaries,
+  normalized devices/streams, absence and reconnect behavior, bounded
   coalesced volume writes, mute routing, keyboard and pointer popover paths,
-  shared-host replacement, focus restoration, edge-aware placement, and
-  normalized maximized/fullscreen visibility;
+  shared-host replacement, focus restoration, edge-aware placement, normalized
+  maximized/fullscreen visibility, and a report-only idle/polling evidence
+  record;
 - `control-center`: blocking host-primitive and component fixtures for
   coordinator ownership, right attachment, zero exclusive zone, pointer and
   keyboard opening, scrim dismissal, Escape, focus handoff, and major-surface
