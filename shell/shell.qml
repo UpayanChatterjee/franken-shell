@@ -6,6 +6,7 @@ import Quickshell
 import "core" as Core
 import "features/audio" as AudioFeatures
 import "features/bluetooth" as BluetoothFeatures
+import "features/feedback" as FeedbackFeatures
 import "features/network" as NetworkFeatures
 import "features/notifications" as NotificationFeatures
 import "features/power" as PowerFeatures
@@ -14,9 +15,11 @@ import "features/tray" as TrayFeatures
 import "ipc" as Ipc
 import "services/audio" as AudioServices
 import "services/bluetooth" as BluetoothServices
+import "services/feedback" as FeedbackServices
 import "services/hyprland" as HyprlandServices
 import "services/network" as NetworkServices
 import "services/notifications" as NotificationServices
+import "services/notifications/NotificationSoundCommandDefinitions.js" as NotificationSoundCommands
 import "services/power" as PowerServices
 import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
 import "services/telemetry" as TelemetryServices
@@ -125,6 +128,7 @@ ShellRoot {
         id: audioController
 
         adapter: audioAdapter
+        feedbackController: feedbackController
         maximumVolume: 1
         volumeStep: 0.02
     }
@@ -205,6 +209,9 @@ ShellRoot {
         policy: notificationPolicy
         runtime: notificationRuntimeLoader.status === Loader.Ready ? notificationRuntimeLoader.item : unavailableNotificationRuntime
     }
+    NotificationServices.NotificationSoundPolicy {
+        id: notificationSoundPolicy
+    }
     TrayServices.UnavailableTrayRuntime {
         id: unavailableTrayRuntime
     }
@@ -235,6 +242,21 @@ ShellRoot {
 
         monitorRegistry: monitorRegistry
     }
+    FeedbackServices.OsdService {
+        id: osdService
+    }
+    FeedbackServices.ToastService {
+        id: toastService
+    }
+    FeedbackFeatures.FeedbackController {
+        id: feedbackController
+
+        dnd: notificationService.dnd
+        fullscreen: hyprlandAdapter.focusedWindow?.fullscreen === true
+        osdService: osdService
+        surfaceCoordinator: surfaceCoordinator
+        toastService: toastService
+    }
     NotificationFeatures.NotificationController {
         id: notificationController
 
@@ -245,8 +267,20 @@ ShellRoot {
     Core.CommandRegistry {
         id: shellCommandRegistry
 
-        builtinDefinitions: BrightnessCommands.definitions().concat(ResourceCommands.definitions())
+        builtinDefinitions: BrightnessCommands.definitions().concat(ResourceCommands.definitions()).concat(NotificationSoundCommands.definitions())
         configService: configService
+    }
+    NotificationServices.CommandRegistryNotificationSoundRuntime {
+        id: notificationSoundRuntime
+
+        commandRegistry: shellCommandRegistry
+    }
+    NotificationServices.NotificationSoundService {
+        id: notificationSoundService
+
+        notificationService: notificationService
+        policy: notificationSoundPolicy
+        runtime: notificationSoundRuntime
     }
     Core.CapabilityRegistry {
         id: capabilityRegistry
@@ -306,6 +340,7 @@ ShellRoot {
 
         adapter: brightnessAdapter
         consumerActive: controlCenterHosts.openHostCount > 0
+        feedbackController: feedbackController
     }
     TelemetryServices.UnavailableTelemetryRuntime {
         id: unavailableTelemetryRuntime
@@ -383,6 +418,13 @@ ShellRoot {
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
         theme: themeManager.active
+    }
+    Surfaces.FeedbackHostSet {
+        fixtureWindow: root.usesFixtureMonitorBackend
+        monitorRegistry: monitorRegistry
+        osdService: osdService
+        theme: themeManager.active
+        toastService: toastService
     }
     Core.CoreReadinessCoordinator {
         id: readinessCoordinator

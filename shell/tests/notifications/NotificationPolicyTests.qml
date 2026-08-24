@@ -75,6 +75,21 @@ ShellRoot {
         }));
         root.check(decision.classification === "critical" && decision.popupEligible && decision.soundEligible && decision.timeoutMs === 0 && decision.criticalBypassReason === "alarm", "trusted alarm category conservatively bypasses DND and fullscreen");
 
+        decision = policy.evaluate(root.record({
+            "category": "critical.battery",
+            "trustedSource": true
+        }), root.context({
+            "dnd": true
+        }));
+        root.check(decision.soundEligible && decision.criticalBypassReason === "criticalBattery", "reliably classified critical system alerts are sound eligible during DND");
+        decision = policy.evaluate(root.record({
+            "category": "authentication",
+            "trustedSource": true
+        }), root.context({
+            "dnd": true
+        }));
+        root.check(decision.popupEligible && !decision.soundEligible, "interactive critical prompts may bypass visually without inventing a sound category");
+
         decision = policy.evaluate(trustedAlarm, root.context({
             "notificationViewOpen": true
         }));

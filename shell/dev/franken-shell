@@ -541,6 +541,49 @@ check_notification_service() {
 	fi
 }
 
+check_feedback() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/core/SurfaceCoordinator.qml" \
+		"$SHELL_DIR/features/audio/AudioController.qml" \
+		"$SHELL_DIR/features/power/BrightnessController.qml" \
+		"$SHELL_DIR/services/feedback/OsdService.qml" \
+		"$SHELL_DIR/services/feedback/ToastService.qml" \
+		"$SHELL_DIR/features/feedback/FeedbackActionButton.qml" \
+		"$SHELL_DIR/features/feedback/FeedbackController.qml" \
+		"$SHELL_DIR/features/feedback/OsdHost.qml" \
+		"$SHELL_DIR/features/feedback/OsdView.qml" \
+		"$SHELL_DIR/features/feedback/ToastHost.qml" \
+		"$SHELL_DIR/features/feedback/ToastView.qml" \
+		"$SHELL_DIR/services/notifications/NotificationPolicy.qml" \
+		"$SHELL_DIR/services/notifications/NotificationService.qml" \
+		"$SHELL_DIR/services/notifications/NotificationSoundCommandDefinitions.js" \
+		"$SHELL_DIR/services/notifications/NotificationSoundPolicy.qml" \
+		"$SHELL_DIR/services/notifications/NotificationSoundService.qml" \
+		"$SHELL_DIR/services/notifications/CommandRegistryNotificationSoundRuntime.qml" \
+		"$SHELL_DIR/services/notifications/UnavailableNotificationSoundRuntime.qml" \
+		"$SHELL_DIR/surfaces/FeedbackHostSet.qml" \
+		"$SHELL_DIR/surfaces/FeedbackMonitorHost.qml" \
+		"$SHELL_DIR/surfaces/OsdFixtureWindow.qml" \
+		"$SHELL_DIR/surfaces/OsdPanelWindow.qml" \
+		"$SHELL_DIR/surfaces/ToastFixtureWindow.qml" \
+		"$SHELL_DIR/surfaces/ToastPanelWindow.qml" \
+		"$SHELL_DIR/tests/feedback/FakeFeedbackTheme.qml" \
+		"$SHELL_DIR/tests/feedback/FeedbackServiceTests.qml" \
+		"$SHELL_DIR/tests/feedback/FeedbackSurfaceTests.qml"
+
+	if rg -n '\b(FileView|JsonAdapter|PersistentProperties)\b' \
+		"$SHELL_DIR/services/feedback" "$SHELL_DIR/features/feedback"; then
+		printf 'OSD and toast feedback must remain transient and non-historical.\n' >&2
+		return 1
+	fi
+
+	if rg -n 'Quickshell\.Services\.Notifications|NotificationHistory' \
+		"$SHELL_DIR/services/feedback" "$SHELL_DIR/features/feedback"; then
+		printf 'OSDs and system toasts must not enter application notification ownership.\n' >&2
+		return 1
+	fi
+}
+
 check_tray_adapter() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/services/tray/TrayAdapter.qml" \
@@ -641,6 +684,25 @@ test_notification_service() {
 			XDG_RUNTIME_DIR="$runtime_dir" \
 			FRANKEN_SHELL_MODE=notification-surface-test \
 			qs --no-duplicate --path "$SHELL_DIR/notification-surface-tests.qml" --log-times || result=$?
+	fi
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_feedback() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-feedback-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=feedback-service-test \
+		qs --no-duplicate --path "$SHELL_DIR/feedback-service-tests.qml" --log-times || result=$?
+	if [ "$result" -eq 0 ]; then
+		QT_QPA_PLATFORM=offscreen \
+			XDG_RUNTIME_DIR="$runtime_dir" \
+			FRANKEN_SHELL_MODE=feedback-surface-test \
+			qs --no-duplicate --path "$SHELL_DIR/feedback-surface-tests.qml" --log-times || result=$?
 	fi
 	rm -rf "$runtime_dir"
 	return "$result"
@@ -1215,6 +1277,10 @@ usage() {
 		"                    Statically check notification policy, privacy, and ownership boundaries" \
 		"  notification-test" \
 		"                    Run deterministic notification policy, history, and redaction fixtures" \
+		"  feedback-check" \
+		"                    Statically check keyed OSD, toast, sound, and ownership boundaries" \
+		"  feedback-test" \
+		"                    Run deterministic feedback policy and component fixtures" \
 		"  tray-adapter-check" \
 		"                    Statically check tray normalization, menus, and non-owning startup" \
 		"  tray-adapter-test" \
@@ -1455,6 +1521,12 @@ notification-check)
 	;;
 notification-test)
 	test_notification_service
+	;;
+feedback-check)
+	check_feedback
+	;;
+feedback-test)
+	test_feedback
 	;;
 tray-adapter-check)
 	check_tray_adapter

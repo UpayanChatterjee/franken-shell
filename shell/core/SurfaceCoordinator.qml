@@ -106,6 +106,39 @@ Scope {
         }
         return controller.result(true, false, "");
     }
+    function resolveTransientMonitor(context): var {
+        if (context === null || typeof context !== "object" || Array.isArray(context))
+            return Object.freeze({
+                "accepted": false,
+                "monitorId": "",
+                "reason": "",
+                "errorCode": "SURFACE_CONTEXT_INVALID"
+            });
+        let resolved = controller.resolvedMonitor(context.explicitMonitorId, "explicit");
+        if (resolved !== null)
+            return resolved;
+        resolved = controller.resolvedMonitor(context.pointerMonitorId, "pointer");
+        if (resolved !== null)
+            return resolved;
+        resolved = controller.resolvedMonitor(context.sourceSurfaceMonitorId, "sourceSurface");
+        if (resolved !== null)
+            return resolved;
+        resolved = controller.resolvedMonitor(root.monitorRegistry.focusedWindowMonitor?.runtimeId, "focusedWindow");
+        if (resolved !== null)
+            return resolved;
+        resolved = controller.resolvedMonitor(root.monitorRegistry.focusedMonitor?.runtimeId, "focused");
+        if (resolved !== null)
+            return resolved;
+        resolved = controller.resolvedMonitor(root.monitorRegistry.fallbackMonitor?.runtimeId, "fallback");
+        if (resolved !== null)
+            return resolved;
+        return Object.freeze({
+            "accepted": false,
+            "monitorId": "",
+            "reason": "",
+            "errorCode": "SURFACE_MONITOR_UNAVAILABLE"
+        });
+    }
     function summary(): var {
         return Object.freeze({
             "activeMajorId": root.activeMajorId,
@@ -301,6 +334,17 @@ Scope {
         }
         function replacePrivate(record, changes): var {
             return Object.freeze(Object.assign({}, record, changes));
+        }
+        function resolvedMonitor(value, reason: string): var {
+            const monitorId = String(value ?? "");
+            if (!controller.validToken(monitorId) || !controller.monitorAvailable(monitorId))
+                return null;
+            return Object.freeze({
+                "accepted": true,
+                "monitorId": monitorId,
+                "reason": reason,
+                "errorCode": ""
+            });
         }
         function restorationContext(record, reason: string): var {
             return Object.freeze({

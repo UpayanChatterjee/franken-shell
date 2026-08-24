@@ -1257,8 +1257,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Notification-complete prototype
 - **Branch:** `feat/notification-surfaces`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #21 / `9afe23944ea87b4838cb6309ef785ac452930df1`
 
 #### Scope
 - Create right-side popup host with maximum visible count, timeout pause, actions, dismissal, and grouped updates.
@@ -1337,6 +1337,34 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - Key replacement, timeout, rapid updates, DND matrix, fullscreen behavior, unavailable brightness, volume mute, and track-change non-events.
 - OSD/toast surfaces do not compete with major surfaces.
+
+#### Implementation evidence
+
+- Separate transient `OsdService` and `ToastService` owners normalize and bound
+  their own records; neither imports notification history or persistence.
+- Volume and brightness use one focus-neutral host per monitor. Repeated values
+  replace the keyed record in place, clamp display values, expose mute
+  independently, and produce no record when brightness is unavailable.
+- System toasts support the seven documented categories, a three-item bound,
+  stable keyed replacement, longer failure timing, hover/focus pause, typed
+  actions, and no focus acquisition on arrival.
+- `SurfaceCoordinator` resolves explicit, pointer, source-surface,
+  focused-window, focused, and fallback monitor candidates. Ownership freezes
+  for an active key; removal dismisses only transient presentation.
+- User-triggered OSDs/toasts and explicit-action failures remain admitted under
+  DND/fullscreen, while passive background feedback is rejected and media
+  track-change publication is an explicit no-op.
+- Audio volume/mute and brightness controllers publish only after their
+  authoritative adapters accept a write. Output selection publishes the keyed
+  audio-output toast through the same injected controller.
+- Notification sounds are limited to fixed call, alarm, timer, and conservative
+  critical mappings and fixed freedesktop sound-theme event arguments through
+  `CommandRegistry`; arbitrary commands, titles, and per-application rules are
+  absent.
+- Deterministic service/component fixtures cover replacement, timeout,
+  50-update bursts, DND/fullscreen, unavailable brightness, mute, track-change
+  suppression, major-surface coexistence, actions, owner removal, sound
+  routing, and a synthetic visual review artifact.
 
 #### CI evolution
 

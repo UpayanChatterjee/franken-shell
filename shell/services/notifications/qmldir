@@ -1,6 +1,10 @@
 module FrankenShell.Services.Notifications
 NotificationHistory 1.0 NotificationHistory.qml
 NotificationPolicy 1.0 NotificationPolicy.qml
+NotificationSoundPolicy 1.0 NotificationSoundPolicy.qml
+NotificationSoundService 1.0 NotificationSoundService.qml
+CommandRegistryNotificationSoundRuntime 1.0 CommandRegistryNotificationSoundRuntime.qml
+UnavailableNotificationSoundRuntime 1.0 UnavailableNotificationSoundRuntime.qml
 NotificationService 1.0 NotificationService.qml
 QuickshellNotificationRuntime 1.0 QuickshellNotificationRuntime.qml
 UnavailableNotificationRuntime 1.0 UnavailableNotificationRuntime.qml

@@ -120,7 +120,18 @@ Placement and geometry remain prototype questions. Hosts receive one resolved mo
 
 Repeated category updates restart/extend timing without spawning parallel cards. Reduced motion uses immediate or simple opacity transitions. On owner removal, close or rehome according to final monitor policy; never leave focus on an invisible toast action.
 
+The first component prototype uses a 300-by-76 logical-pixel horizontal OSD at
+the lower-right inset and a 340 logical-pixel toast stack above it, bounded to
+three keyed records. Candidate lifetimes are 1600 ms for OSDs, 3500 ms for
+routine toasts, and 9000 ms for failures. These values provide deterministic
+fixtures without settling Q-041, Q-042, Q-043, or the final collision policy.
+
 An action-bearing toast does not steal focus on arrival. Each action must also remain available at the originating focused surface/inline failure state, or the host must expose an explicit documented focus request through `SurfaceCoordinator`. When toast focus is explicitly entered, `Escape` returns focus to the origin; if the origin closes, shared fallback restoration applies.
+
+The first service contract rejects action-bearing publication unless the
+originating controller affirms that the same typed action remains available in
+its keyboard-reachable inline failure state. Component fixtures still exercise
+explicit toast focus, but this slice does not invent a global focus shortcut.
 
 # 9. State and Failure Handling
 
@@ -143,6 +154,13 @@ Configuration may define enabled channels, normalized timeout ranges, reduced mo
 Recommended prototype direction: brightness OSD targets the affected monitor when known. Global volume and system-toast ownership follow the provisional policy in `multi-monitor.md`; the final result remains Q-092.
 
 True fullscreen suppresses ordinary application popups, not user-triggered OSDs/toasts. Passive background state changes should not exploit this bypass by mislabeling themselves user-triggered.
+
+The component prototype resolves an explicit affected/source monitor first,
+then focused-window, focused, and fallback candidates through
+`SurfaceCoordinator`. An active keyed record keeps its admitted owner until it
+expires; owner removal dismisses presentation. This is provisional under
+Q-092. Failure toasts remain transient and non-historical in this slice, so
+Q-044 remains unresolved.
 
 # 12. Performance
 

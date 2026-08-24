@@ -49,10 +49,11 @@ QtObject {
         const receivedAtMs = Number(record?.receivedAtMs ?? 0);
         const lastPopupAtMs = Number(context?.lastPopupAtMs ?? -1);
         const burstCoalesced = popupEligible && record?.replacesExisting !== true && groupKey === String(context?.lastPopupGroupKey ?? "") && lastPopupAtMs >= 0 && receivedAtMs >= lastPopupAtMs && receivedAtMs - lastPopupAtMs <= root.burstWindowMs;
+        const soundEligible = ["incomingCall", "alarm", "timer", "criticalBattery", "criticalStorage", "criticalTemperature", "recordingFailure"].indexOf(bypassReason) >= 0;
         return Object.freeze({
             "historyEligible": record?.transient !== true,
             "popupEligible": popupEligible,
-            "soundEligible": bypassReason === "incomingCall" || bypassReason === "alarm" || bypassReason === "timer",
+            "soundEligible": soundEligible,
             "classification": classification,
             "groupKey": groupKey,
             "timeoutMs": root.timeoutFor(record, classification),

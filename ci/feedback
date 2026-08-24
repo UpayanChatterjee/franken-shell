@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+feedback_artifact_dir="$ARTIFACT_DIR/feedback"
+mkdir -p "$feedback_artifact_dir/fixtures"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if shell/dev/franken-shell feedback-check >"$feedback_artifact_dir/check.log" 2>&1; then
+	cat "$feedback_artifact_dir/check.log"
+else
+	status=$?
+	cat "$feedback_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if FRANKEN_FEEDBACK_ARTIFACT_DIR="$feedback_artifact_dir/fixtures" \
+	shell/dev/franken-shell feedback-test >"$feedback_artifact_dir/test.log" 2>&1; then
+	cat "$feedback_artifact_dir/test.log"
+else
+	status=$?
+	cat "$feedback_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+if rg -n 'PRIVATE_NOTIFICATION_CANARY|Fixture network connected|Fixture operation needs attention|Synthetic network state' "$feedback_artifact_dir"; then
+	printf 'Feedback content leaked into text CI artifacts.\n' >&2
+	exit 1
+fi
+
+printf 'Keyed OSD, toast, DND/fullscreen, sound, focus, ownership, screenshot, and redaction contracts passed.\n'

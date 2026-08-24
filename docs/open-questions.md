@@ -1058,6 +1058,10 @@ Need to evaluate:
 - multi-monitor ownership;
 - similarity to notifications.
 
+**PR-021 prototype boundary:** the OSD host is lower-right with a 32 logical-
+pixel bottom inset and 20 logical-pixel right inset. This is fixture placement,
+not a final selection among the candidates.
+
 ---
 
 ## Q-042 — OSD geometry
@@ -1074,6 +1078,10 @@ Should volume/brightness OSD use:
 
 Need to remain glanceable and not mobile-oversized.
 
+**PR-021 prototype boundary:** volume and brightness share a 300-by-76 logical-
+pixel horizontal card with semantic icon, numeric percentage, and progress bar.
+The prototype does not settle the final geometry/content combination.
+
 ---
 
 ## Q-043 — System toast placement
@@ -1089,6 +1097,10 @@ Should system toasts appear:
 
 They must be visually distinct from application notifications.
 
+**PR-021 prototype boundary:** a 340 logical-pixel, at-most-three toast stack is
+positioned above the lower-right OSD region. It remains visually and
+architecturally separate from application notification popups.
+
 ---
 
 ## Q-044 — Toast history on failure
@@ -1103,6 +1115,10 @@ When a system operation fails, should it:
 - appear inline in the originating surface only?
 
 Current direction allows failures to enter history, but exact policy is unsettled.
+
+**PR-021 prototype boundary:** failures remain longer-lived keyed toasts and do
+not enter application history. Retry/details are typed requests, not arbitrary
+commands. This does not select the eventual durable-failure policy.
 
 ---
 
@@ -2002,6 +2018,11 @@ Should OSD appear on:
 - one configured monitor?
 
 Brightness should likely target the affected monitor; volume is global.
+
+**PR-021 prototype boundary:** an explicit affected/source monitor wins;
+otherwise transient feedback uses focused-window, focused, then fallback
+resolution. An active keyed record does not migrate after a focus change, and
+owner removal dismisses it. This does not settle the final policy.
 
 ---
 

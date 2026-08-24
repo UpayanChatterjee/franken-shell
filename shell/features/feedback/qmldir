@@ -1,0 +1,7 @@
+module FrankenShell.Features.Feedback
+FeedbackController 1.0 FeedbackController.qml
+FeedbackActionButton 1.0 FeedbackActionButton.qml
+OsdHost 1.0 OsdHost.qml
+OsdView 1.0 OsdView.qml
+ToastHost 1.0 ToastHost.qml
+ToastView 1.0 ToastView.qml
