@@ -1,0 +1,45 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+tray_artifact_dir="$ARTIFACT_DIR/tray"
+mkdir -p "$tray_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Services\.SystemTray|Quickshell\.DBusMenu|\bSystemTray\b|\bQsMenuAnchor\b' \
+	shell/services/tray/TrayAdapter.qml \
+	shell/features/tray \
+	shell/features/bar \
+	>"$tray_artifact_dir/ownership-boundary.log" 2>&1; then
+	cat "$tray_artifact_dir/ownership-boundary.log" >&2
+	printf 'Tray adapters, controllers, and views must not own native watcher or menu objects.\n' >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell tray-adapter-check >"$tray_artifact_dir/check.log" 2>&1; then
+	cat "$tray_artifact_dir/check.log"
+else
+	status=$?
+	cat "$tray_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if FRANKEN_TRAY_ARTIFACT_DIR="$tray_artifact_dir" shell/dev/franken-shell tray-adapter-test >"$tray_artifact_dir/test.log" 2>&1; then
+	cat "$tray_artifact_dir/test.log"
+else
+	status=$?
+	cat "$tray_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+printf 'Tray normalization, action, native-menu, collapsed-drawer, and non-owning contracts passed.\n'

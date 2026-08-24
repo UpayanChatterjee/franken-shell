@@ -23,6 +23,7 @@ Scope {
     required property var surfaceCoordinator
     required property var theme
     property var throughputController: null
+    property var trayController: null
     readonly property bool visible: root.window?.visible ?? false
     readonly property real width: root.window?.width ?? 0
     readonly property var window: root.ready ? hostLoader.item : null
@@ -167,6 +168,12 @@ Scope {
         property: "throughputController"
         target: root.window
         value: root.throughputController
+        when: root.ready
+    }
+    Binding {
+        property: "trayController"
+        target: root.window
+        value: root.trayController
         when: root.ready
     }
     Binding {

@@ -28,12 +28,14 @@ Scope {
     required property bool surfaceVisible
     required property var themeManager
     property var throughputProvider: null
+    property var trayProvider: null
 
     function summaryObject(): var {
         const bluetooth = root.bluetoothProvider?.diagnosticsSummary?.() ?? {};
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
         const network = root.networkProvider?.diagnosticsSummary?.() ?? {};
+        const traySummary = root.trayProvider?.diagnosticsSummary?.() ?? {};
         const commands = root.commandRegistry.registrySummary();
         const controlCenterHosts = root.controlCenterHostProvider.summary();
         const barHosts = root.barHostProvider.summary();
@@ -121,6 +123,14 @@ Scope {
             "networkActiveConnectionPresent": network.activeConnectionPresent === true,
             "networkPendingTaskCount": Number(network.pendingTaskCount ?? 0),
             "networkLastError": String(network.lastError ?? ""),
+            "trayAvailable": traySummary.available === true,
+            "trayConnectionState": String(traySummary.connectionState ?? "unavailable"),
+            "trayStateStale": traySummary.stale === true,
+            "trayOwnershipClaimed": traySummary.ownershipClaimed === true,
+            "trayItemCount": Number(traySummary.itemCount ?? 0),
+            "trayAttentionItemCount": Number(traySummary.attentionItemCount ?? 0),
+            "trayMenuActive": traySummary.menuActive === true,
+            "trayLastError": String(traySummary.lastError ?? ""),
             "hyprlandAvailable": hyprland.available === true,
             "hyprlandConnectionState": String(hyprland.connectionState ?? "unavailable"),
             "hyprlandStateStale": hyprland.stale === true,
@@ -337,6 +347,13 @@ Scope {
         }
         function themeStatus(): string {
             return JSON.stringify(root.themeManager.summary());
+        }
+        function trayStatus(): string {
+            return JSON.stringify(root.trayProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable",
+                "ownershipClaimed": false
+            });
         }
         function version(): string {
             return JSON.stringify({

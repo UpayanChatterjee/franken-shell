@@ -84,6 +84,15 @@ closeMenu()
 
 Use Quickshell/system D-Bus menu facilities where supported.
 
+The initial adapter uses the pinned `Quickshell.Services.SystemTray` singleton
+behind one guarded native runtime. That API exposes the settled item fields and
+forwards activate, secondary-activate, scroll, and native DBusMenu operations.
+It does not expose the registered service/object address, watcher health,
+per-action support flags, or asynchronous D-Bus method failures. Stable IDs are
+therefore guaranteed only for the current session when an application ID is
+missing or duplicated, and accepted action dispatch does not claim remote
+completion.
+
 # 6. Drawer Presentation and Interaction
 
 - Primary activation of the collapsed affordance toggles the tray popover.
@@ -119,6 +128,11 @@ Outside click closes the deepest dismissible layer. Menu activation that opens a
 - Item disappearance while focused moves focus predictably to the next item or aggregate trigger.
 - Duplicate/unstable identifiers are diagnosed and receive session-stable fallback IDs without pretending they are suitable for persistence.
 
+The first component slice uses a bounded vertical list as a provisional,
+fixture-tested drawer form. This does not resolve Q-073. It preserves first-seen
+session order across non-ordering property updates and backend reorder events;
+this does not resolve Q-074 or define a persistent ordering key.
+
 # 9. Dependencies and Configuration
 
 Dependencies include Quickshell system tray and D-Bus menu support or selected adapter, `CapabilityRegistry`, `Diagnostics`, `ConfigService`, `SurfaceCoordinator`, and `MonitorRegistry`.
@@ -130,6 +144,12 @@ Configuration owns enabled state, hide-when-empty, stable ordering mode, future 
 Tray item state is global. Multiple bars must not register multiple watchers or duplicate application items. The drawer opens on the invoking bar monitor; only one ordinary bar popover is open globally.
 
 Enumeration is event-driven. Icons are cached/bounded. Menu models load lazily when opened. Hidden drawers do not animate or repeatedly sort. Stable ordering prevents movement when status changes.
+
+The pinned Quickshell singleton constructs a StatusNotifier host and a watcher
+that attempts to own `org.kde.StatusNotifierWatcher` when no owner exists and
+retries after owner loss. Ordinary Franken Shell development must therefore not
+reference the singleton. The guarded native runtime is reserved for an isolated
+owning test mode until Q-115 defines production handoff and recovery.
 
 # 11. Fixtures
 

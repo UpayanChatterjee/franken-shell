@@ -1,0 +1,4 @@
+module FrankenShell.Features.Tray
+TrayController 1.0 TrayController.qml
+TrayItemDelegate 1.0 TrayItemDelegate.qml
+TrayPopover 1.0 TrayPopover.qml

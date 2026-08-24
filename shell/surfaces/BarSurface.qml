@@ -27,6 +27,7 @@ Item {
     required property var theme
     readonly property real thickness: geometry.thickness
     property var throughputController: null
+    property var trayController: null
     readonly property bool vertical: geometry.vertical
     readonly property bool windowVisible: root.hostEnabled && !root.fullscreenSuppressed
     required property var workspaceBackend
@@ -160,6 +161,7 @@ Item {
             surfaceCoordinator: root.surfaceCoordinator
             theme: root.theme
             throughputController: root.throughputController
+            trayController: root.trayController
             vertical: geometry.vertical
             workspaceController: workspaceController
         }
@@ -177,5 +179,17 @@ Item {
         specialWorkspaceController: specialWorkspaceController
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
+        trayController: root.trayController
+    }
+    Connections {
+        function onVisibleChanged() {
+            if (root.trayController?.visible === true)
+                return;
+            const anchorId = "bar.tray." + root.safeToken(root.ownerMonitorId);
+            if (root.surfaceCoordinator?.activePopoverId === "tray.drawer" && root.surfaceCoordinator?.activePopover?.anchorId === anchorId)
+                root.surfaceCoordinator.originDisappeared(anchorId);
+        }
+
+        target: root.trayController
     }
 }

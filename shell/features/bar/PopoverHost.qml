@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import "../tray" as Tray
 import "../workspaces" as Workspaces
 
 Scope {
@@ -22,9 +23,12 @@ Scope {
     required property var specialWorkspaceController
     required property var surfaceCoordinator
     required property var theme
+    property var trayController: null
     readonly property string visibleSurfaceId: root.open ? root.activePopover?.surfaceId ?? "" : ""
 
     function dismissEscape(): var {
+        if (root.visibleSurfaceId === "tray.drawer" && root.trayController?.menuState?.active === true)
+            return root.trayController.closeMenu();
         return root.owned ? root.surfaceCoordinator.closePopover("escape") : Object.freeze({
             "accepted": true,
             "changed": false,
@@ -133,7 +137,7 @@ Scope {
                 id: contentLoader
 
                 anchors.fill: parent
-                sourceComponent: root.activePopover?.surfaceId === "workspace.special-selector" ? specialWorkspaceContent : fixtureContent
+                sourceComponent: root.activePopover?.surfaceId === "workspace.special-selector" ? specialWorkspaceContent : root.activePopover?.surfaceId === "tray.drawer" && root.trayController !== null ? trayContent : fixtureContent
             }
             Shortcut {
                 enabled: root.open
@@ -149,6 +153,21 @@ Scope {
         Workspaces.SpecialWorkspaceSelector {
             controller: root.specialWorkspaceController
             focus: root.keyboardOpened
+            theme: root.theme
+
+            onDismissed: reason => {
+                void reason;
+                root.surfaceCoordinator.closePopover("requested");
+            }
+        }
+    }
+    Component {
+        id: trayContent
+
+        Tray.TrayPopover {
+            controller: root.trayController
+            focus: root.keyboardOpened
+            keyboardOpened: root.keyboardOpened
             theme: root.theme
 
             onDismissed: reason => {

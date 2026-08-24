@@ -7,31 +7,34 @@ FocusScope {
     property var audioController: null
     property var batteryController: null
     required property var datum
-    readonly property string effectiveAccessibleName: root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedTooltip : root.isResources && root.resourceController !== null ? root.resourceController.memoryDescription : root.datum.accessibleName
-    readonly property string effectiveEmphasis: root.isBattery && root.batteryController !== null ? root.batteryController.severity : root.datum.emphasis
-    readonly property string effectiveLabel: root.isAudio ? root.audioLabel() : root.isBattery && root.batteryController !== null ? root.batteryController.label : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedDownload : root.isResources && root.resourceController !== null ? root.resourceController.label : root.datum.label
-    readonly property bool effectiveVisible: root.isBattery && root.batteryController !== null ? root.batteryController.visible : root.datum.visible
+    readonly property string effectiveAccessibleName: root.isTray && root.trayController !== null ? root.trayController.accessibleName() : root.isAudio ? root.audioAccessibleName() : root.isBattery ? root.batteryAccessibleName() : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedTooltip : root.isResources && root.resourceController !== null ? root.resourceController.memoryDescription : root.datum.accessibleName
+    readonly property string effectiveEmphasis: root.isTray && root.trayController?.hasAttention === true ? "warning" : root.isBattery && root.batteryController !== null ? root.batteryController.severity : root.datum.emphasis
+    readonly property string effectiveLabel: root.isTray && root.trayController !== null ? "T" : root.isAudio ? root.audioLabel() : root.isBattery && root.batteryController !== null ? root.batteryController.label : root.isNetworkSpeed && root.throughputController !== null ? root.throughputController.formattedDownload : root.isResources && root.resourceController !== null ? root.resourceController.label : root.datum.label
+    readonly property string effectivePopoverId: root.isTray && root.trayController !== null ? "tray.drawer" : root.datum.popoverId
+    readonly property bool effectiveVisible: root.isTray && root.trayController !== null ? root.trayController.visible : root.isBattery && root.batteryController !== null ? root.batteryController.visible : root.datum.visible
     required property real extent
     readonly property bool isAudio: root.datum.id === "audio"
     readonly property bool isBattery: root.datum.id === "battery"
     readonly property bool isNetworkSpeed: root.datum.id === "networkSpeed"
     readonly property bool isResources: root.datum.id === "resources"
+    readonly property bool isTray: root.datum.id === "tray"
     required property string monitorId
-    readonly property bool popoverOpen: root.datum.popoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.datum.popoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
+    readonly property bool popoverOpen: root.effectivePopoverId.length > 0 && root.surfaceCoordinator?.activePopoverId === root.effectivePopoverId && root.surfaceCoordinator?.activePopover?.anchorId === root.anchorId
     property var resourceController: null
     required property var surfaceCoordinator
     required property var theme
     property var throughputController: null
+    property var trayController: null
     required property bool vertical
 
     function activate(origin: string): var {
-        if (root.datum.popoverId.length === 0)
+        if (root.effectivePopoverId.length === 0 || !root.effectiveVisible)
             return Object.freeze({
                 "accepted": false,
                 "changed": false,
                 "errorCode": "FIXTURE_ACTION_UNAVAILABLE"
             });
-        return root.surfaceCoordinator.togglePopover(root.datum.popoverId, root.anchorId, {
+        return root.surfaceCoordinator.togglePopover(root.effectivePopoverId, root.anchorId, {
             "monitorId": root.monitorId,
             "origin": origin,
             "originControlId": root.anchorId,
@@ -92,8 +95,8 @@ FocusScope {
     }
 
     Accessible.name: root.effectiveAccessibleName
-    Accessible.role: root.datum.popoverId.length > 0 ? Accessible.Button : Accessible.StaticText
-    activeFocusOnTab: root.datum.popoverId.length > 0
+    Accessible.role: root.effectivePopoverId.length > 0 ? Accessible.Button : Accessible.StaticText
+    activeFocusOnTab: root.effectivePopoverId.length > 0 && root.effectiveVisible
     clip: true
     height: root.vertical ? root.extent : parent.height
     visible: root.effectiveVisible
@@ -114,7 +117,7 @@ FocusScope {
 
     Rectangle {
         anchors.fill: parent
-        color: root.popoverOpen ? root.theme.colors.accentContainer : pointer.hovered && root.datum.popoverId.length > 0 ? root.theme.colors.surfaceRaised : "transparent"
+        color: root.popoverOpen ? root.theme.colors.accentContainer : pointer.hovered && root.effectivePopoverId.length > 0 ? root.theme.colors.surfaceRaised : "transparent"
         radius: root.popoverOpen ? root.theme.radius.radiusFull : root.theme.radius.radiusSmall
 
         Rectangle {
@@ -145,7 +148,7 @@ FocusScope {
         }
         TapHandler {
             acceptedButtons: Qt.LeftButton
-            enabled: root.datum.popoverId.length > 0
+            enabled: root.effectivePopoverId.length > 0 && root.effectiveVisible
 
             onTapped: root.activate("pointer")
         }
