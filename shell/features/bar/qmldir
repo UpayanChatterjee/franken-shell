@@ -1,9 +1,19 @@
 module FrankenShell.Features.Bar
+BarContentModel 1.0 BarContentModel.qml
+ContextStatusController 1.0 ContextStatusController.qml
+DailyBarControllerSet 1.0 DailyBarControllerSet.qml
 BarFixtureCell 1.0 BarFixtureCell.qml
 BarFixtureModel 1.0 BarFixtureModel.qml
 BarGeometry 1.0 BarGeometry.qml
 BarLayout 1.0 BarLayout.qml
 BarZone 1.0 BarZone.qml
+AudioCompactPopover 1.0 AudioCompactPopover.qml
+BatterySummaryPopover 1.0 BatterySummaryPopover.qml
+CalendarPopover 1.0 CalendarPopover.qml
+ContextStatusPopover 1.0 ContextStatusPopover.qml
 FixturePopoverContent 1.0 FixturePopoverContent.qml
+PopoverAction 1.0 PopoverAction.qml
 PopoverHost 1.0 PopoverHost.qml
 PopoverPlacement 1.0 PopoverPlacement.qml
+ResourceSummaryPopover 1.0 ResourceSummaryPopover.qml
+VicinaeMenuPopover 1.0 VicinaeMenuPopover.qml

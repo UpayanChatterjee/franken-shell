@@ -9,6 +9,7 @@ Item {
     property var batteryController: null
     required property real cellExtent
     readonly property real contentExtent: root.visibleItemCount > 0 ? root.visibleItemCount * root.cellExtent + (root.visibleItemCount - 1) * root.spacing : 0
+    property var dateTimeController: null
     required property var items
     readonly property real mainAxisExtent: root.reservedSlots > 0 ? root.reservedSlots * root.cellExtent + Math.max(0, root.reservedSlots - 1) * root.spacing : root.contentExtent
     required property string monitorId
@@ -20,6 +21,7 @@ Item {
     property var throughputController: null
     property var trayController: null
     required property bool vertical
+    property var vicinaeAdapter: null
     readonly property int visibleItemCount: root.items.filter(item => root.itemVisible(item)).length
 
     // qmllint disable missing-property
@@ -65,6 +67,7 @@ Item {
 
                     audioController: root.audioController
                     batteryController: root.batteryController
+                    dateTimeController: root.dateTimeController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
@@ -74,6 +77,7 @@ Item {
                     throughputController: root.throughputController
                     trayController: root.trayController
                     vertical: true
+                    vicinaeAdapter: root.vicinaeAdapter
                 }
             }
         }
@@ -93,6 +97,7 @@ Item {
 
                     audioController: root.audioController
                     batteryController: root.batteryController
+                    dateTimeController: root.dateTimeController
                     datum: modelData
                     extent: root.cellExtent
                     monitorId: root.monitorId
@@ -102,6 +107,7 @@ Item {
                     throughputController: root.throughputController
                     trayController: root.trayController
                     vertical: false
+                    vicinaeAdapter: root.vicinaeAdapter
                 }
             }
         }

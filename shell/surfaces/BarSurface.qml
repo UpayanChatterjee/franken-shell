@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import "../features/bar" as Bar
@@ -9,6 +11,9 @@ Item {
     property var audioController: null
     required property var barConfig
     property var batteryController: null
+    property var calendarController: null
+    property var contextController: null
+    property var dateTimeController: null
     readonly property string edge: geometry.edge
     readonly property int exclusiveZone: geometry.exclusiveZone
     property alias fixtureModel: fixtureState
@@ -29,11 +34,13 @@ Item {
     property var throughputController: null
     property var trayController: null
     readonly property bool vertical: geometry.vertical
+    property var vicinaeAdapter: null
     readonly property bool windowVisible: root.hostEnabled && !root.fullscreenSuppressed
     required property var workspaceBackend
     required property var workspaceConfig
 
     signal fixtureCaptured(string path, bool saved)
+    signal keyboardFocusReleaseRequested
 
     function activateFixtureItem(itemId: string, origin: string): var {
         const anchorId = "bar." + itemId + "." + root.safeToken(root.ownerMonitorId);
@@ -63,6 +70,9 @@ Item {
     }
     function dismissPopoverOutside(): var {
         return popoverHost.dismissOutside();
+    }
+    function focusInitial(): bool {
+        return barLayout.focusInitial();
     }
     function layoutSnapshot(): var {
         return barLayout.snapshot();
@@ -140,6 +150,21 @@ Item {
     Bar.BarFixtureModel {
         id: fixtureState
     }
+    Loader {
+        id: liveContentLoader
+
+        active: !root.fixtureWindow
+
+        sourceComponent: Component {
+            Bar.BarContentModel {
+                contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
+                contextController: root.contextController
+                dateTimeController: root.dateTimeController
+                showVicinae: root.barConfig?.vicinae?.show !== false
+                vicinaeAdapter: root.vicinaeAdapter
+            }
+        }
+    }
     Rectangle {
         anchors.fill: parent
         border.color: root.theme.colors.outlineSubtle
@@ -154,7 +179,8 @@ Item {
             audioController: root.audioController
             batteryController: root.batteryController
             contextCapacity: Math.max(0, root.barConfig?.contextRegion?.slots ?? 3)
-            fixtureModel: fixtureState
+            dateTimeController: root.dateTimeController
+            fixtureModel: root.fixtureWindow || liveContentLoader.item === null ? fixtureState : liveContentLoader.item
             monitorId: root.ownerMonitorId
             resourceController: root.resourceController
             specialWorkspaceController: specialWorkspaceController
@@ -163,6 +189,7 @@ Item {
             throughputController: root.throughputController
             trayController: root.trayController
             vertical: geometry.vertical
+            vicinaeAdapter: root.vicinaeAdapter
             workspaceController: workspaceController
         }
     }
@@ -170,16 +197,29 @@ Item {
         id: popoverHost
 
         anchorResolver: anchorId => barLayout.anchorItem(anchorId)
+        audioController: root.audioController
+        batteryController: root.batteryController
+        calendarController: root.calendarController
+        contextController: root.contextController
         edge: root.edge
-        fixtureModel: fixtureState
+        fixtureModel: root.fixtureWindow || liveContentLoader.item === null ? fixtureState : liveContentLoader.item
         fixtureWindow: root.fixtureWindow
         monitorId: root.ownerMonitorId
         parentWindow: QsWindow.window
+        resourceController: root.resourceController
         screenInfo: root.screenInfo
         specialWorkspaceController: specialWorkspaceController
         surfaceCoordinator: root.surfaceCoordinator
         theme: root.theme
         trayController: root.trayController
+        vicinaeAdapter: root.vicinaeAdapter
+    }
+    Connections {
+        function onEscapeRequested() {
+            root.keyboardFocusReleaseRequested();
+        }
+
+        target: workspaceController
     }
     Connections {
         function onVisibleChanged() {

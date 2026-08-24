@@ -16,6 +16,22 @@ unset WAYLAND_DISPLAY
 unset HYPRLAND_INSTANCE_SIGNATURE
 export QT_QPA_PLATFORM=offscreen
 
+if shell/dev/franken-shell daily-bar-check >"$bar_artifact_dir/daily-check.log" 2>&1; then
+	cat "$bar_artifact_dir/daily-check.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/daily-check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell daily-bar-test >"$bar_artifact_dir/daily-test.log" 2>&1; then
+	cat "$bar_artifact_dir/daily-test.log"
+else
+	status=$?
+	cat "$bar_artifact_dir/daily-test.log" >&2
+	exit "$status"
+fi
+
 if shell/dev/franken-shell bar-host-check >"$bar_artifact_dir/check.log" 2>&1; then
 	cat "$bar_artifact_dir/check.log"
 else
@@ -49,4 +65,11 @@ else
 	exit "$status"
 fi
 
-printf 'Bar component, audio adapter, interaction, and fixture contracts passed.\n'
+{
+	printf 'reportOnly=true\n'
+	printf 'scope=composed-bar-fixture\n'
+	printf 'samplingPolicy=aligned-minute-clock;summary-telemetry-while-closed;detail-telemetry-while-open\n'
+	printf 'liveIdleCpuMemory=manual-session-evidence-required\n'
+} >"$bar_artifact_dir/idle-baseline.txt"
+
+printf 'Bar composition, adapter, interaction, fallback, fixture, and report-only baseline contracts passed.\n'

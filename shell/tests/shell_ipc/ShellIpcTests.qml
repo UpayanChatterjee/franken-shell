@@ -38,6 +38,8 @@ ShellRoot {
         root.check(response.ok && response.result.accepted && response.result.state === "open" && fakeControlCenterHost.toggleCount === 1, "keyboard control-centre opening routes to the coordinator-owned host");
         response = shellIpc.dispatch(root.envelope("request.control-center.close", "toggleControlCenter", 1));
         root.check(response.ok && response.result.accepted && response.result.state === "closed" && fakeControlCenterHost.toggleCount === 2, "the same keyboard operation toggles the control centre closed");
+        response = shellIpc.dispatch(root.envelope("request.bar.focus", "focusBar", 1));
+        root.check(response.ok && response.result.accepted && response.result.state === "focused" && fakeBarHost.focusCount === 1, "bar focus routes to the focused-monitor host");
         response = shellIpc.dispatch("{");
         root.check(!response.ok && response.requestId === "" && response.error.code === "IPC_MALFORMED_REQUEST", "malformed JSON is rejected without echoing input");
         response = shellIpc.dispatch(JSON.stringify({
@@ -70,6 +72,9 @@ ShellRoot {
     FakeShellIpcConfigService {
         id: fakeConfigService
     }
+    FakeShellIpcBarHostProvider {
+        id: fakeBarHost
+    }
     FakeShellIpcControlCenterHostProvider {
         id: fakeControlCenterHost
     }
@@ -82,6 +87,7 @@ ShellRoot {
     Ipc.ShellIpc {
         id: shellIpc
 
+        barHostProvider: fakeBarHost
         configService: fakeConfigService
         controlCenterHostProvider: fakeControlCenterHost
         diagnosticsProvider: fakeDiagnostics

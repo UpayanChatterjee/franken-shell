@@ -1,0 +1,2 @@
+module FrankenShell.Services.Calendar
+ClockService 1.0 ClockService.qml
