@@ -14,6 +14,7 @@ Scope {
     required property bool fixtureWindow
     required property var monitor
     property var networkController: null
+    property var notificationController: null
     readonly property string ownerMonitorId: root.window?.ownerMonitorId ?? ""
     readonly property bool ready: hostLoader.status === Loader.Ready
     required property ShellScreen screenInfo
@@ -136,6 +137,7 @@ Scope {
         bluetoothController: root.bluetoothController
         brightnessController: root.brightnessController
         networkController: root.networkController
+        notificationController: root.notificationController
     }
     Loader {
         id: hostLoader

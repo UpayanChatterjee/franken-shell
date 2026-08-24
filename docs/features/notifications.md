@@ -134,6 +134,16 @@ do not settle Q-031, Q-033, or Q-034.
 - Keyboard and explicit-dismiss controls provide parity with drag dismissal. Middle-click has no shell-defined dismissal action; scroll remains for history/long content.
 - Exact clear-all confirmation/undo presentation remains unresolved and must not imply protocol restoration; the removal semantics above are settled.
 
+The first surface fixture keeps at most four popup presentations, using the
+configuration-model candidate. A distinct same-group burst updates the newest
+popup summary while all records remain in history. Popup timeout bookkeeping is
+controller-owned so hover and focus pause do not rebuild focused delegates.
+
+Until Q-039 is resolved, cards expose the first two actions and a keyboard-
+reachable disclosure for the remainder. Clear-all is immediate and preserves
+non-dismissible resident/progress records; it provides no restoration claim or
+undo in this slice, leaving Q-040 unresolved.
+
 Cards expose app, time, classification, actions, dismissal, and group state accessibly. Focus is visible independently of urgency, critical state is not colour-only, and reduced motion preserves arrival/grouping causality without large movement.
 
 # 8. Opening, Dismissal, and Focus
@@ -178,6 +188,11 @@ Sound matching is deterministic, ordered, inspectable, and limited to approved s
 Popup ownership is resolved once per admission according to `multi-monitor.md`; the provisional baseline is focused-window monitor. A focus change does not move an already visible popup. Fullscreen is normalized per monitor: ordinary popups are withheld where policy says the target monitor is in true fullscreen, while history remains complete.
 
 Owner removal closes/reassigns visible presentation without losing history or leaving invisible focus. Mirrored displays must not duplicate one notification unless final policy explicitly requires it.
+
+The component prototype captures the focused-window monitor at admission,
+never moves an existing popup after a focus change, and drops presentation only
+when that owner disappears. History is preserved. Top/right inset and width use
+existing theme/configuration candidates and do not settle Q-030 or Q-091.
 
 # 12. Performance
 

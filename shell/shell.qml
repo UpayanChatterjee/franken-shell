@@ -7,6 +7,7 @@ import "core" as Core
 import "features/audio" as AudioFeatures
 import "features/bluetooth" as BluetoothFeatures
 import "features/network" as NetworkFeatures
+import "features/notifications" as NotificationFeatures
 import "features/power" as PowerFeatures
 import "features/telemetry" as TelemetryFeatures
 import "features/tray" as TrayFeatures
@@ -234,6 +235,13 @@ ShellRoot {
 
         monitorRegistry: monitorRegistry
     }
+    NotificationFeatures.NotificationController {
+        id: notificationController
+
+        historyVisible: controlCenterHosts.notificationViewOpenCount > 0
+        monitorRegistry: monitorRegistry
+        service: notificationService
+    }
     Core.CommandRegistry {
         id: shellCommandRegistry
 
@@ -366,7 +374,14 @@ ShellRoot {
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
         networkController: root.usesFixtureMonitorBackend ? null : networkController
+        notificationController: notificationController
         surfaceCoordinator: surfaceCoordinator
+        theme: themeManager.active
+    }
+    Surfaces.NotificationPopupHostSet {
+        controller: notificationController
+        fixtureWindow: root.usesFixtureMonitorBackend
+        monitorRegistry: monitorRegistry
         theme: themeManager.active
     }
     Core.CoreReadinessCoordinator {

@@ -1192,8 +1192,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Notification-complete prototype
 - **Branch:** `feat/notification-core-policy`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #20 / `2b6624c28f80032443d3188a7e261f5acb140aed`
 
 #### Scope
 - Implement notification model, app identity, title/body/actions, urgency, progress, replacement, close, and history.
@@ -1274,6 +1274,31 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - Popup timeout pause, action/dismissal, maximum stack, group replacement, scroll stability, clear all, long content, malformed icon, keyboard traversal, and no-duplicate rule.
 - Screenshots must use synthetic non-sensitive fixtures.
+
+#### Implementation evidence
+
+- `NotificationController` owns a four-item candidate popup queue, stable
+  per-admission monitor ownership, independent pause/resume deadlines, grouped
+  burst replacement, and flat stable-key history rows derived from the one
+  normalized service.
+- The popup window is one non-exclusive overlay host per monitor. Admissions
+  target only the focused-window monitor, never move after focus changes, and
+  lose presentation without losing history when that owner disappears.
+- Reusable cards provide app fallback identity, classification text, bounded
+  body expansion, progress, all normalized actions through disclosure,
+  explicit/keyboard/right-swipe dismissal, and focus rings independent of
+  urgency colour.
+- The injected control-centre history supports group expansion, local counts,
+  individual/group dismissal, clear-all retention, and visible-row anchoring
+  when newer records arrive. Leaving the Notifications view collapses local
+  expansion instead of selecting an unresolved restoration timeout.
+- Opening the control centre to Notifications clears existing duplicate popup
+  presentation and sets the core no-duplicate admission flag for subsequent
+  records. It creates no unread count, persistence, toast, OSD, or sound path.
+- Deterministic controller/component fixtures cover timeout pause/resume,
+  maximum stack, grouped replacement, actions, progress retention, long text,
+  malformed icon fallback, keyboard traversal, swipe parity, monitor removal,
+  scroll stability, and synthetic popup/history review screenshots.
 
 #### CI evolution
 

@@ -728,6 +728,11 @@ If notifications are long, do quick controls and sliders:
 
 The current design says controls remain above the tabs, but their scroll behaviour is not finalized.
 
+**PR-020 prototype boundary:** the existing main-page scroll composition is
+unchanged. Notification history receives a bounded nested viewport with stable
+row anchoring, but this slice does not choose pinned, scrolling, collapsing, or
+sticky behaviour for the controls above it.
+
 ---
 
 ## Q-028 — Control-centre state restoration
@@ -747,6 +752,10 @@ Need exact timeout and behaviour for:
 - Wi-Fi password prompt;
 - Bluetooth pairing task;
 - open notification group.
+
+**PR-020 prototype boundary:** group expansion is local presentation state and
+collapses when the Notifications view is left. No reopen timeout or persisted
+scroll/group state is introduced.
 
 ---
 
@@ -797,6 +806,12 @@ Need exact:
 - spacing;
 - maximum stack height;
 - relationship to OSDs and toasts.
+
+**PR-020 prototype boundary:** one popup host is inset 24 logical pixels from
+the top and 12 from the extreme right edge, uses the existing 380 logical-pixel
+theme candidate, retains at most four presentations, and clips/scrolls within
+available monitor height. This provides fixture geometry without settling its
+final relation to the bar, toasts, or OSDs.
 
 ---
 
@@ -996,6 +1011,10 @@ Options:
 
 Need keyboard accessibility and stable card height.
 
+**PR-020 prototype boundary:** the first two actions are visible inline and a
+keyboard-reachable disclosure exposes any remaining normalized actions. This
+keeps all actions reachable without selecting the final layout.
+
 ---
 
 ## Q-040 — Clear-all undo
@@ -1010,6 +1029,10 @@ Questions:
 - Should undo only restore shell history, not notify apps?
 - Is that misleading?
 - Is a lightweight confirmation better?
+
+**PR-020 prototype boundary:** clear-all immediately dismisses ordinary
+dismissible records and retains resident/progress records. It offers no undo or
+restoration claim. The eventual confirmation/undo presentation remains open.
 
 ---
 
@@ -1958,6 +1981,11 @@ Candidates:
 - configurable.
 
 Need stable behaviour during focus changes.
+
+**PR-020 prototype boundary:** popup admission captures the focused-window
+monitor with the existing focused/fallback registry order. Later focus changes
+do not move that popup; owner removal drops popup presentation but preserves
+history. This does not settle the final configurable policy.
 
 ---
 

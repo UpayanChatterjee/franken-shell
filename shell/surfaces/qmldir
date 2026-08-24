@@ -3,6 +3,7 @@ BarHost 1.0 BarHost.qml
 BarHostSet 1.0 BarHostSet.qml
 ControlCenterHost 1.0 ControlCenterHost.qml
 ControlCenterHostSet 1.0 ControlCenterHostSet.qml
+NotificationPopupHostSet 1.0 NotificationPopupHostSet.qml
 internal BarFixtureWindow BarFixtureWindow.qml
 internal BarPanelWindow BarPanelWindow.qml
 internal BarSurface BarSurface.qml
@@ -10,4 +11,6 @@ internal ControlCenterFixtureWindow ControlCenterFixtureWindow.qml
 internal ControlCenterEdgeActivationWindow ControlCenterEdgeActivationWindow.qml
 internal ControlCenterPanelWindow ControlCenterPanelWindow.qml
 internal ControlCenterSurface ControlCenterSurface.qml
+internal NotificationPopupPanelWindow NotificationPopupPanelWindow.qml
+internal NotificationPopupFixtureWindow NotificationPopupFixtureWindow.qml
 DiagnosticSurface 1.0 DiagnosticSurface.qml

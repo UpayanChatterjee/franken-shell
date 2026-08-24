@@ -1,0 +1,7 @@
+module FrankenShell.Features.Notifications
+internal NotificationActionButton NotificationActionButton.qml
+NotificationCard 1.0 NotificationCard.qml
+NotificationController 1.0 NotificationController.qml
+NotificationGroupHeader 1.0 NotificationGroupHeader.qml
+NotificationHistoryView 1.0 NotificationHistoryView.qml
+NotificationPopupHost 1.0 NotificationPopupHost.qml

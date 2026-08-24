@@ -16,6 +16,7 @@ Scope {
     readonly property var records: root.history.records
     required property var runtime
 
+    signal notificationClosed(string internalId, string reason)
     signal popupRequested(var record)
     signal recordAdmitted(string internalId, bool replaced)
     signal stateChanged
@@ -91,13 +92,22 @@ Scope {
     function dismissGroup(groupKey: string): var {
         const records = root.records.filter(record => record.groupKey === groupKey);
         let failed = 0;
+        let retained = 0;
+        let dismissed = 0;
         for (const record of records) {
-            if (!root.dismiss(record.internalId).accepted)
+            if (!record.dismissible) {
+                retained += 1;
+                continue;
+            }
+            if (root.dismiss(record.internalId).accepted)
+                dismissed += 1;
+            else
                 failed += 1;
         }
         return Object.freeze({
             "accepted": failed === 0,
-            "dismissed": records.length - failed,
+            "dismissed": dismissed,
+            "retained": retained,
             "failed": failed,
             "errorCode": failed === 0 ? "" : "NOTIFICATION_GROUP_DISMISS_PARTIAL"
         });
@@ -110,6 +120,7 @@ Scope {
         root.history.remove(internalId);
         delete state.internalIds[sourceId];
         delete state.sourceIds[internalId];
+        root.notificationClosed(internalId, reason);
         root.stateChanged();
     }
     function handleConnectionChanged(connected: bool) {

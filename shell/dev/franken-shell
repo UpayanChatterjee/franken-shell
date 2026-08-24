@@ -505,10 +505,22 @@ check_notification_service() {
 		"$SHELL_DIR/services/notifications/NotificationService.qml" \
 		"$SHELL_DIR/services/notifications/QuickshellNotificationRuntime.qml" \
 		"$SHELL_DIR/services/notifications/UnavailableNotificationRuntime.qml" \
+		"$SHELL_DIR/features/notifications/NotificationActionButton.qml" \
+		"$SHELL_DIR/features/notifications/NotificationCard.qml" \
+		"$SHELL_DIR/features/notifications/NotificationController.qml" \
+		"$SHELL_DIR/features/notifications/NotificationGroupHeader.qml" \
+		"$SHELL_DIR/features/notifications/NotificationHistoryView.qml" \
+		"$SHELL_DIR/features/notifications/NotificationPopupHost.qml" \
+		"$SHELL_DIR/surfaces/NotificationPopupHostSet.qml" \
+		"$SHELL_DIR/surfaces/NotificationPopupFixtureWindow.qml" \
+		"$SHELL_DIR/surfaces/NotificationPopupPanelWindow.qml" \
 		"$SHELL_DIR/tests/notifications/FakeNotificationRuntime.qml" \
+		"$SHELL_DIR/tests/notifications/FakeNotificationTheme.qml" \
 		"$SHELL_DIR/tests/notifications/NotificationHarness.qml" \
+		"$SHELL_DIR/tests/notifications/NotificationControllerTests.qml" \
 		"$SHELL_DIR/tests/notifications/NotificationPolicyTests.qml" \
-		"$SHELL_DIR/tests/notifications/NotificationServiceTests.qml"
+		"$SHELL_DIR/tests/notifications/NotificationServiceTests.qml" \
+		"$SHELL_DIR/tests/notifications/NotificationSurfaceTests.qml"
 
 	runtime_count=$(rg -c 'NotificationServices\.QuickshellNotificationRuntime[[:space:]]*\{' "$SHELL_DIR/shell.qml")
 	if [ "$runtime_count" -ne 1 ]; then
@@ -617,6 +629,18 @@ test_notification_service() {
 			XDG_RUNTIME_DIR="$runtime_dir" \
 			FRANKEN_SHELL_MODE=notification-service-test \
 			qs --no-duplicate --path "$SHELL_DIR/notification-service-tests.qml" --log-times || result=$?
+	fi
+	if [ "$result" -eq 0 ]; then
+		QT_QPA_PLATFORM=offscreen \
+			XDG_RUNTIME_DIR="$runtime_dir" \
+			FRANKEN_SHELL_MODE=notification-controller-test \
+			qs --no-duplicate --path "$SHELL_DIR/notification-controller-tests.qml" --log-times || result=$?
+	fi
+	if [ "$result" -eq 0 ]; then
+		QT_QPA_PLATFORM=offscreen \
+			XDG_RUNTIME_DIR="$runtime_dir" \
+			FRANKEN_SHELL_MODE=notification-surface-test \
+			qs --no-duplicate --path "$SHELL_DIR/notification-surface-tests.qml" --log-times || result=$?
 	fi
 	rm -rf "$runtime_dir"
 	return "$result"

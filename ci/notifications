@@ -10,7 +10,7 @@ require_tool qs
 cd "$REPO_ROOT"
 
 notification_artifact_dir="$ARTIFACT_DIR/notifications"
-mkdir -p "$notification_artifact_dir"
+mkdir -p "$notification_artifact_dir/fixtures"
 
 unset WAYLAND_DISPLAY
 unset HYPRLAND_INSTANCE_SIGNATURE
@@ -41,7 +41,8 @@ else
 	exit "$status"
 fi
 
-if shell/dev/franken-shell notification-test >"$notification_artifact_dir/test.log" 2>&1; then
+if FRANKEN_NOTIFICATION_ARTIFACT_DIR="$notification_artifact_dir/fixtures" \
+	shell/dev/franken-shell notification-test >"$notification_artifact_dir/test.log" 2>&1; then
 	cat "$notification_artifact_dir/test.log"
 else
 	status=$?
@@ -49,9 +50,9 @@ else
 	exit "$status"
 fi
 
-if rg -n 'PRIVATE_NOTIFICATION_CANARY|Synthetic title|Fixture App' "$notification_artifact_dir"; then
+if rg -n 'PRIVATE_NOTIFICATION_CANARY|Synthetic title|Fixture App|Synthetic notification|Fixture-only body' "$notification_artifact_dir"; then
 	printf 'Notification content leaked into CI artifacts.\n' >&2
 	exit 1
 fi
 
-printf 'Notification normalization, history, policy, ownership, reload, and redaction contracts passed.\n'
+printf 'Notification normalization, policy, popup, grouped-history, focus, ownership, reload, screenshot, and redaction contracts passed.\n'
