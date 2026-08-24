@@ -183,6 +183,13 @@ origin/allowlist policy.
 
 Sound matching is deterministic, ordered, inspectable, and limited to approved sound-theme events or files. Ordinary default is silent. Notification bodies, actions, arbitrary titles, and image data are not logged. Persistence is forbidden in the initial implementation.
 
+The initial sound slice maps only trusted incoming-call, alarm, timer, critical
+battery/storage/temperature, and unexpected-recording-failure classifications.
+They resolve to fixed `phone-incoming-call`, `alarm-clock-elapsed`, or
+`dialog-warning` desktop sound-theme events. Playback is a fixed
+`CommandRegistry` definition; unavailable playback remains a local feedback
+failure and never changes receipt, history, or popup policy.
+
 # 11. Multi-Monitor and Fullscreen
 
 Popup ownership is resolved once per admission according to `multi-monitor.md`; the provisional baseline is focused-window monitor. A focus change does not move an already visible popup. Fullscreen is normalized per monitor: ordinary popups are withheld where policy says the target monitor is in true fullscreen, while history remains complete.

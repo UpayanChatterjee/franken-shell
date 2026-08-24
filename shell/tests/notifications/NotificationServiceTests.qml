@@ -5,6 +5,7 @@ ShellRoot {
     id: root
 
     readonly property string privateCanary: "PRIVATE_NOTIFICATION_CANARY_8F4A"
+    property int soundRequestCount: 0
 
     function action(id: string, label: string): var {
         return Object.freeze({
@@ -104,7 +105,7 @@ ShellRoot {
             "trustedSource": true,
             "receivedAtMs": 3200
         }));
-        root.check(service.records[0].classification === "critical" && service.records[0].popupEligible, "trusted critical category follows the conservative bypass path");
+        root.check(service.records[0].classification === "critical" && service.records[0].popupEligible && root.soundRequestCount === 1, "trusted critical sound category emits one content-private sound request");
 
         service.setDnd(false, "fixture");
         service.fullscreen = true;
@@ -166,6 +167,14 @@ ShellRoot {
         id: harness
 
         runtime: runtime
+    }
+    Connections {
+        function onSoundRequested(record) {
+            void record;
+            root.soundRequestCount += 1;
+        }
+
+        target: harness.service
     }
     FakeNotificationRuntime {
         id: reloadRuntime

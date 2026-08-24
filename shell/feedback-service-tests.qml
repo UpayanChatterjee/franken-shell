@@ -1,0 +1,4 @@
+import "tests/feedback"
+
+FeedbackServiceTests {
+}

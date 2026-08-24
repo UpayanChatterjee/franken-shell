@@ -162,6 +162,13 @@ current-session memory only, route actions through opaque source IDs, and expose
 only content-free counts and lifecycle codes through diagnostics. No title,
 body, action label, app identity, image, or grouping key is persisted or logged.
 
+The initial feedback sound runtime uses `canberra-gtk-play` from `libcanberra`
+only through four fixed `CommandRegistry` definitions. It passes approved
+freedesktop event IDs (`phone-incoming-call`, `alarm-clock-elapsed`, and
+`dialog-warning`) and a fixed description; notification content never becomes
+an argument. When the executable or theme event is unavailable, visual receipt
+and history continue and the sound service reports a structured local failure.
+
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
 `ConfigService` owns watching and atomic typed snapshot publication. Phase 1

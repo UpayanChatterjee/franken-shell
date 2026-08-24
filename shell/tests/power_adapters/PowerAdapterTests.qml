@@ -71,13 +71,13 @@ ShellRoot {
         root.check(!brightnessRuntime.consumerActive, "hidden consumer disables periodic refresh activity");
 
         let result = brightnessController.setValue(2);
-        root.check(result.accepted && brightnessAdapter.operationTask.state === "pending" && brightnessRuntime.lastTargetId === "panel-a" && brightnessRuntime.lastRawValue === 100, "brightness writes are bounded and remain pending until asynchronous completion");
+        root.check(result.accepted && brightnessAdapter.operationTask.state === "pending" && brightnessRuntime.lastTargetId === "panel-a" && brightnessRuntime.lastRawValue === 100 && feedback.brightnessCount === 1 && feedback.lastBrightnessAvailable, "brightness writes are bounded and emit one available OSD request after admission");
         root.check(brightnessAdapter.value === 0.2, "pending writes do not optimistically replace authoritative state");
         brightnessRuntime.completeAction(false, "BRIGHTNESS_WRITE_FAILED");
         root.check(brightnessAdapter.operationTask.state === "failed" && brightnessAdapter.lastError === "BRIGHTNESS_WRITE_FAILED" && brightnessAdapter.value === 0.2, "write failure is truthful and retains the last authoritative value");
 
         result = brightnessController.adjustBySteps(1);
-        root.check(result.accepted && brightnessRuntime.lastRawValue === 25, "controller applies the injected five-percent step to the selected target range");
+        root.check(result.accepted && brightnessRuntime.lastRawValue === 25 && feedback.brightnessCount === 2, "controller applies the injected five-percent step and replaces the brightness OSD");
         brightnessRuntime.completeAction(true, "");
         root.check(brightnessAdapter.operationTask.state === "completed" && brightnessAdapter.value === 0.2, "successful command completion remains distinct from delayed state observation");
         brightnessRuntime.targetRecords = [root.target("panel-a", 25, 100), root.target("panel-z", 200, 400)];
@@ -92,7 +92,7 @@ ShellRoot {
         brightnessRuntime.setConnected(false);
         root.check(!brightnessAdapter.available && brightnessAdapter.stale, "brightness disconnect disables actions while retaining stale diagnostics");
         result = brightnessController.setValue(0.5);
-        root.check(!result.accepted && result.errorCode === "BRIGHTNESS_DISCONNECTED", "stale brightness cannot authorize writes");
+        root.check(!result.accepted && result.errorCode === "BRIGHTNESS_DISCONNECTED" && feedback.brightnessCount === 2, "stale brightness cannot authorize writes or emit misleading OSD feedback");
         brightnessRuntime.targetRecords = [];
         brightnessRuntime.sequence += 1;
         brightnessRuntime.setConnected(true);
@@ -144,6 +144,7 @@ ShellRoot {
 
         adapter: brightnessAdapter
         brightnessStep: 0.05
+        feedbackController: feedback
     }
     ControlCenter.ControlCenterPlaceholderModel {
         id: controlCenterModel
@@ -158,6 +159,23 @@ ShellRoot {
 
         property var activePopover: null
         property string activePopoverId: ""
+    }
+    QtObject {
+        id: feedback
+
+        property int brightnessCount: 0
+        property bool lastBrightnessAvailable: false
+
+        function showBrightness(value: real, available: bool, context): var {
+            void value;
+            void context;
+            feedback.brightnessCount += 1;
+            feedback.lastBrightnessAvailable = available;
+            return Object.freeze({
+                "accepted": true,
+                "errorCode": ""
+            });
+        }
     }
     Item {
         height: 48

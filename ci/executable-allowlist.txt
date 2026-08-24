@@ -3,6 +3,7 @@ ci/bluetooth
 ci/bootstrap-tools
 ci/collect-diagnostics
 ci/control-center
+ci/feedback
 ci/format
 ci/hygiene
 ci/install-arch-deps

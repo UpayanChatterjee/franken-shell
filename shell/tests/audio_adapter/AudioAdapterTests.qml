@@ -68,15 +68,18 @@ ShellRoot {
         root.check(adapter.playbackStreams.length === 0, "disappeared streams are removed rather than retained as duplicates");
 
         let result = controller.setMasterVolume(2);
-        root.check(result.accepted && runtime.lastAction === "setVolume:sink-headset:1", "controller caps master volume at the safe maximum");
+        root.check(result.accepted && runtime.lastAction === "setVolume:sink-headset:1" && feedback.volumeCount === 1, "controller caps master volume and emits one accepted volume OSD request");
         result = controller.setMasterVolume(-1);
-        root.check(result.accepted && runtime.lastAction === "setVolume:sink-headset:0", "controller clamps master volume at zero");
+        root.check(result.accepted && runtime.lastAction === "setVolume:sink-headset:0" && feedback.volumeCount === 2, "controller clamps master volume and replaces the volume OSD");
         result = controller.toggleMasterMute();
-        root.check(result.accepted && runtime.lastAction === "setMuted:sink-headset:true", "master mute requests route through the adapter");
+        root.check(result.accepted && runtime.lastAction === "setMuted:sink-headset:true" && feedback.volumeCount === 3 && feedback.lastMuted, "master mute requests route through the adapter with explicit muted feedback");
+
+        result = controller.selectDefaultOutput(speakers.id);
+        root.check(result.accepted && feedback.toastCount === 1 && feedback.lastToastKey === "audioOutput", "accepted output selection publishes one keyed audio-output toast");
 
         runtime.failNextError = "AUDIO_WRITE_FAILED";
         result = controller.setMasterVolume(0.5);
-        root.check(!result.accepted && result.errorCode === "AUDIO_WRITE_FAILED" && adapter.lastError === result.errorCode, "write failures remain structured and observable");
+        root.check(!result.accepted && result.errorCode === "AUDIO_WRITE_FAILED" && adapter.lastError === result.errorCode && feedback.volumeCount === 3, "write failures remain structured and never emit misleading OSD feedback");
 
         const actionsBeforeScroll = runtime.actionCount;
         controller.queueVolumeSteps(1);
@@ -124,7 +127,36 @@ ShellRoot {
         id: controller
 
         adapter: adapter
+        feedbackController: feedback
         maximumVolume: 1
         volumeStep: 0.02
+    }
+    QtObject {
+        id: feedback
+
+        property bool lastMuted: false
+        property string lastToastKey: ""
+        property int toastCount: 0
+        property int volumeCount: 0
+
+        function showToast(record, context): var {
+            void context;
+            feedback.toastCount += 1;
+            feedback.lastToastKey = String(record.key ?? "");
+            return Object.freeze({
+                "accepted": true,
+                "errorCode": ""
+            });
+        }
+        function showVolume(value: real, muted: bool, context): var {
+            void value;
+            void context;
+            feedback.volumeCount += 1;
+            feedback.lastMuted = muted;
+            return Object.freeze({
+                "accepted": true,
+                "errorCode": ""
+            });
+        }
     }
 }

@@ -10,6 +10,7 @@ Scope {
     readonly property var captureStreams: root.adapter?.captureStreams ?? Object.freeze([])
     readonly property var defaultInput: root.adapter?.defaultInput ?? null
     readonly property var defaultOutput: root.adapter?.defaultOutput ?? null
+    property var feedbackController: null
     readonly property var inputDevices: root.adapter?.inputDevices ?? Object.freeze([])
     readonly property bool masterMuted: root.adapter?.masterMuted ?? false
     readonly property real masterVolume: root.adapter?.masterVolume ?? 0
@@ -54,11 +55,26 @@ Scope {
     function selectDefaultInput(nodeId: string): var {
         return root.adapter.selectDefaultInput(nodeId);
     }
-    function selectDefaultOutput(nodeId: string): var {
-        return root.adapter.selectDefaultOutput(nodeId);
+    function selectDefaultOutput(nodeId: string, context = ({})): var {
+        const response = root.adapter.selectDefaultOutput(nodeId);
+        if (response.accepted && root.feedbackController !== null) {
+            const output = root.outputDevices.find(candidate => candidate.id === nodeId);
+            root.feedbackController.showToast({
+                "key": "audioOutput",
+                "severity": "success",
+                "summary": qsTr("Audio output changed"),
+                "detail": String(output?.description || output?.name || ""),
+                "userTriggered": true
+            }, context);
+        }
+        return response;
     }
-    function setMasterVolume(volume: real): var {
-        return root.adapter.setMasterVolume(root.clampVolume(volume));
+    function setMasterVolume(volume: real, context = ({})): var {
+        const bounded = root.clampVolume(volume);
+        const response = root.adapter.setMasterVolume(bounded);
+        if (response.accepted && root.feedbackController !== null)
+            root.feedbackController.showVolume(bounded, root.masterMuted, context);
+        return response;
     }
     function setMicrophoneMuted(muted: bool): var {
         return root.adapter.setMicrophoneMuted(muted);
@@ -69,8 +85,12 @@ Scope {
     function setStreamVolume(streamId: string, volume: real): var {
         return root.adapter.setStreamVolume(streamId, root.clampVolume(volume));
     }
-    function toggleMasterMute(): var {
-        return root.adapter.setMasterMuted(!root.masterMuted);
+    function toggleMasterMute(context = ({})): var {
+        const muted = !root.masterMuted;
+        const response = root.adapter.setMasterMuted(muted);
+        if (response.accepted && root.feedbackController !== null)
+            root.feedbackController.showVolume(root.masterVolume, muted, context);
+        return response;
     }
 
     QtObject {

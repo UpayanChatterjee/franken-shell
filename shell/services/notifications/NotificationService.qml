@@ -19,6 +19,7 @@ Scope {
     signal notificationClosed(string internalId, string reason)
     signal popupRequested(var record)
     signal recordAdmitted(string internalId, bool replaced)
+    signal soundRequested(var record)
     signal stateChanged
 
     function asArray(value): var {
@@ -272,6 +273,8 @@ Scope {
             state.suppressedCount += 1;
         }
         root.recordAdmitted(internalId, replacesExisting);
+        if (decision.soundEligible)
+            root.soundRequested(record);
         root.stateChanged();
     }
     function result(accepted: bool, errorCode: string): var {
