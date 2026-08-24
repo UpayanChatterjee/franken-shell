@@ -16,6 +16,8 @@ Scope {
     required property var monitorRegistry
     property var networkController: null
     readonly property int networkPageOpenCount: controller.count("network")
+    property var notificationController: null
+    readonly property int notificationViewOpenCount: controller.count("notifications")
     readonly property int openHostCount: controller.count("open")
     readonly property int resolvedHostCount: controller.count("resolved")
     required property var surfaceCoordinator
@@ -72,6 +74,7 @@ Scope {
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor
                 networkController: root.networkController
+                notificationController: root.notificationController
                 screenInfo: instance.modelData
                 surfaceCoordinator: root.surfaceCoordinator
                 theme: root.theme
@@ -94,6 +97,8 @@ Scope {
                 else if (kind === "network" && summary.open && summary.activePage === "network")
                     total += 1;
                 else if (kind === "bluetooth" && summary.open && summary.activePage === "bluetooth")
+                    total += 1;
+                else if (kind === "notifications" && summary.open && summary.activePage === "main" && summary.activeTab === "notifications")
                     total += 1;
             }
             return total;

@@ -1,11 +1,15 @@
+pragma ComponentBehavior: Bound
 import QtQuick
+
+import "../notifications" as NotificationFeatures
 
 FocusScope {
     id: root
 
     required property string activeTab
     required property var contentModel
-    readonly property string focusedControlId: header.focusedControlId.length > 0 ? header.focusedControlId : wifi.activeFocus ? wifi.focusId : bluetooth.activeFocus ? bluetooth.focusId : doNotDisturb.activeFocus ? doNotDisturb.focusId : nightLight.activeFocus ? nightLight.focusId : idleInhibitor.activeFocus ? idleInhibitor.focusId : volume.activeFocus ? volume.focusId : brightness.activeFocus ? brightness.focusId : notificationsTab.activeFocus ? notificationsTab.focusId : volumeMixerTab.activeFocus ? volumeMixerTab.focusId : ""
+    readonly property string focusedControlId: header.focusedControlId.length > 0 ? header.focusedControlId : wifi.activeFocus ? wifi.focusId : bluetooth.activeFocus ? bluetooth.focusId : doNotDisturb.activeFocus ? doNotDisturb.focusId : nightLight.activeFocus ? nightLight.focusId : idleInhibitor.activeFocus ? idleInhibitor.focusId : volume.activeFocus ? volume.focusId : brightness.activeFocus ? brightness.focusId : notificationsTab.activeFocus ? notificationsTab.focusId : volumeMixerTab.activeFocus ? volumeMixerTab.focusId : root.notificationHistory?.focusedRowId ?? ""
+    readonly property var notificationHistory: notificationLoader.status === Loader.Ready ? notificationLoader.item : null
     required property var theme
     readonly property int visibleSliderCount: 1 + (brightness.visible ? 1 : 0)
 
@@ -252,12 +256,21 @@ FocusScope {
                     onSelectedRequested: source => root.tabRequested(tabId, source)
                 }
             }
+            Loader {
+                id: notificationLoader
+
+                active: root.activeTab === "notifications" && root.contentModel.notificationController !== null
+                height: active ? Math.max(320, viewport.height - 128) : 0
+                sourceComponent: notificationHistoryComponent
+                width: parent.width
+            }
             Rectangle {
                 border.color: root.theme.colors.outlineSubtle
                 border.width: root.theme.metrics.outlineWidth
                 color: root.theme.colors.surfaceRaised
-                height: 112
+                height: root.activeTab === "volumeMixer" || root.contentModel.notificationController === null ? 112 : 0
                 radius: root.theme.radius.radiusLarge
+                visible: height > 0
                 width: parent.width
 
                 Column {
@@ -271,7 +284,7 @@ FocusScope {
                         font.pixelSize: root.theme.typography.fontSizeSection
                         font.weight: root.theme.typography.fontWeightMedium
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("No fixture notifications") : root.contentModel.audioAvailable === true ? qsTr("%1 active audio stream(s)").arg(root.contentModel.audioPlaybackStreamCount ?? 0) : qsTr("Audio unavailable")
+                        text: root.activeTab === "notifications" ? qsTr("Notification history unavailable") : root.contentModel.audioAvailable === true ? qsTr("%1 active audio stream(s)").arg(root.contentModel.audioPlaybackStreamCount ?? 0) : qsTr("Audio unavailable")
                         width: parent.width
                     }
                     Text {
@@ -279,12 +292,20 @@ FocusScope {
                         font.family: root.theme.typography.fontFamily
                         font.pixelSize: root.theme.typography.fontSizeBody
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("New items will appear here without a duplicate popup.") : root.contentModel.audioAvailable === true ? qsTr("Default output: %1").arg(root.contentModel.audioDefaultOutputName || qsTr("Unknown output")) : qsTr("The drawer remains usable while PipeWire is absent or restarting.")
+                        text: root.activeTab === "notifications" ? qsTr("The notification model is not connected to this fixture.") : root.contentModel.audioAvailable === true ? qsTr("Default output: %1").arg(root.contentModel.audioDefaultOutputName || qsTr("Unknown output")) : qsTr("The drawer remains usable while PipeWire is absent or restarting.")
                         width: parent.width
                         wrapMode: Text.Wrap
                     }
                 }
             }
+        }
+    }
+    Component {
+        id: notificationHistoryComponent
+
+        NotificationFeatures.NotificationHistoryView {
+            controller: root.contentModel.notificationController
+            theme: root.theme
         }
     }
 }

@@ -39,7 +39,7 @@ QtObject {
     readonly property bool brightnessAvailable: root.brightnessController === null ? root.fixtureBrightnessAvailable : root.brightnessController.visible === true
     property var brightnessController: null
     readonly property QtObject doNotDisturb: QtObject {
-        readonly property bool active: true
+        readonly property bool active: root.notificationController?.service?.dnd === true
         readonly property bool available: true
         readonly property bool busy: false
         readonly property bool canOpenDetails: false
@@ -48,7 +48,7 @@ QtObject {
         readonly property string error: ""
         readonly property string icon: "D"
         readonly property string label: qsTr("Do Not Disturb")
-        readonly property string secondaryText: qsTr("On")
+        readonly property string secondaryText: active ? qsTr("On") : qsTr("Off")
     }
     property bool fixtureBrightnessAvailable: true
     readonly property QtObject idleInhibitor: QtObject {
@@ -84,6 +84,7 @@ QtObject {
         readonly property string label: qsTr("Night Light")
         readonly property string secondaryText: qsTr("Needs attention")
     }
+    property var notificationController: null
     readonly property int quickControlCount: 5
     readonly property QtObject volume: QtObject {
         readonly property bool available: root.audioAvailable
@@ -122,7 +123,6 @@ QtObject {
         }
     }
     function requestQuickControlAction(controlId: string, action: string, source: string): bool {
-        void source;
         if (controlId === "wifi" && root.networkController !== null) {
             if (action === "details")
                 return true;
@@ -135,6 +135,8 @@ QtObject {
             if (action === "toggle")
                 return root.bluetoothController.togglePowered().accepted === true;
         }
+        if (controlId === "doNotDisturb" && action === "toggle" && root.notificationController !== null)
+            return root.notificationController.service.setDnd(!root.notificationController.service.dnd, source).accepted === true;
         return false;
     }
     function requestSliderStep(sliderId: string, step: int, source: string): bool {
