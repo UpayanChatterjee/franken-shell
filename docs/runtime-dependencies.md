@@ -137,6 +137,31 @@ flags, or structured asynchronous action failures. Duplicate/missing IDs are
 therefore session-stable only, and successful dispatch means the call was
 accepted locally rather than confirmed by the tray application.
 
+### Franken Shell notification core
+
+The exact pinned `Quickshell.Services.Notifications` implementation provides a
+freedesktop notification server, tracked records, replacement-in-place,
+generation re-emission, actions, urgency, resident/transient state, desktop
+entry/icon lookup, images, close reasons, and arbitrary hints. Raw image byte
+arrays are removed before the hint map is exposed. Action invocation and
+dismissal are synchronous local calls; the API does not expose remote action
+completion.
+
+Constructing `NotificationServer` registers the D-Bus object, attempts to own
+`org.freedesktop.Notifications`, and retries when the current owner disappears.
+It exposes no registration-success or ownership-conflict property. The one
+native runtime is consequently guarded behind `notification-owner-test` and
+reports ownership as attempted but unverified. Ordinary development, fixture,
+and smoke modes use `UnavailableNotificationRuntime`; the currently running
+Caelestia process remains the notification owner. Production handoff remains
+blocked on Q-115.
+
+`NotificationService`, `NotificationHistory`, and `NotificationPolicy` do not
+import the native module. They normalize bounded untrusted content, keep
+current-session memory only, route actions through opaque source IDs, and expose
+only content-free counts and lifecycle codes through diagnostics. No title,
+body, action label, app identity, image, or grouping key is persisted or logged.
+
 The Phase 1 replacement configuration boundary is D-075/D-076: authoritative
 user TOML is parsed and validated by a small versioned Rust helper, while QML
 `ConfigService` owns watching and atomic typed snapshot publication. Phase 1

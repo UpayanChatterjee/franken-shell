@@ -15,6 +15,7 @@ import "services/audio" as AudioServices
 import "services/bluetooth" as BluetoothServices
 import "services/hyprland" as HyprlandServices
 import "services/network" as NetworkServices
+import "services/notifications" as NotificationServices
 import "services/power" as PowerServices
 import "services/power/BrightnessCommandDefinitions.js" as BrightnessCommands
 import "services/telemetry" as TelemetryServices
@@ -30,6 +31,7 @@ ShellRoot {
     readonly property var activeBarConfig: configService.active?.bar ?? null
     readonly property string mode: String(Quickshell.env("FRANKEN_SHELL_MODE") ?? "development")
     readonly property var networkSpeedConfig: root.activeBarConfig?.networkSpeed ?? null
+    readonly property bool notificationOwnershipEnabled: root.mode === "notification-owner-test"
     property bool surfaceInitialized: false
     readonly property bool trayOwnershipEnabled: root.mode === "tray-owner-test"
     readonly property bool usesFixtureMonitorBackend: root.mode === "mock" || root.mode === "readiness-healthy-test" || root.mode === "readiness-required-failure-test"
@@ -172,6 +174,35 @@ ShellRoot {
 
         adapter: networkAdapter
         detailVisible: controlCenterHosts.networkPageOpenCount > 0
+    }
+    NotificationServices.UnavailableNotificationRuntime {
+        id: unavailableNotificationRuntime
+    }
+    Loader {
+        id: notificationRuntimeLoader
+
+        // Q-115 still blocks production ownership. Ordinary development must
+        // never instantiate the pinned server because it retries bus ownership.
+        active: root.notificationOwnershipEnabled
+
+        sourceComponent: Component {
+            NotificationServices.QuickshellNotificationRuntime {
+            }
+        }
+    }
+    NotificationServices.NotificationPolicy {
+        id: notificationPolicy
+    }
+    NotificationServices.NotificationHistory {
+        id: notificationHistory
+    }
+    NotificationServices.NotificationService {
+        id: notificationService
+
+        fullscreen: hyprlandAdapter.focusedWindow?.fullscreen === true
+        history: notificationHistory
+        policy: notificationPolicy
+        runtime: notificationRuntimeLoader.status === Loader.Ready ? notificationRuntimeLoader.item : unavailableNotificationRuntime
     }
     TrayServices.UnavailableTrayRuntime {
         id: unavailableTrayRuntime
@@ -380,6 +411,7 @@ ShellRoot {
         mode: root.mode
         monitorRegistry: monitorRegistry
         networkProvider: networkAdapter
+        notificationProvider: notificationService
         resourceProvider: resourceSummaryAdapter
         shellState: shellState
         surfaceCoordinator: surfaceCoordinator

@@ -22,6 +22,7 @@ Scope {
     required property string mode
     required property var monitorRegistry
     property var networkProvider: null
+    property var notificationProvider: null
     property var resourceProvider: null
     required property var shellState
     required property var surfaceCoordinator
@@ -35,6 +36,7 @@ Scope {
         const config = root.configService.configurationSummary();
         const monitors = root.monitorRegistry.diagnosticsSummary();
         const network = root.networkProvider?.diagnosticsSummary?.() ?? {};
+        const notifications = root.notificationProvider?.diagnosticsSummary?.() ?? {};
         const traySummary = root.trayProvider?.diagnosticsSummary?.() ?? {};
         const commands = root.commandRegistry.registrySummary();
         const controlCenterHosts = root.controlCenterHostProvider.summary();
@@ -123,6 +125,22 @@ Scope {
             "networkActiveConnectionPresent": network.activeConnectionPresent === true,
             "networkPendingTaskCount": Number(network.pendingTaskCount ?? 0),
             "networkLastError": String(network.lastError ?? ""),
+            "notificationAvailable": notifications.available === true,
+            "notificationConnectionState": String(notifications.connectionState ?? "unavailable"),
+            "notificationOwnershipState": String(notifications.ownershipState ?? "unavailable"),
+            "notificationOwnershipAttempted": notifications.ownershipAttempted === true,
+            "notificationOwnershipConfirmed": notifications.ownershipConfirmed === true,
+            "notificationHistoryCount": Number(notifications.historyCount ?? 0),
+            "notificationGroupCount": Number(notifications.groupCount ?? 0),
+            "notificationDnd": notifications.dnd === true,
+            "notificationFullscreen": notifications.fullscreen === true,
+            "notificationReceivedCount": Number(notifications.receivedCount ?? 0),
+            "notificationReplacementCount": Number(notifications.replacementCount ?? 0),
+            "notificationPopupAdmissionCount": Number(notifications.popupAdmissionCount ?? 0),
+            "notificationSuppressedCount": Number(notifications.suppressedCount ?? 0),
+            "notificationBurstCoalescedCount": Number(notifications.burstCoalescedCount ?? 0),
+            "notificationTrimmedCount": Number(notifications.trimmedCount ?? 0),
+            "notificationLastError": String(notifications.lastError ?? ""),
             "trayAvailable": traySummary.available === true,
             "trayConnectionState": String(traySummary.connectionState ?? "unavailable"),
             "trayStateStale": traySummary.stale === true,
@@ -301,6 +319,13 @@ Scope {
             return JSON.stringify(root.networkProvider?.diagnosticsSummary?.() ?? {
                 "available": false,
                 "connectionState": "unavailable"
+            });
+        }
+        function notificationStatus(): string {
+            return JSON.stringify(root.notificationProvider?.diagnosticsSummary?.() ?? {
+                "available": false,
+                "connectionState": "unavailable",
+                "ownershipState": "notAttempted"
             });
         }
         function powerStatus(): string {

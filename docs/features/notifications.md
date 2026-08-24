@@ -63,6 +63,11 @@ features/notifications/
 
 `NotificationService` owns protocol/server lifecycle and record receipt. `NotificationPolicy` makes deterministic admission/classification decisions. `NotificationHistory` owns the in-memory collection, while the controller derives groups/popup models. Popup/history views render and request actions only.
 
+The initial core slice keeps the pinned Quickshell server in one separate native
+runtime so policy, history, and normalization remain fixture-testable without
+claiming the session bus. The native runtime is reachable only in an isolated
+ownership-test mode until Q-115 defines production handoff and recovery.
+
 # 5. Notification Record and Models
 
 Normalized records require stable internal ID, replacement/protocol ID, application identity/icon, title/body, timestamp, urgency hint, shell classification, category, actions, image/markup capability, progress, resident/persistent hint, popup state, dismissal state, and privacy-safe diagnostics metadata.
@@ -77,6 +82,10 @@ Derived models:
 - DND and fullscreen policy state.
 
 Grouping identity must use a deterministic normalized fallback chain once Q-032 is resolved.
+
+Before Q-032 is resolved, the component-test policy uses desktop entry, then
+normalized application name, then the stable session notification ID. This is a
+provisional fallback and not a persistent application identity contract.
 
 # 6. Service and Policy API
 
@@ -105,6 +114,11 @@ criticalBypassReason?
 ```
 
 Policy is pure/testable where possible. Server lifecycle and side effects remain in services.
+
+The first pure-policy fixture uses the configuration-model candidate values of
+6000 ms routine timeout, 9000 ms important timeout, a 2500 ms same-group burst
+window, and a 500-record memory cap. These values exercise bounded behaviour but
+do not settle Q-031, Q-033, or Q-034.
 
 # 7. Popup and History Interaction
 
@@ -150,6 +164,12 @@ Receipt/history must continue when popup or sound presentation fails. Markup, im
 # 10. Critical, Sound, and Privacy Policy
 
 Default critical-bypass categories are those accepted in D-040. Routine calendar reminders/download completions do not bypass. App urgency is only an input.
+
+The first conservative implementation promotes an untrusted critical urgency
+hint only to `important`. A `critical` bypass requires both an exact accepted
+category and a trusted internal source flag. The native application-notification
+runtime always sets that flag to false; this does not resolve Q-036's eventual
+origin/allowlist policy.
 
 Sound matching is deterministic, ordered, inspectable, and limited to approved sound-theme events or files. Ordinary default is silent. Notification bodies, actions, arbitrary titles, and image data are not logged. Persistence is forbidden in the initial implementation.
 

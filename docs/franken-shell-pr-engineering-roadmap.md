@@ -1127,8 +1127,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Real desktop state
 - **Branch:** `feat/tray-adapter`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #19 / `20c3eb22321589a497fbe60fa1fe6e0f4a5fda7e`
 
 #### Scope
 - Expose normalized tray items, status, category, icon, title, tooltip, and supported actions.
@@ -1209,6 +1209,33 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 #### Required tests and evidence
 - Replacement, progress, malformed action, grouping, burst, DND matrix, fullscreen matrix, conservative critical bypass, history retention, and redaction.
 - Duplicate ownership and reload behavior.
+
+#### Implementation evidence
+
+- The pinned Quickshell server exposes protocol IDs, replacement-in-place,
+  tracked reload generations, app metadata, actions, urgency, resident/transient
+  hints, images, arbitrary bounded hint extraction, close reasons, and inline
+  reply capability. It removes raw image byte arrays before exposing hints.
+- The current session bus owner is the separately running Caelestia Quickshell
+  process. The pinned server attempts `org.freedesktop.Notifications`
+  registration and retries after owner loss, but exposes no registration result
+  to QML. The only native runtime is therefore guarded behind
+  `notification-owner-test`; ordinary development, mock, and smoke modes never
+  instantiate it.
+- `NotificationPolicy` is pure and injected. It covers history/popup admission,
+  DND, true fullscreen, notification-view suppression, trusted-category
+  critical bypass, requested/default timeouts, provisional grouping, and
+  presentation-only burst coalescing without trusting application urgency.
+- `NotificationHistory` retains bounded current-session records only. Protocol
+  replacement/progress updates preserve the internal ID and list position;
+  burst coalescing preserves every distinct history record.
+- The normalized service sanitizes content and actions, exposes content-free
+  count/lifecycle diagnostics, never persists history, and never includes app
+  identity, title, body, action labels, images, or group keys in CI artifacts.
+- Deterministic fixtures cover replacement, progress, malformed/duplicate
+  actions, grouping, bursts, DND/fullscreen matrices, conservative bypass,
+  close/dismiss, retention, modeled ownership conflict, reload reconstruction,
+  and a private-content canary.
 
 #### CI evolution
 
