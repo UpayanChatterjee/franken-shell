@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -eu
+
+# shellcheck source=ci/lib.sh
+. "$(dirname -- "$0")/lib.sh"
+
+require_tool qs
+
+cd "$REPO_ROOT"
+
+notification_artifact_dir="$ARTIFACT_DIR/notifications"
+mkdir -p "$notification_artifact_dir"
+
+unset WAYLAND_DISPLAY
+unset HYPRLAND_INSTANCE_SIGNATURE
+export QT_QPA_PLATFORM=offscreen
+
+if rg -n 'Quickshell\.Services\.Notifications|\bNotificationServer\b' \
+	shell/services/notifications/NotificationPolicy.qml \
+	shell/services/notifications/NotificationHistory.qml \
+	shell/services/notifications/NotificationService.qml \
+	>"$notification_artifact_dir/ownership-boundary.log" 2>&1; then
+	cat "$notification_artifact_dir/ownership-boundary.log" >&2
+	printf 'Notification policy, history, and normalized service must not own the native server.\n' >&2
+	exit 1
+fi
+
+if rg -n '\b(FileView|JsonAdapter|PersistentProperties)\b' shell/services/notifications \
+	>"$notification_artifact_dir/persistence-boundary.log" 2>&1; then
+	cat "$notification_artifact_dir/persistence-boundary.log" >&2
+	printf 'Initial notification history must remain memory-only.\n' >&2
+	exit 1
+fi
+
+if shell/dev/franken-shell notification-check >"$notification_artifact_dir/check.log" 2>&1; then
+	cat "$notification_artifact_dir/check.log"
+else
+	status=$?
+	cat "$notification_artifact_dir/check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell notification-test >"$notification_artifact_dir/test.log" 2>&1; then
+	cat "$notification_artifact_dir/test.log"
+else
+	status=$?
+	cat "$notification_artifact_dir/test.log" >&2
+	exit "$status"
+fi
+
+if rg -n 'PRIVATE_NOTIFICATION_CANARY|Synthetic title|Fixture App' "$notification_artifact_dir"; then
+	printf 'Notification content leaked into CI artifacts.\n' >&2
+	exit 1
+fi
+
+printf 'Notification normalization, history, policy, ownership, reload, and redaction contracts passed.\n'

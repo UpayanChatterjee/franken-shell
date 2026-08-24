@@ -8,6 +8,7 @@ ci/hygiene
 ci/install-arch-deps
 ci/lint
 ci/network
+ci/notifications
 ci/power
 ci/run
 ci/smoke

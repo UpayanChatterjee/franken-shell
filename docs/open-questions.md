@@ -253,6 +253,14 @@ The API exposes neither watcher health nor item bus/object identity, per-action
 support flags, or structured asynchronous action failures. This justifies the
 non-owning runtime guard but does not settle production ownership or recovery.
 
+**Current pinned-source evidence (PR-019):** constructing
+`Quickshell.Services.Notifications.NotificationServer` at the same pin
+registers the freedesktop D-Bus object, attempts
+`org.freedesktop.Notifications` ownership, and retries after owner loss. Tracked
+objects can be re-emitted into the next QML generation. QML receives no
+registration-success/conflict property, so ownership and crash handoff remain
+unresolved even though reload reconstruction is fixture-testable.
+
 ---
 
 ## Q-115 — Exclusive-service crash fallback and recovery
@@ -276,6 +284,11 @@ This does not block the non-owning Phase 0 bootstrap.
 PR-018 leaves this unresolved: the guarded tray runtime is reachable only in a
 named isolated ownership-test mode, while ordinary development and smoke runs
 use an unavailable runtime and never reference the SystemTray singleton.
+
+PR-019 applies the same boundary to notifications: only the isolated
+`notification-owner-test` mode instantiates the native server. Ordinary modes
+use an unavailable runtime. No Mako activation, ownership handback, or restart
+ordering is selected by this slice.
 
 ---
 
@@ -755,6 +768,13 @@ Questions:
 - How are pending notifications handled during restart?
 - Can duplicate ownership be detected cleanly?
 
+**PR-019 research evidence:** the live owner is the separately running
+Caelestia Quickshell process. The pinned implementation retries registration
+when that owner disappears but exposes neither registration success nor a
+conflict signal to QML. `keepOnReload` re-emits tracked objects with a
+last-generation flag, allowing one history reconstruction inside the same
+process. Production migration and restart loss remain unresolved.
+
 ---
 
 ## Q-030 — Popup placement
@@ -799,6 +819,11 @@ Need to determine:
 - whether a notification with progress times out;
 - whether very short “done” notices should disappear faster.
 
+**PR-019 prototype boundary:** pure fixtures use 6000 ms routine, 9000 ms
+important, persistent trusted-critical, persistent active-progress, and bounded
+explicit application timeouts. These are configuration-model candidate values,
+not a resolution of body/action/accessibility timing.
+
 ---
 
 ## Q-032 — Grouping identity
@@ -816,6 +841,11 @@ Possible inputs:
 - normalized fallback.
 
 Need fallback rules for applications that provide poor metadata.
+
+**PR-019 prototype boundary:** grouping uses normalized desktop entry, then
+application name, then the stable session notification ID. The pinned API does
+not expose the D-Bus sender. This exercises deterministic grouping without
+settling a persistent identity contract.
 
 ---
 
@@ -839,6 +869,11 @@ Need separate handling for:
 - media notifications;
 - background sync.
 
+**PR-019 prototype boundary:** distinct same-group arrivals inside a 2500 ms
+candidate window mark presentation coalescing while preserving every history
+record. Protocol replacement remains a separate in-place update. Popup summary
+content and category-specific behavior remain unresolved.
+
 ---
 
 ## Q-034 — Notification history retention
@@ -859,6 +894,10 @@ Later decide:
 - progress-notification cleanup.
 
 No persistence should be implemented before this is settled.
+
+**PR-019 prototype boundary:** current-session history is capped at the
+configuration-model candidate of 500 records and trims the oldest entries. No
+age policy, disk path, serialization, or restart restoration exists.
 
 ---
 
@@ -898,6 +937,11 @@ Possible policy:
 - system-service origin verification.
 
 Avoid allowing any arbitrary app to bypass DND/fullscreen unconditionally.
+
+**PR-019 implementation boundary:** untrusted critical urgency promotes only to
+`important`. Critical bypass requires an exact D-040 category plus a trusted
+internal-source flag, and the native application runtime always supplies
+`false`. Future origin verification and user allowlists remain unresolved.
 
 ---
 
