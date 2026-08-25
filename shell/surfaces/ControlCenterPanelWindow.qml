@@ -19,6 +19,9 @@ PanelWindow {
 
     signal fixtureCaptured(string path, bool saved)
 
+    function canDismiss(): bool {
+        return controlCenterSurface.canDismiss();
+    }
     function captureFixture(path: string) {
         controlCenterSurface.captureFixture(path);
     }

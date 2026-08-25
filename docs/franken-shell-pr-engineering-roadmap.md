@@ -285,8 +285,8 @@ The sequence is dependency-aware, but a later item may be reordered only when it
 | **PR-019** | Notification-complete prototype | Implement normalized notification service ownership, in-memory history, and the pure policy engine for DND/fullscreen/grouping. | `feat/notification-core-policy` | Notification state and policy are deterministic and content-private; DND/fullscreen decisions can be tested without UI or live D-Bus. | **open** |
 | **PR-020** | Notification-complete prototype | Implement notification popup stack and grouped drawer history with focus-safe interaction. | `feat/notification-surfaces` | Ordinary application notifications render and remain manageable under bursts, no unread count exists, and opening history prevents duplicate interruption. | **open** |
 | **PR-021** | Notification-complete prototype | Implement keyed system toasts, volume/brightness OSDs, and the initial notification sound policy. | `feat/toasts-osds` | Milestone D is met: notifications, DND, history, toasts, and OSDs are behaviorally distinct and pass the documented policy matrix. | **open** |
-| **PR-022** | Daily-use prototype | Compose the real persistent bar from live adapters and complete its practical interactions and contextual-status policy. | `feat/daily-use-bar` | The persistent bar can replace the current shell bar for a normal session without a blocker; optional failures remain local and visible. | **open** |
-| **PR-023** | Daily-use prototype | Replace control-centre placeholders with practical audio, brightness, network, Bluetooth, notification, and quick-control workflows. | `feat/daily-use-control-centre` | The control centre handles ordinary daily audio/device/connectivity/notification tasks and remains usable when any one backend fails. | **open** |
+| **PR-022** | Daily-use prototype | Compose the real persistent bar from live adapters and complete its practical interactions and contextual-status policy. | `feat/daily-use-bar` | The persistent bar can replace the current shell bar for a normal session without a blocker; optional failures remain local and visible. | **closed** — PR #23 / 454c0430d467104ec34959978bd2a03dede5c127 |
+| **PR-023** | Daily-use prototype | Replace control-centre placeholders with practical audio, brightness, network, Bluetooth, notification, and quick-control workflows. | `feat/daily-use-control-centre` | The control centre handles ordinary daily audio/device/connectivity/notification tasks and remains usable when any one backend fails. | **in progress** |
 | **PR-024** | Daily-use prototype | Stabilize the prototype through sustained use, eliminate blocker defects, and establish performance/reliability baselines. | `perf/daily-use-stabilization` | Milestone E is met: no blocker-level daily-use defect remains, every fixed bug has a regression test, and baseline performance/reliability data is recorded. | **open** |
 | **PR-025** | Integrated ecosystem | Research, pin, and document the quickshell-overview compatibility and invocation contract before code integration. | `chore/overview-contract-pin` | The integration contract is evidence-based and pinned; the next PR can implement without guessing upstream behavior. | **open** |
 | **PR-026** | Integrated ecosystem | Implement OverviewAdapter, invocation/fallback, shared workspace configuration, theme sync, and diagnostics. | `feat/overview-adapter-sync` | The overview behaves as an optional first-class integration, uses shared config/theme, and cannot break direct navigation when it fails. | **open** |
@@ -1386,8 +1386,8 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Daily-use prototype
 - **Branch:** `feat/daily-use-bar`
-- **Status:** **open**
-- **Merged PR / commit:** _fill when closed_
+- **Status:** **closed**
+- **Merged PR / commit:** PR #23 / 454c0430d467104ec34959978bd2a03dede5c127
 
 #### Scope
 - Replace remaining bar fixtures with live workspace, tray, throughput, audio, resources, battery, date/time, Vicinae availability, and contextual states.
@@ -1426,7 +1426,7 @@ Before coding, read the repository AGENTS instructions and the relevant architec
 
 - **Milestone:** Daily-use prototype
 - **Branch:** `feat/daily-use-control-centre`
-- **Status:** **open**
+- **Status:** **in progress**
 - **Merged PR / commit:** _fill when closed_
 
 #### Scope

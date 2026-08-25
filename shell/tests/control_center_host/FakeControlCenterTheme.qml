@@ -35,6 +35,7 @@ QtObject {
         readonly property real radiusFull: 999
         readonly property real radiusLarge: 18
         readonly property real radiusMedium: 12
+        readonly property real radiusSmall: 6
     }
     readonly property QtObject spacing: QtObject {
         readonly property real space1: 4

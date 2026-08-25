@@ -33,6 +33,9 @@ Item {
     signal quickControlActionRequested(string controlId, string action, string source)
     signal sliderActionRequested(string sliderId, int step, string source)
 
+    function canDismiss(): bool {
+        return !root.contentReady || root.content.canDismiss !== false;
+    }
     function captureFixture(path: string) {
         root.grabToImage(result => {
             root.fixtureCaptured(path, result.saveToFile(path));
@@ -50,7 +53,16 @@ Item {
     function dismissOutside(): var {
         if (!root.open || root.controlCenterConfig?.scrim?.dismissOnClick === false)
             return root.result(false);
+        if (!root.canDismiss())
+            return root.rejection("CONTROL_CENTER_PROTECTED_OPERATION");
         return root.surfaceCoordinator.closeMajor("outsideClick");
+    }
+    function feedbackContext(source: string, originControlId: string): var {
+        return {
+            "monitorId": root.ownerMonitorId,
+            "origin": source,
+            "originControlId": originControlId
+        };
     }
     function focusInitial() {
         if (root.keyboardActive && root.contentReady)
@@ -231,16 +243,28 @@ Item {
                 theme: root.theme
 
                 onCloseRequested: root.surfaceCoordinator.closeMajor("escape")
-                onHeaderActionRequested: (actionId, source) => root.headerActionRequested(actionId, source)
+                onHeaderActionRequested: (actionId, source) => {
+                    root.headerActionRequested(actionId, source);
+                    if (typeof root.contentModel?.requestHeaderAction === "function")
+                        root.contentModel.requestHeaderAction(actionId, source, root.feedbackContext(source, "header." + actionId));
+                }
+                onMixerActionRequested: (actionId, targetId, value, source) => {
+                    if (typeof root.contentModel?.requestAudioMixerAction === "function")
+                        root.contentModel.requestAudioMixerAction(actionId, targetId, value, source, root.feedbackContext(source, "audio.mixer." + actionId));
+                }
                 onQuickControlActionRequested: (controlId, action, source) => {
                     root.quickControlActionRequested(controlId, action, source);
                     if (typeof root.contentModel?.requestQuickControlAction === "function")
-                        root.contentModel.requestQuickControlAction(controlId, action, source);
+                        root.contentModel.requestQuickControlAction(controlId, action, source, root.feedbackContext(source, "quick." + controlId));
                 }
                 onSliderActionRequested: (sliderId, step, source) => {
                     root.sliderActionRequested(sliderId, step, source);
                     if (typeof root.contentModel?.requestSliderStep === "function")
-                        root.contentModel.requestSliderStep(sliderId, step, source);
+                        root.contentModel.requestSliderStep(sliderId, step, source, root.feedbackContext(source, "slider." + sliderId));
+                }
+                onSliderValueActionRequested: (sliderId, value, source) => {
+                    if (typeof root.contentModel?.requestSliderValue === "function")
+                        root.contentModel.requestSliderValue(sliderId, value, source, root.feedbackContext(source, "slider." + sliderId));
                 }
             }
         }

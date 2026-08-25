@@ -1,54 +1,41 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
+
+import "../bluetooth" as BluetoothFeatures
+import "../network" as NetworkFeatures
 
 FocusScope {
     id: root
 
+    readonly property bool canDismiss: root.pageItem?.canDismiss !== false
     required property var contentModel
     readonly property string focusedControlId: backAction.activeFocus ? "detail.back" : ""
     required property string pageId
+    readonly property var pageItem: pageLoader.status === Loader.Ready ? pageLoader.item : null
+    readonly property bool protectedOperation: root.pageItem?.protectedOperation === true
     required property var theme
 
     signal backRequested(string source)
 
-    function bluetoothDetails(): string {
-        const model = root.contentModel?.bluetoothPage;
-        if (model === null || model === undefined || model.status === "unavailable")
-            return qsTr("No Bluetooth adapter is available. The drawer remains usable.");
-        return qsTr("%1 connected · %2 paired · %3 nearby").arg(model.connectedDeviceCount).arg(model.pairedDeviceCount).arg(model.availableDeviceCount);
-    }
-    function bluetoothHeadline(): string {
-        const model = root.contentModel?.bluetoothPage;
-        if (model?.pairingPromptActive === true)
-            return qsTr("Pairing needs attention");
-        if (model?.status === "pairing")
-            return qsTr("Pairing device…");
-        if (model?.discoveryState === "discovering")
-            return qsTr("Discovering devices…");
-        return qsTr("Bluetooth status: %1").arg(model?.status ?? "unavailable");
+    function clearTransient() {
+        if (typeof root.pageItem?.clearTransient === "function")
+            root.pageItem.clearTransient();
     }
     function focusInitial() {
         backAction.forceActiveFocus();
     }
-    function networkDetails(): string {
-        const model = root.contentModel?.networkPage;
-        if (model === null || model === undefined || model.status === "unavailable")
-            return qsTr("NetworkManager is unavailable. The drawer remains usable.");
-        return qsTr("%1 visible · %2 saved · %3 Ethernet").arg(model.visibleNetworkCount).arg(model.savedNetworkCount).arg(model.ethernetDeviceCount);
+    function handleEscape(): bool {
+        return typeof root.pageItem?.handleEscape === "function" && root.pageItem.handleEscape() === true;
     }
-    function networkHeadline(): string {
-        const model = root.contentModel?.networkPage;
-        if (model?.activeConnection !== null && model?.activeConnection !== undefined)
-            return qsTr("Connected to %1").arg(model.activeConnection.name);
-        if (model?.status === "scanning")
-            return qsTr("Scanning for networks…");
-        if (model?.status === "captive")
-            return qsTr("Network login required");
-        if (model?.status === "limited")
-            return qsTr("Limited connectivity");
-        return qsTr("Network status: %1").arg(model?.status ?? "unavailable");
+    function requestBack(source: string): bool {
+        if (!root.canDismiss)
+            return root.handleEscape();
+        root.backRequested(source);
+        return true;
     }
 
-    Accessible.name: root.pageId === "network" ? qsTr("Network detail placeholder") : qsTr("Bluetooth detail placeholder")
+    Accessible.name: root.pageId === "network" ? qsTr("Network details") : qsTr("Bluetooth details")
     Accessible.role: Accessible.Pane
 
     FocusScope {
@@ -63,15 +50,15 @@ FocusScope {
         width: 92
 
         Keys.onEnterPressed: event => {
-            root.backRequested("keyboard");
+            root.requestBack("keyboard");
             event.accepted = true;
         }
         Keys.onReturnPressed: event => {
-            root.backRequested("keyboard");
+            root.requestBack("keyboard");
             event.accepted = true;
         }
         Keys.onSpacePressed: event => {
-            root.backRequested("keyboard");
+            root.requestBack("keyboard");
             event.accepted = true;
         }
 
@@ -92,7 +79,7 @@ FocusScope {
             TapHandler {
                 acceptedButtons: Qt.LeftButton
 
-                onTapped: root.backRequested("pointer")
+                onTapped: root.requestBack("pointer")
             }
             HoverHandler {
                 id: backHover
@@ -111,41 +98,31 @@ FocusScope {
         font.weight: root.theme.typography.fontWeightSemibold
         text: root.pageId === "network" ? qsTr("Network") : qsTr("Bluetooth")
     }
-    Rectangle {
+    Loader {
+        id: pageLoader
+
+        active: root.pageId === "network" || root.pageId === "bluetooth"
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: backAction.bottom
         anchors.topMargin: root.theme.spacing.space4
-        border.color: root.theme.colors.outlineSubtle
-        border.width: root.theme.metrics.outlineWidth
-        color: root.theme.colors.surfaceOverlay
-        radius: root.theme.radius.radiusLarge
+        sourceComponent: root.pageId === "network" ? networkPage : bluetoothPage
+    }
+    Component {
+        id: networkPage
 
-        Column {
-            anchors.centerIn: parent
-            spacing: root.theme.spacing.space2
-            width: parent.width - root.theme.spacing.space6 * 2
+        NetworkFeatures.NetworkControlCenterPage {
+            controller: root.contentModel?.networkController ?? null
+            theme: root.theme
+        }
+    }
+    Component {
+        id: bluetoothPage
 
-            Text {
-                color: root.theme.colors.textPrimary
-                font.family: root.theme.typography.fontFamily
-                font.pixelSize: root.theme.typography.fontSizeSection
-                font.weight: root.theme.typography.fontWeightMedium
-                horizontalAlignment: Text.AlignHCenter
-                text: root.pageId === "network" ? root.networkHeadline() : root.bluetoothHeadline()
-                width: parent.width
-                wrapMode: Text.Wrap
-            }
-            Text {
-                color: root.theme.colors.textSecondary
-                font.family: root.theme.typography.fontFamily
-                font.pixelSize: root.theme.typography.fontSizeBody
-                horizontalAlignment: Text.AlignHCenter
-                text: root.pageId === "network" ? root.networkDetails() : root.bluetoothDetails()
-                width: parent.width
-                wrapMode: Text.Wrap
-            }
+        BluetoothFeatures.BluetoothControlCenterPage {
+            controller: root.contentModel?.bluetoothController ?? null
+            theme: root.theme
         }
     }
 }

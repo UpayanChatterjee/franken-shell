@@ -7,6 +7,7 @@ FocusScope {
 
     readonly property string activePage: navigation.activePage
     readonly property string activeTab: navigation.activeTab
+    readonly property bool canDismiss: root.detailItem?.canDismiss !== false
     required property var contentModel
     readonly property ControlCenterDetailPage detailItem: detailLoader.status === Loader.Ready ? detailLoader.item as ControlCenterDetailPage : null
     readonly property string focusedControlId: root.activePage === "main" ? mainPage.focusedControlId : root.detailItem?.focusedControlId ?? ""
@@ -14,13 +15,22 @@ FocusScope {
 
     signal closeRequested
     signal headerActionRequested(string actionId, string source)
+    signal mixerActionRequested(string actionId, string targetId, real value, string source)
     signal quickControlActionRequested(string controlId, string action, string source)
     signal sliderActionRequested(string sliderId, int step, string source)
+    signal sliderValueActionRequested(string sliderId, real value, string source)
 
     function focusInitial() {
         mainPage.focusControl("quick.wifi");
     }
     function handleEscape(): var {
+        if (root.detailItem !== null && root.detailItem.handleEscape()) {
+            return Object.freeze({
+                "handled": true,
+                "closeRequested": false,
+                "restoreFocusId": ""
+            });
+        }
         const result = navigation.handleEscape();
         if (result.handled) {
             Qt.callLater(() => mainPage.focusControl(result.restoreFocusId));
@@ -49,6 +59,8 @@ FocusScope {
         return mainPage.requestSliderStep(sliderId, step, source);
     }
     function resetSession() {
+        if (root.detailItem !== null)
+            root.detailItem.clearTransient();
         navigation.resetSession();
     }
     function selectTab(tabId: string, source: string): bool {
@@ -61,6 +73,8 @@ FocusScope {
             "activeTab": root.activeTab,
             "stackDepth": navigation.stackDepth,
             "focusedControlId": root.focusedControlId,
+            "mixerHeight": mainPage.mixerHeight,
+            "mixerLoaded": mainPage.mixerLoaded,
             "quickControlCount": root.contentModel.quickControlCount ?? 0,
             "visibleSliderCount": mainPage.visibleSliderCount
         });
@@ -86,9 +100,11 @@ FocusScope {
         visible: root.activePage === "main"
 
         onHeaderActionRequested: (actionId, source) => root.headerActionRequested(actionId, source)
+        onMixerActionRequested: (actionId, targetId, value, source) => root.mixerActionRequested(actionId, targetId, value, source)
         onPageRequested: (pageId, invokerFocusId, source) => root.openPage(pageId, invokerFocusId, source)
         onQuickControlActionRequested: (controlId, action, source) => root.quickControlActionRequested(controlId, action, source)
         onSliderActionRequested: (sliderId, step, source) => root.sliderActionRequested(sliderId, step, source)
+        onSliderValueActionRequested: (sliderId, value, source) => root.sliderValueActionRequested(sliderId, value, source)
         onTabRequested: (tabId, source) => root.selectTab(tabId, source)
     }
     Loader {

@@ -14,6 +14,35 @@ It turns the settled product, interaction, and architecture decisions into an im
 
 ---
 
+# PR-023 Delivery Boundary
+
+The daily-use implementation connects the control-centre presentation to the
+existing authoritative audio, brightness, network, Bluetooth, notification,
+feedback, and command controllers. The main sliders emit through the shared
+volume/brightness OSD channel; the mixer consumes the same audio controller as
+the bar; and the Notifications tab consumes the existing notification-history
+controller rather than creating a second model.
+
+Network and Bluetooth detail pages expose controller-owned discovery,
+connection, pairing, credential, task-cancellation, success, and failure
+state. Credential and pairing prompts block outside-click and close-drag
+dismissal; Escape first cancels the protected prompt, then unwinds the nested
+page. Closing the drawer drops those unsafe prompt states.
+
+Night Light and Keep awake are intentionally shown as unavailable in this
+delivery because no Franken Shell adapter/controller exists yet. The view does
+not issue direct backend commands or fabricate active state for either service.
+Settings and session entry points use only the configured settings.open and
+session.open command contracts; no command is guessed when an entry is
+unavailable.
+
+The existing bounded notification viewport and safe reset-to-main/Notifications
+behaviour remain in place. This delivery does not settle the unresolved
+main-view sticky/scroll relationship or the exact timed safe-state restoration
+policy.
+
+---
+
 # 1. Product Role
 
 The control centre is Franken Shell's hidden right-edge utility drawer for accumulated attention and frequent secondary system controls.

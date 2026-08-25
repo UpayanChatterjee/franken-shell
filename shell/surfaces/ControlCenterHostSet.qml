@@ -10,7 +10,9 @@ Scope {
     property var bluetoothController: null
     readonly property int bluetoothPageOpenCount: controller.count("bluetooth")
     property var brightnessController: null
+    property var commandRegistry: null
     required property var controlCenterConfig
+    property var feedbackController: null
     required property bool fixtureWindow
     readonly property int hostCount: hostVariants.instances.length
     required property var monitorRegistry
@@ -70,7 +72,9 @@ Scope {
                 audioController: root.audioController
                 bluetoothController: root.bluetoothController
                 brightnessController: root.brightnessController
+                commandRegistry: root.commandRegistry
                 controlCenterConfig: root.controlCenterConfig
+                feedbackController: root.feedbackController
                 fixtureWindow: root.fixtureWindow
                 monitor: instance.monitor
                 networkController: root.networkController
