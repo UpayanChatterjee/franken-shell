@@ -1,2 +1,3 @@
 module FrankenShell.Features.Audio
 AudioController 1.0 AudioController.qml
+AudioMixerView 1.0 AudioMixerView.qml

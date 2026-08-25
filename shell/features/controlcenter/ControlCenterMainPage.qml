@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 
+import "../audio" as AudioFeatures
 import "../notifications" as NotificationFeatures
 
 FocusScope {
@@ -9,14 +10,18 @@ FocusScope {
     required property string activeTab
     required property var contentModel
     readonly property string focusedControlId: header.focusedControlId.length > 0 ? header.focusedControlId : wifi.activeFocus ? wifi.focusId : bluetooth.activeFocus ? bluetooth.focusId : doNotDisturb.activeFocus ? doNotDisturb.focusId : nightLight.activeFocus ? nightLight.focusId : idleInhibitor.activeFocus ? idleInhibitor.focusId : volume.activeFocus ? volume.focusId : brightness.activeFocus ? brightness.focusId : notificationsTab.activeFocus ? notificationsTab.focusId : volumeMixerTab.activeFocus ? volumeMixerTab.focusId : root.notificationHistory?.focusedRowId ?? ""
+    readonly property real mixerHeight: audioMixerLoader.height
+    readonly property bool mixerLoaded: audioMixerLoader.status === Loader.Ready
     readonly property var notificationHistory: notificationLoader.status === Loader.Ready ? notificationLoader.item : null
     required property var theme
     readonly property int visibleSliderCount: 1 + (brightness.visible ? 1 : 0)
 
     signal headerActionRequested(string actionId, string source)
+    signal mixerActionRequested(string actionId, string targetId, real value, string source)
     signal pageRequested(string pageId, string invokerFocusId, string source)
     signal quickControlActionRequested(string controlId, string action, string source)
     signal sliderActionRequested(string sliderId, int step, string source)
+    signal sliderValueActionRequested(string sliderId, real value, string source)
     signal tabRequested(string tabId, string source)
 
     function focusControl(focusId: string): bool {
@@ -202,7 +207,7 @@ FocusScope {
                 spacing: root.theme.spacing.space2
                 width: parent.width
 
-                ControlCenterSliderPlaceholder {
+                ControlCenterSlider {
                     id: volume
 
                     height: implicitHeight
@@ -211,9 +216,10 @@ FocusScope {
                     theme: root.theme
                     width: parent.width
 
-                    onAdjustmentRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                    onStepRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                    onValueRequested: (value, source) => root.sliderValueActionRequested(sliderId, value, source)
                 }
-                ControlCenterSliderPlaceholder {
+                ControlCenterSlider {
                     id: brightness
 
                     height: visible ? implicitHeight : 0
@@ -222,7 +228,8 @@ FocusScope {
                     theme: root.theme
                     width: parent.width
 
-                    onAdjustmentRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                    onStepRequested: (step, source) => root.sliderActionRequested(sliderId, step, source)
+                    onValueRequested: (value, source) => root.sliderValueActionRequested(sliderId, value, source)
                 }
             }
             Row {
@@ -264,11 +271,19 @@ FocusScope {
                 sourceComponent: notificationHistoryComponent
                 width: parent.width
             }
+            Loader {
+                id: audioMixerLoader
+
+                active: root.activeTab === "volumeMixer"
+                height: active ? Math.max(112, implicitHeight) : 0
+                sourceComponent: audioMixerComponent
+                width: parent.width
+            }
             Rectangle {
                 border.color: root.theme.colors.outlineSubtle
                 border.width: root.theme.metrics.outlineWidth
                 color: root.theme.colors.surfaceRaised
-                height: root.activeTab === "volumeMixer" || root.contentModel.notificationController === null ? 112 : 0
+                height: root.activeTab === "notifications" && root.contentModel.notificationController === null ? 112 : 0
                 radius: root.theme.radius.radiusLarge
                 visible: height > 0
                 width: parent.width
@@ -284,7 +299,7 @@ FocusScope {
                         font.pixelSize: root.theme.typography.fontSizeSection
                         font.weight: root.theme.typography.fontWeightMedium
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("Notification history unavailable") : root.contentModel.audioAvailable === true ? qsTr("%1 active audio stream(s)").arg(root.contentModel.audioPlaybackStreamCount ?? 0) : qsTr("Audio unavailable")
+                        text: qsTr("Notification history unavailable")
                         width: parent.width
                     }
                     Text {
@@ -292,7 +307,7 @@ FocusScope {
                         font.family: root.theme.typography.fontFamily
                         font.pixelSize: root.theme.typography.fontSizeBody
                         horizontalAlignment: Text.AlignHCenter
-                        text: root.activeTab === "notifications" ? qsTr("The notification model is not connected to this fixture.") : root.contentModel.audioAvailable === true ? qsTr("Default output: %1").arg(root.contentModel.audioDefaultOutputName || qsTr("Unknown output")) : qsTr("The drawer remains usable while PipeWire is absent or restarting.")
+                        text: qsTr("The notification model is not connected to this fixture.")
                         width: parent.width
                         wrapMode: Text.Wrap
                     }
@@ -306,6 +321,17 @@ FocusScope {
         NotificationFeatures.NotificationHistoryView {
             controller: root.contentModel.notificationController
             theme: root.theme
+        }
+    }
+    Component {
+        id: audioMixerComponent
+
+        AudioFeatures.AudioMixerView {
+            audioController: root.contentModel.audioController
+            theme: root.theme
+            width: parent.width
+
+            onActionRequested: (actionId, targetId, value, source) => root.mixerActionRequested(actionId, targetId, value, source)
         }
     }
 }

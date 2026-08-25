@@ -408,6 +408,27 @@ check_control_center_navigation() {
 		"$SHELL_DIR/tests/control_center_navigation/ControlCenterNavigationComponentTests.qml"
 }
 
+check_control_center_daily_use() {
+	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
+		"$SHELL_DIR/features/audio/AudioController.qml" \
+		"$SHELL_DIR/features/audio/AudioMixerView.qml" \
+		"$SHELL_DIR/features/bluetooth/BluetoothController.qml" \
+		"$SHELL_DIR/features/bluetooth/BluetoothControlCenterPage.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterActionButton.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterContent.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterDailyUseModel.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterDetailPage.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterMainPage.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterNavigationController.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterQuickControl.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterSlider.qml" \
+		"$SHELL_DIR/features/controlcenter/ControlCenterTabButton.qml" \
+		"$SHELL_DIR/features/network/NetworkController.qml" \
+		"$SHELL_DIR/features/network/NetworkControlCenterPage.qml" \
+		"$SHELL_DIR/features/power/BrightnessController.qml" \
+		"$SHELL_DIR/tests/control_center_daily_use/ControlCenterDailyUseTests.qml"
+}
+
 check_hyprland_adapter() {
 	"$QMLLINT" -I "$SHELL_DIR" -I /usr/lib/qt6/qml \
 		"$SHELL_DIR/services/hyprland/HyprlandCommandBuilder.js" \
@@ -808,6 +829,19 @@ test_control_center_navigation() {
 			FRANKEN_SHELL_MODE=control-center-navigation-component-test \
 			qs --no-duplicate --path "$SHELL_DIR/control-center-navigation-component-tests.qml" --log-times || result=$?
 	fi
+	rm -rf "$runtime_dir"
+	return "$result"
+}
+
+test_control_center_daily_use() {
+	runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/franken-shell-control-center-daily-use-runtime.XXXXXX")
+	chmod 700 "$runtime_dir"
+
+	result=0
+	QT_QPA_PLATFORM=offscreen \
+		XDG_RUNTIME_DIR="$runtime_dir" \
+		FRANKEN_SHELL_MODE=control-center-daily-use-test \
+		qs --no-duplicate --path "$SHELL_DIR/control-center-daily-use-tests.qml" --log-times || result=$?
 	rm -rf "$runtime_dir"
 	return "$result"
 }
@@ -1278,6 +1312,10 @@ usage() {
 		"                    Statically check control-centre tab and page navigation" \
 		"  control-center-navigation-test" \
 		"                    Run deterministic tab, page-stack, focus, and Escape fixtures" \
+		"  control-center-daily-use-check" \
+		"                    Statically check composed daily-use control-centre workflows" \
+		"  control-center-daily-use-test" \
+		"                    Run daily-use controller, prompt, cancellation, and reconnect fixtures" \
 		"  hyprland-adapter-check" \
 		"                    Statically check the normalized Hyprland adapter contract" \
 		"  hyprland-adapter-test" \
@@ -1501,6 +1539,12 @@ control-center-navigation-check)
 	;;
 control-center-navigation-test)
 	test_control_center_navigation
+	;;
+control-center-daily-use-check)
+	check_control_center_daily_use
+	;;
+control-center-daily-use-test)
+	test_control_center_daily_use
 	;;
 hyprland-adapter-check)
 	check_hyprland_adapter

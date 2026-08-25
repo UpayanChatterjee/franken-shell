@@ -52,8 +52,19 @@ Scope {
             "errorCode": errorCode
         });
     }
-    function selectDefaultInput(nodeId: string): var {
-        return root.adapter.selectDefaultInput(nodeId);
+    function selectDefaultInput(nodeId: string, context = ({})): var {
+        const response = root.adapter.selectDefaultInput(nodeId);
+        if (response.accepted && root.feedbackController !== null) {
+            const input = root.inputDevices.find(candidate => candidate.id === nodeId);
+            root.feedbackController.showToast({
+                "key": "audioOutput",
+                "severity": "success",
+                "summary": qsTr("Audio input changed"),
+                "detail": String(input?.description || input?.name || ""),
+                "userTriggered": true
+            }, context);
+        }
+        return response;
     }
     function selectDefaultOutput(nodeId: string, context = ({})): var {
         const response = root.adapter.selectDefaultOutput(nodeId);

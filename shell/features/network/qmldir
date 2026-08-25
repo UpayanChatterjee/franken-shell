@@ -1,2 +1,3 @@
 module FrankenShell.Features.Network
 NetworkController 1.0 NetworkController.qml
+NetworkControlCenterPage 1.0 NetworkControlCenterPage.qml

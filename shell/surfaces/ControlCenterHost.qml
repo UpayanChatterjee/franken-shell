@@ -8,9 +8,11 @@ Scope {
     property var audioController: null
     property var bluetoothController: null
     property var brightnessController: null
+    property var commandRegistry: null
     property var contentModel: null
     required property var controlCenterConfig
-    readonly property var effectiveContentModel: root.contentModel ?? placeholderModel
+    readonly property var effectiveContentModel: root.contentModel ?? dailyUseModel
+    property var feedbackController: null
     required property bool fixtureWindow
     required property var monitor
     property var networkController: null
@@ -115,8 +117,10 @@ Scope {
         velocityThreshold: root.controlCenterConfig?.edgeDrag?.velocityThreshold ?? 900
 
         onCloseRequested: reason => {
-            if (root.surfaceCoordinator?.activeMajorId === "controlCenter" && root.surfaceCoordinator?.activeMajor?.ownerMonitorId === root.monitor?.runtimeId)
+            if (root.surfaceCoordinator?.activeMajorId === "controlCenter" && root.surfaceCoordinator?.activeMajor?.ownerMonitorId === root.monitor?.runtimeId && root.window?.canDismiss() !== false)
                 root.surfaceCoordinator.closeMajor(reason);
+            else if (root.surfaceCoordinator?.activeMajorId === "controlCenter")
+                revealController.showOpen();
         }
         onOpenRequested: {
             const result = root.surfaceCoordinator.openMajor("controlCenter", {
@@ -130,12 +134,14 @@ Scope {
                 revealController.cancel("surfaceRejected");
         }
     }
-    ControlCenter.ControlCenterPlaceholderModel {
-        id: placeholderModel
+    ControlCenter.ControlCenterDailyUseModel {
+        id: dailyUseModel
 
         audioController: root.audioController
         bluetoothController: root.bluetoothController
         brightnessController: root.brightnessController
+        commandRegistry: root.commandRegistry
+        feedbackController: root.feedbackController
         networkController: root.networkController
         notificationController: root.notificationController
     }

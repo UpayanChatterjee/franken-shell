@@ -434,7 +434,9 @@ ShellRoot {
         audioController: audioController
         bluetoothController: root.usesFixtureMonitorBackend ? null : bluetoothController
         brightnessController: root.usesFixtureMonitorBackend ? null : brightnessController
+        commandRegistry: shellCommandRegistry
         controlCenterConfig: configService.active?.controlCenter ?? null
+        feedbackController: feedbackController
         fixtureWindow: root.usesFixtureMonitorBackend
         monitorRegistry: monitorRegistry
         networkController: root.usesFixtureMonitorBackend ? null : networkController

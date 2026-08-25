@@ -71,4 +71,22 @@ else
 	exit "$status"
 fi
 
-printf 'Control-centre primitive, ownership, direct reveal, navigation, focus, and dismissal fixtures passed.\n'
+if shell/dev/franken-shell control-center-daily-use-check \
+	>"$control_center_artifact_dir/daily-use-check.log" 2>&1; then
+	cat "$control_center_artifact_dir/daily-use-check.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/daily-use-check.log" >&2
+	exit "$status"
+fi
+
+if shell/dev/franken-shell control-center-daily-use-test \
+	>"$control_center_artifact_dir/daily-use-test.log" 2>&1; then
+	cat "$control_center_artifact_dir/daily-use-test.log"
+else
+	status=$?
+	cat "$control_center_artifact_dir/daily-use-test.log" >&2
+	exit "$status"
+fi
+
+printf 'Control-centre primitive, ownership, direct reveal, navigation, focus, dismissal, and daily-use fixtures passed.\n'

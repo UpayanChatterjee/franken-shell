@@ -1,5 +1,7 @@
 module FrankenShell.Features.ControlCenter
+ControlCenterActionButton 1.0 ControlCenterActionButton.qml
 ControlCenterContent 1.0 ControlCenterContent.qml
+ControlCenterDailyUseModel 1.0 ControlCenterDailyUseModel.qml
 ControlCenterDetailPage 1.0 ControlCenterDetailPage.qml
 ControlCenterHeader 1.0 ControlCenterHeader.qml
 ControlCenterMainPage 1.0 ControlCenterMainPage.qml
@@ -7,5 +9,6 @@ ControlCenterNavigationController 1.0 ControlCenterNavigationController.qml
 ControlCenterPlaceholderModel 1.0 ControlCenterPlaceholderModel.qml
 ControlCenterQuickControl 1.0 ControlCenterQuickControl.qml
 ControlCenterRevealController 1.0 ControlCenterRevealController.qml
+ControlCenterSlider 1.0 ControlCenterSlider.qml
 ControlCenterSliderPlaceholder 1.0 ControlCenterSliderPlaceholder.qml
 ControlCenterTabButton 1.0 ControlCenterTabButton.qml
